@@ -14,6 +14,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-fn main() {
-    println!("Hello, world!");
+/// Command line interface module
+mod cli;
+/// N34 errors
+mod error;
+/// Nostr utils module
+mod nostr_utils;
+
+use std::process::ExitCode;
+
+use clap::Parser;
+use clap_verbosity_flag::Verbosity;
+
+use self::cli::Cli;
+
+/// Configures the logging level based on the provided verbosity.
+///
+/// When verbosity is set to TRACE, includes file and line numbers in logs.
+fn set_log_level(verbosity: Verbosity) {
+    let is_trace = verbosity
+        .tracing_level()
+        .is_some_and(|l| l == tracing::Level::TRACE);
+
+    let subscriber = tracing_subscriber::fmt()
+        .with_file(is_trace)
+        .with_line_number(is_trace)
+        .without_time()
+        .with_max_level(verbosity)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).ok();
+}
+
+#[tokio::main]
+async fn main() -> ExitCode {
+    let cli = Cli::parse();
+    set_log_level(cli.verbosity);
+
+    if let Err(err) = cli.run().await {
+        tracing::error!("{err}");
+        return err.exit_code();
+    }
+
+    ExitCode::SUCCESS
 }
