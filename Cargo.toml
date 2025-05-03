@@ -1,13 +1,23 @@
 [package]
-name = "n34"
+name        = "n34"
 description = "A CLI to interact with NIP-34 and other stuff related to codes in nostr"
-version = "0.0.0"
-edition = "2024"
-license = "GPL-3.0-or-later"
-authors = ["Awiteb <a@4rs.nl>"]
-readme = "README.md"
-repository = "https://git.4rs.nl/awiteb/n34"
-keywords = ["nostr", "NIP-34", "CLI"]
-categories = ["command-line-utilities"]
+version     = "0.0.0"
+edition     = "2024"
+license     = "GPL-3.0-or-later"
+authors     = ["Awiteb <a@4rs.nl>"]
+readme      = "README.md"
+repository  = "https://git.4rs.nl/awiteb/n34"
+keywords    = ["nostr", "NIP-34", "CLI"]
+categories  = ["command-line-utilities"]
 
 [dependencies]
+clap = { version = "4.5.37", features = ["derive"] }
+clap-verbosity-flag = { version = "3.0.2", default-features = false, features = [
+  "tracing",
+] }
+nostr = { version = "0.41.0", features = ["parser"] }
+nostr-sdk = "0.41.0"
+thiserror = "2.0.12"
+tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
