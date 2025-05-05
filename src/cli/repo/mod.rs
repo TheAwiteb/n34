@@ -14,11 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+/// `repo announce` subcommand
+mod announce;
 /// `repo view` subcommand
 mod view;
 
 use clap::Subcommand;
 
+use self::announce::AnnounceArgs;
 use self::view::ViewArgs;
 use super::{CliOptions, CommandRunner};
 use crate::error::N34Result;
@@ -27,12 +30,17 @@ use crate::error::N34Result;
 pub enum RepoSubcommands {
     /// View details of a nostr git repository
     View(ViewArgs),
+    /// Publish information about a git repository to Nostr for collaboration
+    /// and feedback. Can also be used to update an existing repository's
+    /// details.
+    Announce(AnnounceArgs),
 }
 
 impl CommandRunner for RepoSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         match self {
             Self::View(args) => args.run(options).await,
+            Self::Announce(args) => args.run(options).await,
         }
     }
 }

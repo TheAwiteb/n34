@@ -16,6 +16,7 @@
 
 use std::process::ExitCode;
 
+use nostr::event::builder::Error as EventBuilderError;
 use nostr_sdk::client::Error as ClientError;
 
 pub type N34Result<T> = Result<T, N34Error>;
@@ -27,6 +28,12 @@ pub enum N34Error {
     Client(#[from] ClientError),
     #[error("Unable to locate the repository. The repository may not exists in the given relays")]
     NotFoundRepo,
+    #[error("Failed building an event: {0}")]
+    EventBuilder(#[from] EventBuilderError),
+    #[error("Invalid repository id, it can't be empty and must be kebab-case")]
+    InvalidRepoId,
+    #[error("Bech32 error: {0}")]
+    Bech32(#[from] nostr::nips::nip19::Error),
 }
 
 impl N34Error {

@@ -14,7 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use nostr::event::{TagKind, TagStandard, Tags};
+use convert_case::{Case, Casing};
+use nostr::{
+    event::{EventBuilder, Tag, TagKind, TagStandard, Tags},
+    key::PublicKey,
+    nips::nip34::GitRepositoryAnnouncement,
+    types::{RelayUrl, Url},
+};
+
+use crate::error::{N34Error, N34Result};
 
 
 /// A trait to add helper instance function to [`Tags`] type
@@ -45,5 +53,41 @@ impl Tags {
         self.filter_standardized(kind)
             .find(|t| (*t).clone().to_vec().last().is_some_and(|m| m == marker))
             .map(f)
+    }
+}
+
+/// Trait for building [`GitRepositoryAnnouncement`] events
+#[easy_ext::ext(NewGitRepositoryAnnouncement)]
+impl EventBuilder {
+    /// Creates a new [`GitRepositoryAnnouncement`] event builder with the given
+    /// repository details.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_git_repo(
+        repo_id: String,
+        name: Option<String>,
+        description: Option<String>,
+        web: Vec<Url>,
+        clone: Vec<Url>,
+        relays: Vec<RelayUrl>,
+        maintainers: Vec<PublicKey>,
+        labels: Vec<String>,
+    ) -> N34Result<EventBuilder> {
+        if repo_id.is_empty() || repo_id != repo_id.to_case(Case::Kebab) {
+            return Err(N34Error::InvalidRepoId);
+        }
+
+        Ok(
+            EventBuilder::git_repository_announcement(GitRepositoryAnnouncement {
+                id: repo_id.to_owned(),
+                name,
+                description,
+                web,
+                clone,
+                relays,
+                euc: None,
+                maintainers,
+            })?
+            .tags(labels.into_iter().map(Tag::hashtag)),
+        )
     }
 }
