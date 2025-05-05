@@ -18,6 +18,7 @@ use std::{fmt, str::FromStr};
 
 use nostr::{
     event::{Event, TagKind, TagStandard},
+    filter::{Alphabet, SingleLetterTag},
     nips::nip34::GitRepositoryAnnouncement,
 };
 
@@ -26,6 +27,11 @@ use super::traits::TagsExt;
 /// Returns the value of the given tag
 fn tag_value(tag: &TagStandard) -> String {
     tag.clone().to_vec().remove(1)
+}
+
+/// Parses the tag value into type `T` if possible.
+fn parse_value<T: FromStr>(tag: &TagStandard) -> Option<T> {
+    tag_value(tag).parse().ok()
 }
 
 /// Gets all values from the tag. If any value fails to parse, returns an empty
@@ -56,7 +62,13 @@ pub fn event_into_repo(event: Event, repo_id: impl Into<String>) -> GitRepositor
         id:          repo_id.into(),
         name:        tags.map_tag(TagKind::Name, tag_value),
         description: tags.map_tag(TagKind::Description, tag_value),
-        euc:         None,
+        euc:         tags
+            .map_marker(
+                TagKind::SingleLetter(SingleLetterTag::lowercase(Alphabet::R)),
+                "euc",
+                parse_value,
+            )
+            .flatten(),
         web:         tags.dmap_tag(TagKind::Web, tag_values),
         clone:       tags.dmap_tag(TagKind::Clone, tag_values),
         relays:      tags.dmap_tag(TagKind::Relays, tag_values),

@@ -33,4 +33,17 @@ impl Tags {
     {
         self.map_tag(kind, f).unwrap_or_default()
     }
+
+    /// Finds the first standard tag of the given kind with the specified
+    /// marker, then applies the function to the tag and returns the result.
+    pub fn map_marker<T>(
+        &self,
+        kind: TagKind,
+        marker: &str,
+        f: impl FnOnce(&TagStandard) -> T,
+    ) -> Option<T> {
+        self.filter_standardized(kind)
+            .find(|t| (*t).clone().to_vec().last().is_some_and(|m| m == marker))
+            .map(f)
+    }
 }
