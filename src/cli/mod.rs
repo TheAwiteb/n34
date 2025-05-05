@@ -25,7 +25,8 @@ use std::fmt;
 
 use clap::{ArgGroup, Args, Parser};
 use clap_verbosity_flag::Verbosity;
-use nostr::{RelayUrl, SecretKey};
+use nostr::key::Keys;
+use nostr::{PublicKey, RelayUrl, SecretKey};
 
 pub use self::repo::RepoSubcommands;
 pub use self::traits::CommandRunner;
@@ -109,6 +110,16 @@ impl CommandRunner for Commands {
         match self {
             Self::Repo { subcommands } => subcommands.run(options).await,
         }
+    }
+}
+
+impl CliOptions {
+    /// Gets the public key of the user.
+    pub async fn pubkey(&self) -> PublicKey {
+        if let Some(sk) = &self.secret_key {
+            return Keys::new(sk.clone()).public_key();
+        }
+        unreachable!("There is no other method until now")
     }
 }
 
