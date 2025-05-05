@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+/// Extension traits for nostr types.
+pub mod traits;
+/// Utility functions for nostr.
 pub mod utils;
 
 use std::time::Duration;

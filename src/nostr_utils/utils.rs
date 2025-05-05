@@ -21,6 +21,8 @@ use nostr::{
     nips::nip34::GitRepositoryAnnouncement,
 };
 
+use super::traits::TagsExt;
+
 /// Returns the value of the given tag
 fn tag_value(tag: &TagStandard) -> String {
     tag.clone().to_vec().remove(1)
@@ -48,33 +50,16 @@ where
 
 /// Convert [`Event`] to [`GitRepositoryAnnouncement`]
 pub fn event_into_repo(event: Event, repo_id: impl Into<String>) -> GitRepositoryAnnouncement {
+    let tags = &event.tags;
+
     GitRepositoryAnnouncement {
         id:          repo_id.into(),
-        name:        event.tags.find_standardized(TagKind::Name).map(tag_value),
-        description: event
-            .tags
-            .find_standardized(TagKind::Description)
-            .map(tag_value),
-        web:         event
-            .tags
-            .find_standardized(TagKind::Web)
-            .map(tag_values)
-            .unwrap_or_default(),
-        clone:       event
-            .tags
-            .find_standardized(TagKind::Clone)
-            .map(tag_values)
-            .unwrap_or_default(),
-        relays:      event
-            .tags
-            .find_standardized(TagKind::Relays)
-            .map(tag_values)
-            .unwrap_or_default(),
+        name:        tags.map_tag(TagKind::Name, tag_value),
+        description: tags.map_tag(TagKind::Description, tag_value),
         euc:         None,
-        maintainers: event
-            .tags
-            .find_standardized(TagKind::Maintainers)
-            .map(tag_values)
-            .unwrap_or_default(),
+        web:         tags.dmap_tag(TagKind::Web, tag_values),
+        clone:       tags.dmap_tag(TagKind::Clone, tag_values),
+        relays:      tags.dmap_tag(TagKind::Relays, tag_values),
+        maintainers: tags.dmap_tag(TagKind::Maintainers, tag_values),
     }
 }
