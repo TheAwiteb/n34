@@ -22,13 +22,13 @@ pub mod utils;
 use std::time::Duration;
 
 use nostr::{
-    event::Kind,
+    event::{EventBuilder, EventId, Kind},
     filter::Filter,
     key::Keys,
     nips::{nip19::Nip19Coordinate, nip34::GitRepositoryAnnouncement},
     types::RelayUrl,
 };
-use nostr_sdk::Client;
+use nostr_sdk::{Client, pool::Output};
 
 use crate::{
     cli::CliOptions,
@@ -81,6 +81,22 @@ impl NostrClient {
                 tracing::error!("Failed to connect to relay '{relay}': {err}");
             }
         }
+    }
+
+    /// Sends an event builder to the specified relays.
+    pub async fn send_builder_to(
+        &self,
+        builder: EventBuilder,
+        relays: &[RelayUrl],
+    ) -> N34Result<Output<EventId>> {
+        for relay in relays {
+            let _ = self.client.add_write_relay(relay).await;
+        }
+
+        self.client
+            .send_event_builder_to(relays, builder)
+            .await
+            .map_err(N34Error::from)
     }
 
     /// Try to fetch a repository and returns it
