@@ -103,7 +103,7 @@ impl Cli {
 }
 
 impl CommandRunner for Commands {
-    async fn run(&self, options: CliOptions) -> N34Result<()> {
+    async fn run(self, options: CliOptions) -> N34Result<()> {
         tracing::trace!("Options: {options:#?}");
         tracing::trace!("Handling: {self:#?}");
         match self {

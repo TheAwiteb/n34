@@ -20,5 +20,5 @@ use crate::error::N34Result;
 /// A trait defining the interface for command runners in the CLI.
 pub trait CommandRunner {
     /// Executes the command and returns a Result indicating success or failure.
-    async fn run(&self, options: CliOptions) -> N34Result<()>;
+    async fn run(self, options: CliOptions) -> N34Result<()>;
 }
