@@ -115,9 +115,9 @@ impl CommandRunner for Commands {
 
 impl CliOptions {
     /// Gets the public key of the user.
-    pub async fn pubkey(&self) -> PublicKey {
+    pub async fn pubkey(&self) -> N34Result<PublicKey> {
         if let Some(sk) = &self.secret_key {
-            return Keys::new(sk.clone()).public_key();
+            return Ok(Keys::new(sk.clone()).public_key());
         }
         unreachable!("There is no other method until now")
     }

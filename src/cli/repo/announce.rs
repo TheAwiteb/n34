@@ -62,7 +62,7 @@ pub struct AnnounceArgs {
 impl CommandRunner for AnnounceArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         let client = NostrClient::init(&options).await;
-        let user_pubk = options.pubkey().await;
+        let user_pubk = options.pubkey().await?;
         let naddr = Nip19Coordinate::new(
             Coordinate::new(Kind::GitRepoAnnouncement, user_pubk),
             options.relays.iter().take(3),
