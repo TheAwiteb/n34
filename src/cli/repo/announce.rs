@@ -15,21 +15,20 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 use clap::Args;
-use convert_case::{Case, Casing};
 use nostr::{
-    event::{EventBuilder, Kind, Tag},
+    event::{EventBuilder, Kind},
     key::PublicKey,
     nips::{
         nip01::Coordinate,
         nip19::{Nip19Coordinate, Nip19Event, ToBech32},
-        nip34::GitRepositoryAnnouncement,
+        nip65::{self, RelayMetadata},
     },
     types::Url,
 };
 
 use crate::{
     cli::{CliOptions, CommandRunner},
-    error::{N34Error, N34Result},
+    error::N34Result,
     nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement},
 };
 
@@ -63,28 +62,43 @@ pub struct AnnounceArgs {
 impl CommandRunner for AnnounceArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         let client = NostrClient::init(&options).await;
+        let user_pubk = options.pubkey().await;
         let naddr = Nip19Coordinate::new(
-            Coordinate::new(Kind::GitRepoAnnouncement, options.pubkey().await),
+            Coordinate::new(Kind::GitRepoAnnouncement, user_pubk),
             options.relays.iter().take(3),
         )
         .expect("Valid relays");
+        let relays_list = client.user_relays_list(user_pubk).await?;
 
-        let mut maintainers = vec![naddr.public_key];
+        let mut write_relays = options.relays.clone();
+        let mut maintainers = vec![user_pubk];
         maintainers.extend(self.maintainers);
 
-        let event_builder = EventBuilder::new_git_repo(
+        if let Some(event) = relays_list.clone() {
+            write_relays.extend(
+                nip65::extract_owned_relay_list(event)
+                    .filter_map(|(r, m)| m.is_none_or(|m| m == RelayMetadata::Write).then_some(r)),
+            );
+        }
+
+        let event = EventBuilder::new_git_repo(
             self.repo_id,
             self.name,
             self.description,
             self.web,
             self.clone,
-            options.relays.clone(),
+            options.relays,
             maintainers,
             self.labels,
-        )?;
+        )?
+        .build(user_pubk);
+        let nevent = Nip19Event::new(event.id.expect("There is an id"))
+            .relays(write_relays.iter().take(3).cloned())
+            .to_bech32()?;
+
 
         let result = client
-            .send_builder_to(event_builder, &options.relays)
+            .send_event_to(event, relays_list.as_ref(), write_relays)
             .await?;
 
         for relay in &result.success {
@@ -94,12 +108,7 @@ impl CommandRunner for AnnounceArgs {
             tracing::warn!(relay = %relay, reason = %reason, "Failed to send event");
         }
 
-        println!(
-            "Event: {}",
-            Nip19Event::new(result.val)
-                .relays(options.relays.into_iter().take(3))
-                .to_bech32()?
-        );
+        println!("Event: {nevent}",);
         println!("Repo Address: {}", naddr.to_bech32()?);
 
         Ok(())

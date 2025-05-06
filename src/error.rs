@@ -34,6 +34,8 @@ pub enum N34Error {
     InvalidRepoId,
     #[error("Bech32 error: {0}")]
     Bech32(#[from] nostr::nips::nip19::Error),
+    #[error("Event error: {0}")]
+    Event(#[from] nostr::event::Error),
 }
 
 impl N34Error {

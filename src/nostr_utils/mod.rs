@@ -22,9 +22,9 @@ pub mod utils;
 use std::time::Duration;
 
 use nostr::{
-    event::{EventBuilder, EventId, Kind},
+    event::{Event, EventId, Kind, UnsignedEvent},
     filter::Filter,
-    key::Keys,
+    key::{Keys, PublicKey},
     nips::{nip19::Nip19Coordinate, nip34::GitRepositoryAnnouncement},
     types::RelayUrl,
 };
@@ -34,6 +34,9 @@ use crate::{
     cli::CliOptions,
     error::{N34Error, N34Result},
 };
+
+/// Timeout duration for the clinet.
+const CLIENT_TIMEOUT: Duration = Duration::from_millis(1500);
 
 /// A client for interacting with the Nostr relays
 pub struct NostrClient {
@@ -73,28 +76,30 @@ impl NostrClient {
                 .add_read_relay(relay)
                 .await
                 .expect("It's a valid relay url");
-            if let Err(err) = self
-                .client
-                .try_connect_relay(relay, Duration::from_millis(1500))
-                .await
-            {
+            if let Err(err) = self.client.try_connect_relay(relay, CLIENT_TIMEOUT).await {
                 tracing::error!("Failed to connect to relay '{relay}': {err}");
             }
         }
     }
 
-    /// Sends an event builder to the specified relays.
-    pub async fn send_builder_to(
+    /// Sends an event to the specified relays.
+    pub async fn send_event_to(
         &self,
-        builder: EventBuilder,
-        relays: &[RelayUrl],
+        event: UnsignedEvent,
+        relays_list: Option<&Event>,
+        mut relays: Vec<RelayUrl>,
     ) -> N34Result<Output<EventId>> {
-        for relay in relays {
+        relays.sort_unstable();
+        relays.dedup();
+        for relay in &relays {
             let _ = self.client.add_write_relay(relay).await;
         }
 
+        if let Some(event) = relays_list {
+            let _ = self.client.send_event_to(&relays, event).await;
+        }
         self.client
-            .send_event_builder_to(relays, builder)
+            .send_event_to(relays, &event.sign(&self.client.signer().await?).await?)
             .await
             .map_err(N34Error::from)
     }
@@ -110,7 +115,7 @@ impl NostrClient {
             .identifier(&repo_naddr.identifier);
         let events = self
             .client
-            .fetch_events(filter, Duration::from_secs(1))
+            .fetch_events(filter, CLIENT_TIMEOUT)
             .await
             .map_err(|_| N34Error::NotFoundRepo)?;
 
@@ -119,5 +124,18 @@ impl NostrClient {
             events.first_owned().ok_or(N34Error::NotFoundRepo)?,
             &repo_naddr.identifier,
         ))
+    }
+
+    /// Fetches the relay list (kind 10002) for the given user. Returns None if
+    /// no relays are found.
+    pub async fn user_relays_list(&self, user: PublicKey) -> N34Result<Option<Event>> {
+        Ok(self
+            .client
+            .fetch_events(
+                Filter::new().author(user).kind(Kind::RelayList),
+                CLIENT_TIMEOUT,
+            )
+            .await?
+            .first_owned())
     }
 }
