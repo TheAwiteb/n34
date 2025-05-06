@@ -72,6 +72,7 @@ impl EventBuilder {
         maintainers: Vec<PublicKey>,
         labels: Vec<String>,
     ) -> N34Result<EventBuilder> {
+        let repo_id = repo_id.trim();
         if repo_id.is_empty() || repo_id != repo_id.to_case(Case::Kebab) {
             return Err(N34Error::InvalidRepoId);
         }

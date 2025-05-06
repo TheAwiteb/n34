@@ -75,3 +75,8 @@ pub fn event_into_repo(event: Event, repo_id: impl Into<String>) -> GitRepositor
         maintainers: tags.dmap_tag(TagKind::Maintainers, tag_values),
     }
 }
+
+/// Returns a new string with leading and trailing whitespace removed.
+pub fn str_trim(s: String) -> String {
+    s.trim().to_owned()
+}

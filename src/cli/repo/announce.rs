@@ -29,7 +29,7 @@ use nostr::{
 use crate::{
     cli::{CliOptions, CommandRunner},
     error::N34Result,
-    nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement},
+    nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement, utils},
 };
 
 
@@ -83,13 +83,13 @@ impl CommandRunner for AnnounceArgs {
 
         let event = EventBuilder::new_git_repo(
             self.repo_id,
-            self.name,
-            self.description,
+            self.name.map(utils::str_trim),
+            self.description.map(utils::str_trim),
             self.web,
             self.clone,
             options.relays,
             maintainers,
-            self.labels,
+            self.labels.into_iter().map(utils::str_trim).collect(),
         )?
         .build(user_pubk);
         let nevent = Nip19Event::new(event.id.expect("There is an id"))
