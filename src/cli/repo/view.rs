@@ -37,7 +37,7 @@ impl CommandRunner for ViewArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         let client = NostrClient::init(&options).await;
         if !self.naddr.relays.is_empty() {
-            client.add_read_relays(&self.naddr.relays).await;
+            client.add_relays(&self.naddr.relays).await;
         }
 
         let repo = client.fetch_repo(&self.naddr).await?;

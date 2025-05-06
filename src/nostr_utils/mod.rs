@@ -65,15 +65,15 @@ impl NostrClient {
                 .build(),
         );
 
-        client.add_read_relays(&options.relays).await;
+        client.add_relays(&options.relays).await;
         client
     }
 
-    /// Add read relays and connect to them
-    pub async fn add_read_relays(&self, relays: &[RelayUrl]) {
+    /// Add relays and connect to them
+    pub async fn add_relays(&self, relays: &[RelayUrl]) {
         for relay in relays {
             self.client
-                .add_read_relay(relay)
+                .add_relay(relay)
                 .await
                 .expect("It's a valid relay url");
             if let Err(err) = self.client.try_connect_relay(relay, CLIENT_TIMEOUT).await {
@@ -87,16 +87,12 @@ impl NostrClient {
         &self,
         event: UnsignedEvent,
         relays_list: Option<&Event>,
-        mut relays: Vec<RelayUrl>,
+        relays: &[RelayUrl],
     ) -> N34Result<Output<EventId>> {
-        relays.sort_unstable();
-        relays.dedup();
-        for relay in &relays {
-            let _ = self.client.add_write_relay(relay).await;
-        }
+        self.add_relays(relays).await;
 
         if let Some(event) = relays_list {
-            let _ = self.client.send_event_to(&relays, event).await;
+            let _ = self.client.send_event_to(relays, event).await;
         }
         self.client
             .send_event_to(relays, &event.sign(&self.client.signer().await?).await?)

@@ -72,6 +72,8 @@ impl CommandRunner for AnnounceArgs {
 
         let mut write_relays = options.relays.clone();
         let mut maintainers = vec![user_pubk];
+        write_relays.sort_unstable();
+        write_relays.dedup();
         maintainers.extend(self.maintainers);
 
         if let Some(event) = relays_list.clone() {
@@ -99,7 +101,7 @@ impl CommandRunner for AnnounceArgs {
 
 
         let result = client
-            .send_event_to(event, relays_list.as_ref(), write_relays)
+            .send_event_to(event, relays_list.as_ref(), &write_relays)
             .await?;
 
         for relay in &result.success {
