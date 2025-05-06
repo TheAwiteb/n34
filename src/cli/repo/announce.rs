@@ -91,6 +91,7 @@ impl CommandRunner for AnnounceArgs {
             maintainers,
             self.labels.into_iter().map(utils::str_trim).collect(),
         )?
+        .pow(options.pow)
         .build(user_pubk);
         let nevent = Nip19Event::new(event.id.expect("There is an id"))
             .relays(write_relays.iter().take(3).cloned())

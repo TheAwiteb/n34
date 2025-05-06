@@ -59,6 +59,9 @@ pub struct CliOptions {
     /// Where your relays list. And repository relays if not included in naddr
     #[arg(short, long, required = true)]
     pub relays:     Vec<RelayUrl>,
+    /// Proof of Work difficulty when creatring events
+    #[arg(long, default_value_t = 0)]
+    pub pow:        u8,
 }
 
 #[derive(Parser, Debug)]
