@@ -100,16 +100,9 @@ impl CommandRunner for AnnounceArgs {
             .to_bech32()?;
 
 
-        let result = client
+        client
             .send_event_to(event, relays_list.as_ref(), &write_relays)
             .await?;
-
-        for relay in &result.success {
-            tracing::info!(relay = %relay, "Event sent successfully");
-        }
-        for (relay, reason) in &result.failed {
-            tracing::warn!(relay = %relay, reason = %reason, "Failed to send event");
-        }
 
         println!("Event: {nevent}",);
         println!("Repo Address: {}", naddr.to_bech32()?);

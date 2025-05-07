@@ -88,16 +88,25 @@ impl NostrClient {
         event: UnsignedEvent,
         relays_list: Option<&Event>,
         relays: &[RelayUrl],
-    ) -> N34Result<Output<EventId>> {
+    ) -> N34Result<()> {
         self.add_relays(relays).await;
 
         if let Some(event) = relays_list {
             let _ = self.client.send_event_to(relays, event).await;
         }
-        self.client
+
+        let result = self
+            .client
             .send_event_to(relays, &event.sign(&self.client.signer().await?).await?)
-            .await
-            .map_err(N34Error::from)
+            .await?;
+
+        for relay in &result.success {
+            tracing::info!(relay = %relay, "Event sent successfully");
+        }
+        for (relay, reason) in &result.failed {
+            tracing::warn!(relay = %relay, reason = %reason, "Failed to send event");
+        }
+        Ok(())
     }
 
     /// Try to fetch a repository and returns it
