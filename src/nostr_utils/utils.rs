@@ -105,7 +105,12 @@ where
 /// URLs.
 pub fn new_nevent(event_id: EventId, relays: &[RelayUrl]) -> N34Result<String> {
     Nip19Event::new(event_id)
-        .relays(dedup(relays.iter().take(3).cloned()))
+        .relays(
+            dedup(relays.iter().cloned())
+                .into_iter()
+                .take(3)
+                .collect::<Vec<_>>(),
+        )
         .to_bech32()
         .map_err(N34Error::from)
 }
@@ -115,7 +120,7 @@ pub fn new_nevent(event_id: EventId, relays: &[RelayUrl]) -> N34Result<String> {
 pub fn repo_naddr(pubk: PublicKey, relays: &[RelayUrl]) -> N34Result<String> {
     Nip19Coordinate::new(
         Coordinate::new(Kind::GitRepoAnnouncement, pubk),
-        dedup(relays.iter().take(3)),
+        dedup(relays.iter().cloned()).iter().take(3),
     )
     .expect("Valid relays")
     .to_bech32()
