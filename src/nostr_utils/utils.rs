@@ -17,12 +17,19 @@
 use std::{fmt, str::FromStr};
 
 use nostr::{
-    event::{Event, TagKind, TagStandard},
+    event::{Event, EventId, Kind, TagKind, TagStandard},
     filter::{Alphabet, SingleLetterTag},
-    nips::nip34::GitRepositoryAnnouncement,
+    key::PublicKey,
+    nips::{
+        nip01::Coordinate,
+        nip19::{Nip19Coordinate, Nip19Event, ToBech32},
+        nip34::GitRepositoryAnnouncement,
+    },
+    types::RelayUrl,
 };
 
 use super::traits::TagsExt;
+use crate::error::{N34Error, N34Result};
 
 /// Returns the value of the given tag
 fn tag_value(tag: &TagStandard) -> String {
@@ -79,4 +86,37 @@ pub fn event_into_repo(event: Event, repo_id: impl Into<String>) -> GitRepositor
 /// Returns a new string with leading and trailing whitespace removed.
 pub fn str_trim(s: String) -> String {
     s.trim().to_owned()
+}
+
+/// Returns a vector with duplicate elements removed.
+pub fn dedup<I, T>(iter: I) -> Vec<T>
+where
+    T: std::cmp::Ord,
+    I: Iterator<Item = T>,
+{
+    let mut vector: Vec<T> = iter.collect();
+    vector.sort_unstable();
+    vector.dedup();
+    vector
+}
+
+/// Creates a new NIP-19 nevent string from an event ID and up to 3 unique relay
+/// URLs.
+pub fn new_nevent(event_id: EventId, relays: &[RelayUrl]) -> N34Result<String> {
+    Nip19Event::new(event_id)
+        .relays(dedup(relays.iter().take(3).cloned()))
+        .to_bech32()
+        .map_err(N34Error::from)
+}
+
+/// Creates a NIP-19 naddr string for a git repository announcement and up to 3
+/// unique relay URLs.
+pub fn repo_naddr(pubk: PublicKey, relays: &[RelayUrl]) -> N34Result<String> {
+    Nip19Coordinate::new(
+        Coordinate::new(Kind::GitRepoAnnouncement, pubk),
+        dedup(relays.iter().take(3)),
+    )
+    .expect("Valid relays")
+    .to_bech32()
+    .map_err(N34Error::from)
 }

@@ -22,13 +22,13 @@ pub mod utils;
 use std::time::Duration;
 
 use nostr::{
-    event::{Event, EventId, Kind, UnsignedEvent},
+    event::{Event, Kind, UnsignedEvent},
     filter::Filter,
     key::{Keys, PublicKey},
     nips::{nip19::Nip19Coordinate, nip34::GitRepositoryAnnouncement},
     types::RelayUrl,
 };
-use nostr_sdk::{Client, pool::Output};
+use nostr_sdk::Client;
 
 use crate::{
     cli::CliOptions,

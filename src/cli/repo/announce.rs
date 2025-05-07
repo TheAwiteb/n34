@@ -16,13 +16,9 @@
 
 use clap::Args;
 use nostr::{
-    event::{EventBuilder, Kind},
+    event::EventBuilder,
     key::PublicKey,
-    nips::{
-        nip01::Coordinate,
-        nip19::{Nip19Coordinate, Nip19Event, ToBech32},
-        nip65::{self, RelayMetadata},
-    },
+    nips::nip65::{self, RelayMetadata},
     types::Url,
 };
 
@@ -63,17 +59,9 @@ impl CommandRunner for AnnounceArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
-        let naddr = Nip19Coordinate::new(
-            Coordinate::new(Kind::GitRepoAnnouncement, user_pubk),
-            options.relays.iter().take(3),
-        )
-        .expect("Valid relays");
         let relays_list = client.user_relays_list(user_pubk).await?;
-
         let mut write_relays = options.relays.clone();
         let mut maintainers = vec![user_pubk];
-        write_relays.sort_unstable();
-        write_relays.dedup();
         maintainers.extend(self.maintainers);
 
         if let Some(event) = relays_list.clone() {
@@ -89,23 +77,21 @@ impl CommandRunner for AnnounceArgs {
             self.description.map(utils::str_trim),
             self.web,
             self.clone,
-            options.relays,
+            options.relays.clone(),
             maintainers,
             self.labels.into_iter().map(utils::str_trim).collect(),
         )?
         .pow(options.pow)
         .build(user_pubk);
-        let nevent = Nip19Event::new(event.id.expect("There is an id"))
-            .relays(write_relays.iter().take(3).cloned())
-            .to_bech32()?;
 
-
+        let nevent = utils::new_nevent(event.id.expect("There is an id"), &write_relays)?;
+        let naddr = utils::repo_naddr(user_pubk, &options.relays)?;
         client
             .send_event_to(event, relays_list.as_ref(), &write_relays)
             .await?;
 
         println!("Event: {nevent}",);
-        println!("Repo Address: {}", naddr.to_bech32()?);
+        println!("Repo Address: {naddr}",);
 
         Ok(())
     }
