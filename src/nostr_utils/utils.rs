@@ -24,6 +24,7 @@ use nostr::{
         nip01::Coordinate,
         nip19::{Nip19Coordinate, Nip19Event, ToBech32},
         nip34::GitRepositoryAnnouncement,
+        nip65::{self, RelayMetadata},
     },
     types::RelayUrl,
 };
@@ -119,4 +120,15 @@ pub fn repo_naddr(pubk: PublicKey, relays: &[RelayUrl]) -> N34Result<String> {
     .expect("Valid relays")
     .to_bech32()
     .map_err(N34Error::from)
+}
+
+/// Extends the given vector with write relays found in the event (if any).
+pub fn add_write_relays(mut vector: Vec<RelayUrl>, event: Option<&Event>) -> Vec<RelayUrl> {
+    if let Some(event) = event {
+        vector.extend(
+            nip65::extract_owned_relay_list(event.clone())
+                .filter_map(|(r, m)| m.is_none_or(|m| m == RelayMetadata::Write).then_some(r)),
+        );
+    }
+    vector
 }

@@ -15,12 +15,7 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 use clap::Args;
-use nostr::{
-    event::EventBuilder,
-    key::PublicKey,
-    nips::nip65::{self, RelayMetadata},
-    types::Url,
-};
+use nostr::{event::EventBuilder, key::PublicKey, types::Url};
 
 use crate::{
     cli::{CliOptions, CommandRunner},
@@ -60,16 +55,9 @@ impl CommandRunner for AnnounceArgs {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;
-        let mut write_relays = options.relays.clone();
+        let write_relays = utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
         let mut maintainers = vec![user_pubk];
         maintainers.extend(self.maintainers);
-
-        if let Some(event) = relays_list.clone() {
-            write_relays.extend(
-                nip65::extract_owned_relay_list(event)
-                    .filter_map(|(r, m)| m.is_none_or(|m| m == RelayMetadata::Write).then_some(r)),
-            );
-        }
 
         let event = EventBuilder::new_git_repo(
             self.repo_id,
