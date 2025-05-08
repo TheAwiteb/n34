@@ -16,9 +16,14 @@
 
 use convert_case::{Case, Casing};
 use nostr::{
-    event::{EventBuilder, Tag, TagKind, TagStandard, Tags},
+    event::{EventBuilder, EventId, Tag, TagKind, TagStandard, Tags},
     key::PublicKey,
-    nips::nip34::GitRepositoryAnnouncement,
+    nips::{
+        nip01::Coordinate,
+        nip21::Nip21,
+        nip34::{GitIssue, GitRepositoryAnnouncement},
+    },
+    parser::Token,
     types::{RelayUrl, Url},
 };
 
@@ -90,5 +95,64 @@ impl EventBuilder {
             })?
             .tags(labels.into_iter().map(Tag::hashtag)),
         )
+    }
+
+    /// Creates a new [`GitIssue`] event builder with the given
+    /// issue details.
+    pub fn new_git_issue(
+        repository: Coordinate,
+        content: String,
+        subject: Option<String>,
+        labels: Vec<String>,
+    ) -> N34Result<EventBuilder> {
+        EventBuilder::git_issue(GitIssue {
+            repository,
+            content,
+            subject,
+            labels: labels.into_iter().map(|l| l.trim().to_owned()).collect(),
+        })
+        .map_err(N34Error::from)
+    }
+}
+
+/// Helper functions for [`Token`] type
+#[easy_ext::ext(TokenUtils)]
+impl Token<'_> {
+    /// Returns `Some((public_key, relays))` from the givin token if it's npub1
+    /// or nprofile1
+    pub fn extract_public_key(&self) -> Option<(PublicKey, Vec<RelayUrl>)> {
+        match self {
+            Token::Nostr(nip21) => {
+                match nip21 {
+                    Nip21::Pubkey(pkey) => Some((*pkey, Vec::new())),
+                    Nip21::Profile(profile) => Some((profile.public_key, profile.relays.clone())),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns `Some((note_id, relays))` from the givin token if it's note1 or
+    /// nevent1
+    pub fn extract_event_id(&self) -> Option<(EventId, Vec<RelayUrl>)> {
+        match self {
+            Token::Nostr(nip21) => {
+                match nip21 {
+                    Nip21::EventId(event_id) => Some((*event_id, Vec::new())),
+                    Nip21::Event(event) => Some((event.event_id, event.relays.clone())),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns `Some(hashtag)` from the givin token if it's a hashtag
+    pub fn extract_hashtag(&self) -> Option<String> {
+        match self {
+            Token::Hashtag(tag) => Some(tag.trim().to_owned()),
+            _ => None,
+        }
     }
 }

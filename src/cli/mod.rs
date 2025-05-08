@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+/// `issue` subcommands
+mod issue;
 /// CLI arguments parsers
 pub mod parsers;
 /// `repo` subcommands
@@ -28,6 +30,7 @@ use clap_verbosity_flag::Verbosity;
 use nostr::key::Keys;
 use nostr::{PublicKey, RelayUrl, SecretKey};
 
+pub use self::issue::IssueSubcommands;
 pub use self::repo::RepoSubcommands;
 pub use self::traits::CommandRunner;
 use crate::error::N34Result;
@@ -87,11 +90,11 @@ pub enum Commands {
         #[command(subcommand)]
         subcommands: RepoSubcommands,
     },
-    // /// Manage issues
-    // Issue {
-    //     #[command(subcommand)]
-    //     subcommands: IssueSubcommands,
-    // },
+    /// Manage issues
+    Issue {
+        #[command(subcommand)]
+        subcommands: IssueSubcommands,
+    },
     // /// Manage patches
     // Patch {
     //     #[command(subcommand)]
@@ -112,6 +115,7 @@ impl CommandRunner for Commands {
         tracing::trace!("Handling: {self:#?}");
         match self {
             Self::Repo { subcommands } => subcommands.run(options).await,
+            Self::Issue { subcommands } => subcommands.run(options).await,
         }
     }
 }

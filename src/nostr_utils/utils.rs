@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::{fmt, str::FromStr};
+use std::{fmt, fs, str::FromStr, sync::atomic::Ordering};
 
 use nostr::{
     event::{Event, EventId, Kind, TagKind, TagStandard},
@@ -136,4 +136,51 @@ pub fn add_write_relays(mut vector: Vec<RelayUrl>, event: Option<&Event>) -> Vec
         );
     }
     vector
+}
+
+/// Extends the given vector with read relays found in the event (if any).
+pub fn add_read_relays(mut vector: Vec<RelayUrl>, event: Option<&Event>) -> Vec<RelayUrl> {
+    if let Some(event) = event {
+        vector.extend(
+            nip65::extract_owned_relay_list(event.clone())
+                .filter_map(|(r, m)| m.is_none_or(|m| m == RelayMetadata::Read).then_some(r)),
+        );
+    }
+    vector
+}
+
+
+/// Opens the user's default editor ($EDITOR) to edit a temporary file with
+/// given suffix, then reads and returns the file contents. The temporary file
+/// is automatically deleted.
+pub fn read_editor(file_suffix: &str) -> N34Result<String> {
+    let Ok(editor) = std::env::var("EDITOR") else {
+        return Err(N34Error::EditorNotFound);
+    };
+
+    let temp_path = tempfile::NamedTempFile::with_suffix(file_suffix)?.into_temp_path();
+
+    // Disable the logs to not show up in a terminal text editor
+    crate::EDITOR_OPEN.store(true, Ordering::Relaxed);
+    let exit_status = std::process::Command::new(editor)
+        .arg(temp_path.to_str().expect("The path is valid utf8"))
+        .spawn()?
+        .wait()?;
+    crate::EDITOR_OPEN.store(false, Ordering::Relaxed);
+
+    if !exit_status.success() {
+        if let Some(code) = exit_status.code() {
+            tracing::warn!("The editor exit with `{code}` status")
+        }
+    }
+
+    let content = fs::read_to_string(&temp_path)
+        .map_err(N34Error::from)?
+        .trim()
+        .to_owned();
+
+    if content.is_empty() {
+        return Err(N34Error::EmptyEditorFile);
+    }
+    Ok(content)
 }
