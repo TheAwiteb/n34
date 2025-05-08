@@ -21,6 +21,7 @@ pub mod utils;
 
 use std::time::Duration;
 
+use futures::future;
 use nostr::{
     event::{Event, EventId, Kind, UnsignedEvent},
     filter::Filter,
@@ -71,15 +72,21 @@ impl NostrClient {
 
     /// Add relays and connect to them
     pub async fn add_relays(&self, relays: &[RelayUrl]) {
+        let mut tasks = Vec::new();
         for relay in relays {
-            self.client
-                .add_relay(relay)
-                .await
-                .expect("It's a valid relay url");
-            if let Err(err) = self.client.try_connect_relay(relay, CLIENT_TIMEOUT).await {
-                tracing::error!("Failed to connect to relay '{relay}': {err}");
-            }
+            let relay = relay.clone();
+            let client = self.client.clone();
+            tasks.push(tokio::spawn(async move {
+                client
+                    .add_relay(&relay)
+                    .await
+                    .expect("It's a valid relay url");
+                if let Err(err) = client.try_connect_relay(&relay, CLIENT_TIMEOUT).await {
+                    tracing::error!("Failed to connect to relay '{relay}': {err}");
+                }
+            }));
         }
+        future::join_all(tasks).await;
     }
 
     /// Broadcasts an unsigned event to given relays, optionally broadcast the
