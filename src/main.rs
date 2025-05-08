@@ -21,12 +21,21 @@ mod error;
 /// Nostr utils module
 mod nostr_utils;
 
-use std::process::ExitCode;
+use std::{
+    process::ExitCode,
+    sync::atomic::{AtomicBool, Ordering},
+};
 
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
+use tracing::Level;
+use tracing_subscriber::{Layer, filter, layer::SubscriberExt};
 
 use self::cli::Cli;
+
+/// Whether the editor is currently open. Prevents logging while the editor is
+/// open.
+static EDITOR_OPEN: AtomicBool = AtomicBool::new(false);
 
 /// Configures the logging level based on the provided verbosity.
 ///
@@ -36,12 +45,17 @@ fn set_log_level(verbosity: Verbosity) {
         .tracing_level()
         .is_some_and(|l| l == tracing::Level::TRACE);
 
-    let subscriber = tracing_subscriber::fmt()
+    let logs_filter = filter::dynamic_filter_fn(move |m, _| {
+        // Disable all logs while editor is open
+        verbosity.tracing_level().unwrap_or(Level::ERROR) >= *m.level()
+            && !EDITOR_OPEN.load(Ordering::Relaxed)
+    });
+
+    let logs_layer = tracing_subscriber::fmt::layer()
         .with_file(is_trace)
         .with_line_number(is_trace)
-        .without_time()
-        .with_max_level(verbosity)
-        .finish();
+        .without_time();
+    let subscriber = tracing_subscriber::registry().with(logs_layer.with_filter(logs_filter));
     tracing::subscriber::set_global_default(subscriber).ok();
 }
 
