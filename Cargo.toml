@@ -1,14 +1,15 @@
 [package]
-name        = "n34"
-description = "A CLI to interact with NIP-34 and other stuff related to codes in nostr"
-version     = "0.0.0"
-edition     = "2024"
-license     = "GPL-3.0-or-later"
-authors     = ["Awiteb <a@4rs.nl>"]
-readme      = "README.md"
-repository  = "https://git.4rs.nl/awiteb/n34"
-keywords    = ["nostr", "NIP-34", "CLI"]
-categories  = ["command-line-utilities"]
+name         = "n34"
+description  = "A CLI to interact with NIP-34 and other stuff related to codes in nostr"
+version      = "0.0.0"
+edition      = "2024"
+license      = "GPL-3.0-or-later"
+authors      = ["Awiteb <a@4rs.nl>"]
+readme       = "README.md"
+repository   = "https://git.4rs.nl/awiteb/n34"
+keywords     = ["nostr", "NIP-34", "CLI"]
+categories   = ["command-line-utilities"]
+rust-version = "1.85.1"
 
 [dependencies]
 clap = { version = "4.5.37", features = ["derive"] }
