@@ -24,6 +24,12 @@ pub type N34Result<T> = Result<T, N34Error>;
 /// N34 errors
 #[derive(Debug, thiserror::Error)]
 pub enum N34Error {
+    #[error("IO: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("No editor specified in the `EDITOR` environment variable")]
+    EditorNotFound,
+    #[error("The file you edited is empty. Please save your changes before exiting the editor.")]
+    EmptyEditorFile,
     #[error("Client Error: {0}")]
     Client(#[from] ClientError),
     #[error("Unable to locate the repository. The repository may not exists in the given relays")]
