@@ -22,14 +22,13 @@ _default:
 # Run the CI
 ci: && msrv
     cargo build -q
-    cargo fmt -- --check
-    cargo clippy -- -D warnings
+    cargo fmt -q -- --check
+    cargo clippy -q -- -D warnings
 
 # Check that the current MSRV is correct
 msrv:
-    rustup toolchain install {{msrv}}
     echo "Checking MSRV ({{msrv}})"
-    cargo +{{msrv}} check -q
+    rustup -q run --install {{msrv}} cargo check -q
     echo "MSRV is correct"
 
 # Update the changelog
