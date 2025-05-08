@@ -82,14 +82,18 @@ impl NostrClient {
         }
     }
 
-    /// Sends an event to the specified relays.
+    /// Broadcasts an unsigned event to given relays, optionally broadcast the
+    /// relays list event. Returns URLs of relays that successfully received
+    /// the event.
     pub async fn send_event_to(
         &self,
-        event: UnsignedEvent,
+        mut event: UnsignedEvent,
         relays_list: Option<&Event>,
         relays: &[RelayUrl],
-    ) -> N34Result<()> {
+    ) -> N34Result<Vec<RelayUrl>> {
+        event.ensure_id();
         self.add_relays(relays).await;
+        let event_id = event.id.expect("It's there");
 
         if let Some(event) = relays_list {
             let _ = self.client.send_event_to(relays, event).await;
@@ -101,12 +105,13 @@ impl NostrClient {
             .await?;
 
         for relay in &result.success {
-            tracing::info!(relay = %relay, "Event sent successfully");
+            tracing::info!(event_id = %event_id, relay = %relay, "Event sent successfully");
         }
         for (relay, reason) in &result.failed {
-            tracing::warn!(relay = %relay, reason = %reason, "Failed to send event");
+            tracing::warn!(event_id = %event_id, relay = %relay, reason = %reason, "Failed to send event");
         }
-        Ok(())
+
+        Ok(result.success.into_iter().collect())
     }
 
     /// Try to fetch a repository and returns it
