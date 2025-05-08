@@ -22,7 +22,7 @@ pub mod utils;
 use std::time::Duration;
 
 use nostr::{
-    event::{Event, Kind, UnsignedEvent},
+    event::{Event, EventId, Kind, UnsignedEvent},
     filter::Filter,
     key::{Keys, PublicKey},
     nips::{nip19::Nip19Coordinate, nip34::GitRepositoryAnnouncement},
@@ -147,5 +147,15 @@ impl NostrClient {
             )
             .await?
             .first_owned())
+    }
+
+    /// Gets the author of the specified event, if found.
+    pub async fn event_author(&self, event_id: EventId) -> N34Result<Option<PublicKey>> {
+        Ok(self
+            .client
+            .fetch_events(Filter::new().id(event_id), CLIENT_TIMEOUT)
+            .await?
+            .first_owned()
+            .map(|e| e.pubkey))
     }
 }
