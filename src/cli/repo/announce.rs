@@ -45,9 +45,9 @@ pub struct AnnounceArgs {
     /// Additional maintainers of the repository (besides yourself).
     #[arg(short, long)]
     maintainers: Vec<PublicKey>,
-    /// Labels to categorize the repository.
+    /// Labels to categorize the repository. Can be specified multiple times.
     #[arg(short, long)]
-    labels:      Vec<String>,
+    label:       Vec<String>,
 }
 
 impl CommandRunner for AnnounceArgs {
@@ -67,7 +67,7 @@ impl CommandRunner for AnnounceArgs {
             self.clone,
             options.relays.clone(),
             maintainers,
-            self.labels.into_iter().map(utils::str_trim).collect(),
+            self.label.into_iter().map(utils::str_trim).collect(),
         )?
         .pow(options.pow)
         .build(user_pubk);
