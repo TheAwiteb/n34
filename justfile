@@ -20,16 +20,22 @@ _default:
     @{{JUST_EXECUTABLE}} --list-heading "{{header}}" --list
 
 # Run the CI
-ci: && msrv
+ci: && msrv _done_ci
+    echo "🔨 Building n34..."
     cargo build -q
+    echo "🔍 Checking code formatting..."
     cargo fmt -q -- --check
+    echo "🧹 Running linter checks..."
     cargo clippy -q -- -D warnings
 
 # Check that the current MSRV is correct
 msrv:
-    echo "Checking MSRV ({{msrv}})"
+    echo "🔧 Verifying MSRV ({{msrv}})..."
     rustup -q run --install {{msrv}} cargo check -q
-    echo "MSRV is correct"
+    echo "✅ MSRV verification passed"
+
+_done_ci:
+    echo "🎉 CI pipeline completed successfully"
 
 # Update the changelog
 [script]
