@@ -18,6 +18,7 @@ clap-verbosity-flag = { version = "3.0.2", default-features = false, features = 
 ] }
 convert_case = "0.8.0"
 easy-ext = "1.0.2"
+futures = "0.3.31"
 nostr = { version = "0.41.0", features = ["parser"] }
 nostr-sdk = "0.41.0"
 tempfile = "3.19.1"
