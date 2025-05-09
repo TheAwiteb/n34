@@ -121,6 +121,16 @@ impl NostrClient {
         Ok(result.success.into_iter().collect())
     }
 
+    /// Fetches the first event matching the given filter, or None if no event
+    /// is found.
+    pub async fn fetch_event(&self, filter: Filter) -> N34Result<Option<Event>> {
+        Ok(self
+            .client
+            .fetch_events(filter, CLIENT_TIMEOUT)
+            .await?
+            .first_owned())
+    }
+
     /// Try to fetch a repository and returns it
     pub async fn fetch_repo(
         &self,
@@ -130,39 +140,25 @@ impl NostrClient {
             .author(repo_naddr.public_key)
             .kind(Kind::GitRepoAnnouncement)
             .identifier(&repo_naddr.identifier);
-        let events = self
-            .client
-            .fetch_events(filter, CLIENT_TIMEOUT)
-            .await
-            .map_err(|_| N34Error::NotFoundRepo)?;
 
-
-        Ok(utils::event_into_repo(
-            events.first_owned().ok_or(N34Error::NotFoundRepo)?,
-            &repo_naddr.identifier,
-        ))
+        self.fetch_event(filter)
+            .await?
+            .map(|e| utils::event_into_repo(e, &repo_naddr.identifier))
+            .ok_or(N34Error::NotFoundRepo)
     }
 
     /// Fetches the relay list (kind 10002) for the given user. Returns None if
     /// no relays are found.
     pub async fn user_relays_list(&self, user: PublicKey) -> N34Result<Option<Event>> {
-        Ok(self
-            .client
-            .fetch_events(
-                Filter::new().author(user).kind(Kind::RelayList),
-                CLIENT_TIMEOUT,
-            )
-            .await?
-            .first_owned())
+        self.fetch_event(Filter::new().author(user).kind(Kind::RelayList))
+            .await
     }
 
     /// Gets the author of the specified event, if found.
     pub async fn event_author(&self, event_id: EventId) -> N34Result<Option<PublicKey>> {
         Ok(self
-            .client
-            .fetch_events(Filter::new().id(event_id), CLIENT_TIMEOUT)
+            .fetch_event(Filter::new().id(event_id))
             .await?
-            .first_owned()
             .map(|e| e.pubkey))
     }
 }
