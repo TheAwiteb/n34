@@ -99,7 +99,7 @@ impl CommandRunner for NewArgs {
             utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
         client.add_relays(&options.relays).await;
         client.add_relays(&self.naddr.relays).await;
-        write_relays.extend(client.fetch_repo(&self.naddr).await?.relays);
+        write_relays.extend(client.fetch_repo(&self.naddr.coordinate).await?.relays);
 
         let (subject, content) = self.issue_content()?;
         let tokens = NostrParser::new().parse(&content).collect::<Vec<_>>();

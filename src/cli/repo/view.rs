@@ -40,7 +40,7 @@ impl CommandRunner for ViewArgs {
             client.add_relays(&self.naddr.relays).await;
         }
 
-        let repo = client.fetch_repo(&self.naddr).await?;
+        let repo = client.fetch_repo(&self.naddr.coordinate).await?;
         let mut msg = format!("ID: {}", repo.id);
 
         if let Some(name) = repo.name {

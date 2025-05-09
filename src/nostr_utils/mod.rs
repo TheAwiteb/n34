@@ -26,7 +26,7 @@ use nostr::{
     event::{Event, EventId, Kind, UnsignedEvent},
     filter::Filter,
     key::{Keys, PublicKey},
-    nips::{nip19::Nip19Coordinate, nip34::GitRepositoryAnnouncement},
+    nips::{nip01::Coordinate, nip34::GitRepositoryAnnouncement},
     types::RelayUrl,
 };
 use nostr_sdk::Client;
@@ -124,7 +124,7 @@ impl NostrClient {
     /// Try to fetch a repository and returns it
     pub async fn fetch_repo(
         &self,
-        repo_naddr: &Nip19Coordinate,
+        repo_naddr: &Coordinate,
     ) -> N34Result<GitRepositoryAnnouncement> {
         let filter = Filter::new()
             .author(repo_naddr.public_key)
