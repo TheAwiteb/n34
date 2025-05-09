@@ -72,6 +72,10 @@ impl NostrClient {
 
     /// Add relays and connect to them
     pub async fn add_relays(&self, relays: &[RelayUrl]) {
+        if relays.is_empty() {
+            return;
+        }
+
         let mut tasks = Vec::new();
         for relay in relays {
             let relay = relay.clone();
