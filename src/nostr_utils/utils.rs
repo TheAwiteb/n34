@@ -184,3 +184,14 @@ pub fn read_editor(file_suffix: &str) -> N34Result<String> {
     }
     Ok(content)
 }
+
+/// Returns the given content if it's `Option::Some` or call [`read_editor`]
+pub fn get_content<S>(content: Option<S>, file_suffix: &str) -> N34Result<String>
+where
+    S: AsRef<str>,
+{
+    if let Some(content) = content {
+        return Ok(content.as_ref().trim().to_owned());
+    }
+    read_editor(file_suffix)
+}
