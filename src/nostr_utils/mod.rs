@@ -165,4 +165,16 @@ impl NostrClient {
             .await?
             .map(|e| e.pubkey))
     }
+
+    /// Adds read relays from the user to the given vector of relays.
+    pub async fn read_relays_from_user(
+        &self,
+        vector: Vec<RelayUrl>,
+        user: PublicKey,
+    ) -> Vec<RelayUrl> {
+        utils::add_read_relays(
+            vector,
+            self.user_relays_list(user).await.ok().flatten().as_ref(),
+        )
+    }
 }
