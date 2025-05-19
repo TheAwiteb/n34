@@ -38,10 +38,19 @@ pub enum N34Error {
     EventBuilder(#[from] EventBuilderError),
     #[error("Invalid repository id, it can't be empty and must be kebab-case")]
     InvalidRepoId,
+    #[error("Invalid event: {0}")]
+    InvalidEvent(String),
     #[error("Bech32 error: {0}")]
     Bech32(#[from] nostr::nips::nip19::Error),
     #[error("Event error: {0}")]
     Event(#[from] nostr::event::Error),
+    #[error("Event not found in the specified relays")]
+    EventNotFound,
+    #[error(
+        "Can't reply to this event. Only Git issues, patches, and their comments can be replied \
+         to."
+    )]
+    CanNotReplyToEvent,
 }
 
 impl N34Error {
