@@ -19,17 +19,19 @@ pub mod traits;
 /// Utility functions for nostr.
 pub mod utils;
 
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 
 use futures::future;
 use nostr::{
-    event::{Event, EventId, Kind, UnsignedEvent},
+    event::{Event, EventId, Kind, Tag, TagStandard, Tags, UnsignedEvent},
     filter::Filter,
     key::{Keys, PublicKey},
-    nips::{nip01::Coordinate, nip34::GitRepositoryAnnouncement},
+    nips::{nip01::Coordinate, nip22, nip34::GitRepositoryAnnouncement},
+    parser::NostrParser,
     types::RelayUrl,
 };
 use nostr_sdk::Client;
+use traits::TokenUtils;
 
 use crate::{
     cli::CliOptions,
@@ -39,10 +41,55 @@ use crate::{
 /// Timeout duration for the clinet.
 const CLIENT_TIMEOUT: Duration = Duration::from_millis(1500);
 
+/// Parsed content details
+pub struct ContentDetails {
+    /// Public keys of users mentioned in the content.
+    pub p_tagged:     HashSet<PublicKey>,
+    /// Event IDs and optional relay URLs for quoted events.
+    pub quotes:       HashSet<(EventId, Option<RelayUrl>)>,
+    /// Hashtags found in the content.
+    pub hashtags:     HashSet<String>,
+    /// Relays where mentioned users and quoted authors are read.
+    pub write_relays: HashSet<RelayUrl>,
+}
+
 /// A client for interacting with the Nostr relays
 pub struct NostrClient {
     /// The underlying Nostr client implementation
     client: Client,
+}
+
+impl ContentDetails {
+    /// Create a new [`ContentDetails`] instance
+    pub fn new(
+        users: impl IntoIterator<Item = PublicKey>,
+        quotes: impl IntoIterator<Item = (EventId, Option<RelayUrl>)>,
+        hashtags: impl IntoIterator<Item = String>,
+        write_relays: impl IntoIterator<Item = RelayUrl>,
+    ) -> Self {
+        Self {
+            p_tagged:     HashSet::from_iter(users),
+            quotes:       HashSet::from_iter(quotes),
+            hashtags:     HashSet::from_iter(hashtags),
+            write_relays: HashSet::from_iter(write_relays),
+        }
+    }
+
+    /// Converts the instance into a list of tags including hashtags, p-tagged
+    /// users, and quoted events.
+    pub fn into_tags(self) -> Tags {
+        let mut tags = Tags::new();
+        tags.extend(self.hashtags.into_iter().map(Tag::hashtag));
+        tags.extend(self.p_tagged.into_iter().map(Tag::public_key));
+        tags.extend(self.quotes.into_iter().map(|(event_id, relay_url)| {
+            Tag::from_standardized(TagStandard::Quote {
+                event_id,
+                relay_url,
+                public_key: None,
+            })
+        }));
+        tags
+    }
 }
 
 impl NostrClient {
@@ -91,6 +138,19 @@ impl NostrClient {
             }));
         }
         future::join_all(tasks).await;
+    }
+
+    /// Add a relay hint and connect to it
+    pub async fn add_relay_hint(&self, hint: Option<RelayUrl>) {
+        if let Some(relay) = hint {
+            self.add_relays(&[relay]).await
+        }
+    }
+
+    /// broadcast an event to the given relays
+    pub async fn broadcast(&self, event: &Event, relays: &[RelayUrl]) -> N34Result<()> {
+        self.client.send_event_to(relays, event).await?;
+        Ok(())
     }
 
     /// Broadcasts an unsigned event to given relays, optionally broadcast the
@@ -151,6 +211,47 @@ impl NostrClient {
             .ok_or(N34Error::NotFoundRepo)
     }
 
+    /// Finds the root issue or patch for a given event. If the event is already
+    /// a root (issue/patch), returns it directly. For comments, follows
+    /// parent/root references until finding the root or failing. Returns
+    /// None if no root can be found.
+    pub async fn find_root(&self, mut event: Event) -> N34Result<Option<Event>> {
+        if !matches!(event.kind, Kind::GitIssue | Kind::GitPatch | Kind::Comment) {
+            return Err(N34Error::CanNotReplyToEvent);
+        }
+
+        loop {
+            if matches!(event.kind, Kind::GitIssue | Kind::GitPatch) {
+                return Ok(Some(event));
+            }
+
+            if let Some(nip22::Comment::Event { id, relay_hint, .. }) = nip22::extract_root(&event)
+            {
+                self.add_relay_hint(relay_hint.cloned()).await;
+                let root_event = self.fetch_event(Filter::new().id(*id)).await?;
+                if let Some(ref root_event) = root_event {
+                    if !matches!(root_event.kind, Kind::GitIssue | Kind::GitPatch) {
+                        return Err(N34Error::CanNotReplyToEvent);
+                    }
+                }
+                return Ok(root_event);
+            } else if let Some(nip22::Comment::Event { id, relay_hint, .. }) =
+                nip22::extract_parent(&event)
+            {
+                self.add_relay_hint(relay_hint.cloned()).await;
+                if let Ok(Some(parent_event)) = self.fetch_event(Filter::new().id(*id)).await {
+                    event = parent_event;
+                    continue;
+                }
+            }
+
+            // Break if: no root/parent tags found, parent/root event fetch failed
+            break;
+        }
+
+        Ok(None)
+    }
+
     /// Fetches the relay list (kind 10002) for the given user. Returns None if
     /// no relays are found.
     pub async fn user_relays_list(&self, user: PublicKey) -> N34Result<Option<Event>> {
@@ -175,6 +276,45 @@ impl NostrClient {
         utils::add_read_relays(
             vector,
             self.user_relays_list(user).await.ok().flatten().as_ref(),
+        )
+    }
+
+    /// Parse the given content and returns the details that inside it
+    pub async fn parse_content(&self, content: &str) -> ContentDetails {
+        let mut write_relays = Vec::new();
+        let tokens = NostrParser::new().parse(content).collect::<Vec<_>>();
+
+        let mut p_tagged_users = tokens
+            .iter()
+            .filter_map(TokenUtils::extract_public_key)
+            .collect::<Vec<_>>();
+        let quotes = tokens
+            .iter()
+            .filter_map(TokenUtils::extract_event_id)
+            .collect::<Vec<_>>();
+        let hashtags = tokens
+            .iter()
+            .filter_map(TokenUtils::extract_hashtag)
+            .collect::<Vec<_>>();
+
+        for (user, relays) in &p_tagged_users {
+            self.add_relays(relays).await;
+            write_relays = self.read_relays_from_user(write_relays, *user).await
+        }
+        for (event_id, relays) in &quotes {
+            self.add_relays(relays).await;
+            // Add the event author to the p-tagged users
+            if let Ok(Some(author)) = self.event_author(*event_id).await {
+                p_tagged_users.push((author, Vec::new()));
+                write_relays = self.read_relays_from_user(write_relays, author).await;
+            }
+        }
+
+        ContentDetails::new(
+            p_tagged_users.into_iter().map(|(p, _)| p),
+            quotes.into_iter().map(|(e, r)| (e, r.first().cloned())),
+            hashtags,
+            write_relays,
         )
     }
 }
