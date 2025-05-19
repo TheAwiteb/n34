@@ -18,6 +18,8 @@
 mod issue;
 /// CLI arguments parsers
 pub mod parsers;
+/// 'reply` command
+mod reply;
 /// `repo` subcommands
 mod repo;
 /// CLI traits
@@ -30,9 +32,10 @@ use clap_verbosity_flag::Verbosity;
 use nostr::key::Keys;
 use nostr::{PublicKey, RelayUrl, SecretKey};
 
-pub use self::issue::IssueSubcommands;
-pub use self::repo::RepoSubcommands;
-pub use self::traits::CommandRunner;
+use self::issue::IssueSubcommands;
+use self::reply::ReplyArgs;
+use self::repo::RepoSubcommands;
+use self::traits::CommandRunner;
 use crate::error::N34Result;
 
 /// Header message, used in the help message
@@ -100,6 +103,8 @@ pub enum Commands {
     //     #[command(subcommand)]
     //     subcommands: PatchSubcommands,
     // },
+    /// Reply to issues and patches.
+    Reply(ReplyArgs),
 }
 
 impl Cli {
@@ -116,6 +121,7 @@ impl CommandRunner for Commands {
         match self {
             Self::Repo { subcommands } => subcommands.run(options).await,
             Self::Issue { subcommands } => subcommands.run(options).await,
+            Commands::Reply(args) => args.run(options).await,
         }
     }
 }
