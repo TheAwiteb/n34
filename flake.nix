@@ -22,9 +22,10 @@
       {
         devShells.default = mkShell {
           packages = [
-            just
             cargo-msrv
             git-cliff
+            just
+            taplo
           ];
 
           nativeBuildInputs = [
