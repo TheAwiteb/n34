@@ -51,13 +51,15 @@ pub struct AnnounceArgs {
 }
 
 impl CommandRunner for AnnounceArgs {
-    async fn run(self, options: CliOptions) -> N34Result<()> {
+    async fn run(mut self, options: CliOptions) -> N34Result<()> {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;
         let write_relays = utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
-        let mut maintainers = vec![user_pubk];
-        maintainers.extend(self.maintainers);
+
+        if !self.maintainers.contains(&user_pubk) {
+            self.maintainers.insert(0, user_pubk);
+        }
 
         let event = EventBuilder::new_git_repo(
             self.repo_id,
@@ -66,7 +68,7 @@ impl CommandRunner for AnnounceArgs {
             self.web,
             self.clone,
             options.relays.clone(),
-            maintainers,
+            self.maintainers,
             self.label.into_iter().map(utils::str_trim).collect(),
         )?
         .pow(options.pow)
