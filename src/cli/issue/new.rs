@@ -16,20 +16,12 @@
 
 
 use clap::{ArgGroup, Args};
-use nostr::{
-    event::{EventBuilder, Tag, TagStandard},
-    nips::nip19::Nip19Coordinate,
-    parser::NostrParser,
-};
+use nostr::{event::EventBuilder, nips::nip19::Nip19Coordinate};
 
 use crate::{
     cli::{CliOptions, CommandRunner, parsers},
     error::N34Result,
-    nostr_utils::{
-        NostrClient,
-        traits::{NewGitRepositoryAnnouncement, TokenUtils},
-        utils,
-    },
+    nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement, utils},
 };
 
 
@@ -91,7 +83,7 @@ impl NewArgs {
 }
 
 impl CommandRunner for NewArgs {
-    async fn run(mut self, options: CliOptions) -> N34Result<()> {
+    async fn run(self, options: CliOptions) -> N34Result<()> {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;
@@ -102,41 +94,8 @@ impl CommandRunner for NewArgs {
         write_relays.extend(client.fetch_repo(&self.naddr.coordinate).await?.relays);
 
         let (subject, content) = self.issue_content()?;
-        let tokens = NostrParser::new().parse(&content).collect::<Vec<_>>();
-        let mut p_tagged_users = tokens
-            .iter()
-            .filter_map(TokenUtils::extract_public_key)
-            .collect::<Vec<_>>();
-        let quote_events = tokens
-            .iter()
-            .filter_map(TokenUtils::extract_event_id)
-            .collect::<Vec<_>>();
-
-        self.label.extend(
-            tokens
-                .iter()
-                .filter_map(TokenUtils::extract_hashtag)
-                .collect::<Vec<_>>(),
-        );
-
-        // Add the p-tagged users read relays to our write relays. And relays with the
-        // nprofile/nevent to our discovery relays
-        for (user, relays) in &p_tagged_users {
-            client.add_relays(relays).await;
-            write_relays =
-                utils::add_read_relays(write_relays, client.user_relays_list(*user).await?.as_ref())
-        }
-        for (event_id, relays) in &quote_events {
-            client.add_relays(relays).await;
-            // Add the note author to the p-tagged users
-            if let Some(author) = client.event_author(*event_id).await? {
-                p_tagged_users.push((author, Vec::new()));
-                write_relays = utils::add_read_relays(
-                    write_relays,
-                    client.user_relays_list(author).await?.as_ref(),
-                );
-            }
-        }
+        let content_details = client.parse_content(&content).await;
+        write_relays.extend(content_details.write_relays.clone());
 
         let event = EventBuilder::new_git_issue(
             self.naddr.coordinate.clone(),
@@ -144,15 +103,8 @@ impl CommandRunner for NewArgs {
             subject,
             self.label,
         )?
+        .tags(content_details.into_tags())
         .pow(options.pow)
-        .tags(p_tagged_users.into_iter().map(|(p, _)| Tag::public_key(p)))
-        .tags(quote_events.into_iter().map(|(e, r)| {
-            Tag::from_standardized(TagStandard::Quote {
-                event_id:   e,
-                relay_url:  r.first().cloned(),
-                public_key: None,
-            })
-        }))
         .build(user_pubk);
         let event_id = event.id.expect("There is an id");
 
