@@ -225,7 +225,8 @@ impl NostrClient {
                 return Ok(Some(event));
             }
 
-            if let Some(nip22::Comment::Event { id, relay_hint, .. }) = nip22::extract_root(&event)
+            if let Some(nip22::CommentTarget::Event { id, relay_hint, .. }) =
+                nip22::extract_root(&event)
             {
                 self.add_relay_hint(relay_hint.cloned()).await;
                 let root_event = self.fetch_event(Filter::new().id(*id)).await?;
@@ -235,7 +236,7 @@ impl NostrClient {
                     }
                 }
                 return Ok(root_event);
-            } else if let Some(nip22::Comment::Event { id, relay_hint, .. }) =
+            } else if let Some(nip22::CommentTarget::Event { id, relay_hint, .. }) =
                 nip22::extract_parent(&event)
             {
                 self.add_relay_hint(relay_hint.cloned()).await;
