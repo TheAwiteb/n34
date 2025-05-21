@@ -44,10 +44,10 @@ License GNU GPL-3.0-or-later <https://gnu.org/licenses/gpl-3.0.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 
-Git repository: https://git.4rs.nl/awiteb/n34"#;
+Git repository: https://git.4rs.nl/awiteb/n34.git"#;
 
 /// Footer message, used in the help message
-const FOOTER: &str = r#"Please report bugs to <https://git.4rs.nl/awiteb/n34/issues>."#;
+const FOOTER: &str = r#"Please report bugs to <naddr1qqpkuve5qgsqqqqqq9g9uljgjfcyd6dm4fegk8em2yfz0c3qp3tc6mntkrrhawgrqsqqqauesksc39>."#;
 
 /// The command-line interface options
 #[derive(Args, Clone)]
