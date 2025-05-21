@@ -64,7 +64,7 @@ changelog:
 [script]
 release version:
     set -e
-    TAG_MSG=$(git-cliff --strip all --unreleased --body '{{ tag_change_body }}')
+    TAG_MSG="Version {{ version }}\n\n$(git-cliff --strip all --unreleased --body '{{ tag_change_body }}')\n"
     sed -i "s/^version\s*= \".*\"/version = \"{{ version }}\"/" ./Cargo.toml
     taplo fmt --config ./.taplo.toml ./Cargo.toml
     {{ JUST_EXECUTABLE }} ci
