@@ -1,9 +1,74 @@
+!!! warning "Work In Progress"
+    This project is still work in progress and not completed yet.
+
 # n34
 
 A CLI to interact with NIP-34 and other stuff related to codes in nostr
+
+## About
+
+`n34` is a command-line interface (CLI) tool for sending and receiving Git
+issues, patches, and comments over the Nostr protocol. It supports creating,
+replying to, and managing issues and patches, making Git collaboration
+decentralized and censorship-resistant.
+
+The primary goal of `n34` is to implement [NIP-34] (`git` stuff), but its
+flexible design allows for additional use cases beyond Git workflows. For more
+details, see the following section.
+
+## Features
+
+- [X] Repository announcements
+- [ ] Repository state announcements
+- [ ] Patches
+- [X] Issues
+- [X] Replies
+- [X] Status
+- [X] Gossip Model ([NIP-65])
+- [X] Proof of Work ([NIP-13])
+- [X] `nostr:` URI scheme, in the issue/reply content ([NIP-21])
+- [ ] Code Snippets ([NIP-C0])
+- [ ] In device relays and repos bookmark
+
+
+## Why Nostr?
+
+Nostr is fundamentally different from traditional platforms because it’s not
+an application or service, it’s a decentralized protocol. This means any tool or
+app can integrate with it, enabling open, permissionless collaboration without
+relying on centralized gatekeepers. Unlike proprietary systems, Nostr doesn’t
+require emails, passwords, or accounts. You interact directly through relays,
+whether you self-host your own or use public ones, ensuring no single point of
+failure or control.
+
+What makes Nostr uniquely resilient is its design, the protocol itself is just
+a set of rules, not a company or product that can disappear. Your Git issues,
+patches, and comments persist as long as relays choose to store them, immune to
+the whims of corporate shutdowns or policy changes. Nostr is infrastructure in
+its purest form, an idea that outlives any temporary implementation. `n34` taps
+into a future-proof foundation for decentralized collaboration.
+
+### More about Nostr
+
+- <https://nostr.com>
+- <https://nostr.org>
+- <https://nostr.how/en/what-is-nostr>
+
+## Contributing
+
+Contributions to `n34` are welcome! You can help by opening issues (such as bug
+reports or feature requests) or submitting patches. **All contributions must be
+submitted through Nostr**. For more details on the process, please refer to the
+[CONTRIBUTING.md](CONTRIBUTING.md) file. Your support is greatly appreciated!
 
 ## License
 
 n34 is licensed under the GPL-3.0 License. This means that you are free to use,
 modify, and distribute the software under the terms of this license. Please
 refer to the [LICENSE](LICENSE) file for more details.
+
+[NIP-34]: https://github.com/nostr-protocol/nips/blob/master/34.md
+[NIP-65]: https://github.com/nostr-protocol/nips/blob/master/65.md
+[NIP-13]: https://github.com/nostr-protocol/nips/blob/master/13.md
+[NIP-21]: https://github.com/nostr-protocol/nips/blob/master/21.md
+[NIP-C0]: https://github.com/nostr-protocol/nips/blob/master/C0.md
