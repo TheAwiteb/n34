@@ -14,6 +14,12 @@ JUST_EXECUTABLE := "just -u -f " + justfile()
 header := "Available tasks:\n"
 # Get the MSRV from the Cargo.toml
 msrv := `cat Cargo.toml | grep "rust-version" | sed 's/.*"\(.*\)".*/\1/'`
+tag_change_body := '''{% for group, commits in commits | group_by(attribute="group") %}
+
+{{ group | upper_first }}
+
+{% for commit in commits %}
+- {{ commit.message | split(pat="\n") | first | split(pat=":") | slice(start=1) | join(sep=":") | upper_first | trim }} - (by {{ commit.author.name}}){% endfor %}{% endfor %}'''
 
 export TZ := "UTC"
 
@@ -58,7 +64,7 @@ changelog:
 [script]
 release version:
     set -e
-    TAG_MSG=$(git-cliff --strip all --unreleased --tag "v{{ version }}" | sed -e 's/[]#[]//g' -e 's/^ //g')
+    TAG_MSG=$(git-cliff --strip all --unreleased --body '{{ tag_change_body }}')
     sed -i "s/^version\s*= \".*\"/version = \"{{ version }}\"/" ./Cargo.toml
     taplo fmt --config ./.taplo.toml ./Cargo.toml
     {{ JUST_EXECUTABLE }} ci
