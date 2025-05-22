@@ -14,11 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+use std::fs;
+
 use clap::Args;
 use nostr::{event::EventBuilder, key::PublicKey, types::Url};
 
 use crate::{
-    cli::{CliOptions, CommandRunner},
+    cli::{CliOptions, CommandRunner, NOSTR_ADDRESS_FILE},
     error::N34Result,
     nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement, utils},
 };
@@ -29,28 +31,32 @@ use crate::{
 pub struct AnnounceArgs {
     /// Unique identifier for the repository in kebab-case.
     #[arg(long = "id")]
-    repo_id:     String,
+    repo_id:      String,
     /// A name for the repository.
     #[arg(short, long)]
-    name:        Option<String>,
+    name:         Option<String>,
     /// A description for the repository.
     #[arg(short, long)]
-    description: Option<String>,
+    description:  Option<String>,
     /// Webpage URLs for the repository (if provided by the git server).
     #[arg(short, long)]
-    web:         Vec<Url>,
+    web:          Vec<Url>,
     /// URLs for cloning the repository.
     #[arg(short, long)]
-    clone:       Vec<Url>,
+    clone:        Vec<Url>,
     /// Additional maintainers of the repository (besides yourself).
     #[arg(short, long)]
-    maintainers: Vec<PublicKey>,
+    maintainers:  Vec<PublicKey>,
     /// Labels to categorize the repository. Can be specified multiple times.
     #[arg(short, long)]
-    label:       Vec<String>,
+    label:        Vec<String>,
     /// Skip kebab-case validation for the repository ID
     #[arg(long)]
-    force_id:    bool,
+    force_id:     bool,
+    /// If set, creates a `nostr-address` file to enable automatic address
+    /// discovery by n34
+    #[arg(long)]
+    address_file: bool,
 }
 
 impl CommandRunner for AnnounceArgs {
@@ -80,6 +86,13 @@ impl CommandRunner for AnnounceArgs {
 
         let nevent = utils::new_nevent(event.id.expect("There is an id"), &write_relays)?;
         let naddr = utils::repo_naddr(user_pubk, &options.relays)?;
+
+        if self.address_file {
+            let path = std::env::current_dir()?.join(NOSTR_ADDRESS_FILE);
+            tracing::info!("Create the `nostr-address` file at `{}`", path.display());
+            fs::write(path, &naddr)?;
+        }
+
         client
             .send_event_to(event, relays_list.as_ref(), &write_relays)
             .await?;

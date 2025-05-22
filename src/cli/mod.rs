@@ -49,6 +49,9 @@ Git repository: https://git.4rs.nl/awiteb/n34.git"#;
 /// Footer message, used in the help message
 const FOOTER: &str = r#"Please report bugs to <naddr1qqpkuve5qgsqqqqqq9g9uljgjfcyd6dm4fegk8em2yfz0c3qp3tc6mntkrrhawgrqsqqqauesksc39>."#;
 
+/// Name of the file storing the repository address
+pub const NOSTR_ADDRESS_FILE: &str = "nostr-address";
+
 /// The command-line interface options
 #[derive(Args, Clone)]
 #[clap(
