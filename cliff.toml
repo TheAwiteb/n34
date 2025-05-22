@@ -23,7 +23,7 @@ body = """
     ### {{ group | upper_first }}
     {% for commit in commits %}
         - {{ commit.message | split(pat="\n") | first | split(pat=":") | slice(start=1) | join(sep=":") | trim | upper_first }} - \
-            ({{ commit.author.name}} at [{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/?id={{ commit.id }}))\
+            by {{ commit.author.name}}\
     {% endfor %}
 {% endfor %}\n
 """

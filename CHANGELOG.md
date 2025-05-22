@@ -9,32 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add `--force-id` flag to bypass case validation in `repo announce` - (Awiteb at [8f627c2](https://git.4rs.nl/awiteb/n34.git/commit/?id=8f627c2704e31538074f06b8300b1a118eb6f21d))
+- Add `--force-id` flag to bypass case validation in `repo announce` - by Awiteb
 
 ## [0.1.0] - 2025-05-21
 
 ### Added
 
-- Setup the CLI and create `repo view` command - (Awiteb at [d962732](https://git.4rs.nl/awiteb/n34.git/commit/?id=d962732e5251b3af81b6d12327e258b49e3e603e))
-- Add `repo announce` command - (Awiteb at [b444aeb](https://git.4rs.nl/awiteb/n34.git/commit/?id=b444aeba0ac6d19cb32715fb70c7dc1da297f8e9))
-- Support PoW - (Awiteb at [c0a5e47](https://git.4rs.nl/awiteb/n34.git/commit/?id=c0a5e4779385024c8b65ae7626081a54ccbcb5b7))
-- Add `issue new` command - (Awiteb at [54f1c7e](https://git.4rs.nl/awiteb/n34.git/commit/?id=54f1c7e0e68670926a99993651db6f4e15087250))
-- New `reply` command - (Awiteb at [9444fc1](https://git.4rs.nl/awiteb/n34.git/commit/?id=9444fc1a8c75dcfb9f74be5e7ea7df6759a5ce6c))
+- Setup the CLI and create `repo view` command - by Awiteb
+- Add `repo announce` command - by Awiteb
+- Support PoW - by Awiteb
+- Add `issue new` command - by Awiteb
+- New `reply` command - by Awiteb
 
 ### Dependencies
 
-- Add nedded dependencies - (Awiteb at [d37c696](https://git.4rs.nl/awiteb/n34.git/commit/?id=d37c6964f7111097550a04d25768085d4c6694d6))
-- Add `easy_ext@1.0.2` to the dependencies - (Awiteb at [fb77a8c](https://git.4rs.nl/awiteb/n34.git/commit/?id=fb77a8ca141e885f351ef671680dbc3f54229303))
-- Add `convert_case@0.8.0` to the dependencies - (Awiteb at [8a553f4](https://git.4rs.nl/awiteb/n34.git/commit/?id=8a553f4de85891c40965a9100f2853034919b6c8))
-- Add `tempfile@3.19.1` to the dependencies - (Awiteb at [ce58f29](https://git.4rs.nl/awiteb/n34.git/commit/?id=ce58f2902246637c8ebd8b66d14cbdf958c09543))
-- Add `futures@0.3.31` to the dependencies - (Awiteb at [bd08653](https://git.4rs.nl/awiteb/n34.git/commit/?id=bd086538fdeed1b39d3d8a355fc453722ab04bc2))
-- Bump `nostr` and `nostr_sdk` to `0.42.0` - (Awiteb at [724e270](https://git.4rs.nl/awiteb/n34.git/commit/?id=724e2707c69fc8ac16f05331970919439619346e))
+- Add nedded dependencies - by Awiteb
+- Add `easy_ext@1.0.2` to the dependencies - by Awiteb
+- Add `convert_case@0.8.0` to the dependencies - by Awiteb
+- Add `tempfile@3.19.1` to the dependencies - by Awiteb
+- Add `futures@0.3.31` to the dependencies - by Awiteb
+- Bump `nostr` and `nostr_sdk` to `0.42.0` - by Awiteb
 
 ## [0.0.0] - 2025-05-01
 
 ### Added
 
-- Initialize the project - (Awiteb at [c3594c6](https://git.4rs.nl/awiteb/n34.git/commit/?id=c3594c64671f622386a6dab12cb97b9f44c1611e))
+- Initialize the project - by Awiteb
 
 [0.1.0]: https://git.4rs.nl/awiteb/n34.git/tag/?h=v0.1.0
 [0.0.0]: https://git.4rs.nl/awiteb/n34.git/tag/?h=v0.0.0
