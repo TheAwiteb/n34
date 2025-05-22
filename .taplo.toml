@@ -1,3 +1,5 @@
+exclude = ["target/**/*.toml", "Cargo.lock"]
+
 [formatting]
 align_entries = true
 indent_tables = true
