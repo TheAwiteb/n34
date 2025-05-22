@@ -51,6 +51,15 @@ pub enum N34Error {
          to."
     )]
     CanNotReplyToEvent,
+    #[error("No repository address given and couldn't read `nostr-address` file: {0}")]
+    CanNotReadNostrAddressFile(std::io::Error),
+    #[error(
+        "The `nostr-address` file is empty.  Please add a valid Nostr repository address (naddr) \
+         to the file or provide it manually as a flag."
+    )]
+    EmptyNostrAddressFile,
+    #[error("Invalid `nostr-address` file content: {0}")]
+    InvalidNostrAddressFileContent(String),
 }
 
 impl N34Error {
