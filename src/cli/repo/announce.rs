@@ -48,6 +48,9 @@ pub struct AnnounceArgs {
     /// Labels to categorize the repository. Can be specified multiple times.
     #[arg(short, long)]
     label:       Vec<String>,
+    /// Skip kebab-case validation for the repository ID
+    #[arg(long)]
+    force_id:    bool,
 }
 
 impl CommandRunner for AnnounceArgs {
@@ -70,6 +73,7 @@ impl CommandRunner for AnnounceArgs {
             options.relays.clone(),
             self.maintainers,
             self.label.into_iter().map(utils::str_trim).collect(),
+            self.force_id,
         )?
         .pow(options.pow)
         .build(user_pubk);

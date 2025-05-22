@@ -76,9 +76,17 @@ impl EventBuilder {
         relays: Vec<RelayUrl>,
         maintainers: Vec<PublicKey>,
         labels: Vec<String>,
+        force_id: bool,
     ) -> N34Result<EventBuilder> {
         let repo_id = repo_id.trim();
-        if repo_id.is_empty() || repo_id != repo_id.to_case(Case::Kebab) {
+        let kebab_repo_id = repo_id.to_case(Case::Kebab);
+        if repo_id.is_empty() || (!force_id && repo_id != kebab_repo_id) {
+            if repo_id != kebab_repo_id {
+                tracing::error!(
+                    "The repo id should be `{kebab_repo_id}` (kebab-case). Use `--force-id` to \
+                     override this check"
+                );
+            }
             return Err(N34Error::InvalidRepoId);
         }
 
