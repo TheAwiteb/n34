@@ -14,7 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::{fmt, fs, str::FromStr, sync::atomic::Ordering};
+use std::{
+    fmt,
+    fs,
+    path::{Path, PathBuf},
+    str::FromStr,
+    sync::atomic::Ordering,
+};
 
 use nostr::{
     event::{Event, EventId, Kind, TagKind, TagStandard},
@@ -30,7 +36,10 @@ use nostr::{
 };
 
 use super::traits::TagsExt;
-use crate::error::{N34Error, N34Result};
+use crate::{
+    cli::{NOSTR_ADDRESS_FILE, parsers},
+    error::{N34Error, N34Result},
+};
 
 /// Returns the value of the given tag
 fn tag_value(tag: &TagStandard) -> String {
@@ -194,4 +203,30 @@ where
         return Ok(content.as_ref().trim().to_owned());
     }
     read_editor(file_suffix)
+}
+
+/// Path to the `nostr-address` file in current directory.
+pub fn nostr_address_path() -> std::io::Result<PathBuf> {
+    std::env::current_dir().map(|p| p.join(NOSTR_ADDRESS_FILE))
+}
+
+/// If the given coordinate is Some, return it. Otherwise, try to read and parse
+/// the first non-comment line from the `nostr-address` file.
+pub fn naddr_or_file(
+    naddr: Option<Nip19Coordinate>,
+    address_file_path: &Path,
+) -> N34Result<Nip19Coordinate> {
+    if let Some(naddr) = naddr {
+        return Ok(naddr);
+    }
+
+    parsers::repo_naddr(
+        fs::read_to_string(address_file_path)
+            .map_err(N34Error::CanNotReadNostrAddressFile)?
+            .split("\n")
+            .find(|line| !line.starts_with("#") && !line.trim().is_empty())
+            .ok_or(N34Error::EmptyNostrAddressFile)?
+            .trim(),
+    )
+    .map_err(N34Error::InvalidNostrAddressFileContent)
 }
