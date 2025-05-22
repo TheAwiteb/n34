@@ -22,25 +22,26 @@ use nostr::nips::nip19::Nip19Coordinate;
 use crate::{
     cli::{CliOptions, CommandRunner, parsers},
     error::N34Result,
-    nostr_utils::NostrClient,
+    nostr_utils::{NostrClient, utils},
 };
 
 /// Arguments for the `repo view` command
 #[derive(Args, Debug)]
 pub struct ViewArgs {
-    /// Nostr repository address
+    /// Repository address in `naddr` format.
+    ///
+    /// If not provided, `n34` will look for a `nostr-address` file.
     #[arg(short, long, value_parser = parsers::repo_naddr)]
-    naddr: Nip19Coordinate,
+    naddr: Option<Nip19Coordinate>,
 }
 
 impl CommandRunner for ViewArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
+        let naddr = utils::naddr_or_file(self.naddr, &utils::nostr_address_path()?)?;
         let client = NostrClient::init(&options).await;
-        if !self.naddr.relays.is_empty() {
-            client.add_relays(&self.naddr.relays).await;
-        }
+        client.add_relays(&naddr.relays).await;
 
-        let repo = client.fetch_repo(&self.naddr.coordinate).await?;
+        let repo = client.fetch_repo(&naddr.coordinate).await?;
         let mut msg = format!("ID: {}", repo.id);
 
         if let Some(name) = repo.name {
