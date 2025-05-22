@@ -61,6 +61,11 @@ reports or feature requests) or submitting patches. **All contributions must be
 submitted through Nostr**. For more details on the process, please refer to the
 [CONTRIBUTING.md](CONTRIBUTING.md) file. Your support is greatly appreciated!
 
+## Contributions & Changes
+
+You can find the changelog at [CHANGELOG.md](CHANGELOG.md) and the list of
+contributors at [AUTHORS](AUTHORS) file.
+
 ## License
 
 n34 is licensed under the GPL-3.0 License. This means that you are free to use,
