@@ -8,6 +8,22 @@ Before submitting changes, please read the [Developer Certificate of Origin](DCO
 All patches must include a `Signed-off-by: NAME <EMAIL>` line to acknowledge
 your agreement with the DCO.
 
+Ensure your Git name and email are correctly configured. While you don’t need to
+use your real details, avoid leaving them as the default values. To verify your
+current settings, run:
+
+```bash
+git config user.name
+git config user.email
+```
+
+If they’re incorrect or unset, update them using:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
 We welcome all contributions, whether it be bug reports, fixes, feature
 submissions, feature requests, or improving documentation or testing. Enjoy
 collaborating!
@@ -49,6 +65,9 @@ to their read relays, most tools handle this automatically.
 #### Patch Guidelines
 
 - Keep patches small: Focused changes are easier to review and merge.
+- Run `just ci` before submitting your patch.
+- Update the change log with your patch. Run `just changelog` or `git-cliff > CHANGELOG.md`
+- Add your name to the [AUTHORS](AUTHORS) file if this is your first contribution. (alphabetical order)
 - Use [Conventional Commits]: Start the patch subject with one of these types:
   - `feat`: New feature
   - `fix`: Bug fix
@@ -62,7 +81,6 @@ to their read relays, most tools handle this automatically.
 - For all other changes, use `chore`.
 - Add `!` to the subject if your patch contains a breacking change, e.g.
 `remove!: text` and `fix(reply)!: text`
-- Run `just ci` before submitting your patch.
 
 #### Code Style
 
