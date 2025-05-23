@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `--force-id` flag to bypass case validation in `repo announce` - by Awiteb
 - Add `--address-file` flag to `repo announce` command - by Awiteb
 - Read the `nostr-address` file in `repo view` command - by Awiteb
+- Read the `nostr-address` file in `issue new` command - by Awiteb
 
 ## [0.1.0] - 2025-05-21
 

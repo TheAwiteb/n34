@@ -39,9 +39,11 @@ use crate::{
     )
 )]
 pub struct NewArgs {
-    /// Repository address
+    /// Repository address in `naddr` format.
+    ///
+    /// If not provided, `n34` will look for a `nostr-address` file.
     #[arg(short, long, value_parser = parsers::repo_naddr)]
-    naddr:   Nip19Coordinate,
+    naddr:   Option<Nip19Coordinate>,
     /// Markdown content for the issue. Cannot be used together with the
     /// `--editor` flag.
     #[arg(short, long)]
@@ -86,26 +88,25 @@ impl CommandRunner for NewArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
+        let naddr = utils::naddr_or_file(self.naddr.clone(), &utils::nostr_address_path()?)?;
+
+        client.add_relays(&options.relays).await;
+        client.add_relays(&naddr.relays).await;
+
         let relays_list = client.user_relays_list(user_pubk).await?;
         let mut write_relays =
             utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
-        client.add_relays(&options.relays).await;
-        client.add_relays(&self.naddr.relays).await;
-        write_relays.extend(client.fetch_repo(&self.naddr.coordinate).await?.relays);
+        write_relays.extend(client.fetch_repo(&naddr.coordinate).await?.relays);
 
         let (subject, content) = self.issue_content()?;
         let content_details = client.parse_content(&content).await;
         write_relays.extend(content_details.write_relays.clone());
 
-        let event = EventBuilder::new_git_issue(
-            self.naddr.coordinate.clone(),
-            content,
-            subject,
-            self.label,
-        )?
-        .tags(content_details.into_tags())
-        .pow(options.pow)
-        .build(user_pubk);
+        let event =
+            EventBuilder::new_git_issue(naddr.coordinate.clone(), content, subject, self.label)?
+                .tags(content_details.into_tags())
+                .pow(options.pow)
+                .build(user_pubk);
         let event_id = event.id.expect("There is an id");
 
         tracing::trace!(relays = ?write_relays, "Write relays list");
