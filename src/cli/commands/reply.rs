@@ -24,8 +24,9 @@ use nostr::{
     types::RelayUrl,
 };
 
-use super::{CliOptions, CommandRunner, parsers};
+use super::{CliOptions, CommandRunner};
 use crate::{
+    cli::parsers,
     error::{N34Error, N34Result},
     nostr_utils::{NostrClient, utils},
 };

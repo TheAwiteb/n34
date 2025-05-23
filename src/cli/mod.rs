@@ -14,27 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-/// `issue` subcommands
-mod issue;
+/// Commands module
+mod commands;
 /// CLI arguments parsers
 pub mod parsers;
-/// 'reply` command
-mod reply;
-/// `repo` subcommands
-mod repo;
 /// CLI traits
 mod traits;
 
-use std::fmt;
-
-use clap::{ArgGroup, Args, Parser};
+use clap::Parser;
 use clap_verbosity_flag::Verbosity;
-use nostr::key::Keys;
-use nostr::{PublicKey, RelayUrl, SecretKey};
 
-use self::issue::IssueSubcommands;
-use self::reply::ReplyArgs;
-use self::repo::RepoSubcommands;
+pub use self::commands::*;
 use self::traits::CommandRunner;
 use crate::error::N34Result;
 
@@ -52,98 +42,25 @@ const FOOTER: &str = r#"Please report bugs to <naddr1qqpkuve5qgsqqqqqq9g9uljgjfc
 /// Name of the file storing the repository address
 pub const NOSTR_ADDRESS_FILE: &str = "nostr-address";
 
-/// The command-line interface options
-#[derive(Args, Clone)]
-#[clap(
-    group(
-        ArgGroup::new("auth")
-            .args(&["secret_key"])
-            .required(true)
-    )
-)]
-pub struct CliOptions {
-    /// Your Nostr secret key
-    #[arg(short, long)]
-    pub secret_key: Option<SecretKey>,
-    /// Where your relays list. And repository relays if not included in naddr
-    #[arg(short, long, required = true)]
-    pub relays:     Vec<RelayUrl>,
-    /// Proof of Work difficulty when creatring events
-    #[arg(long, default_value_t = 0)]
-    pub pow:        u8,
-}
-
 #[derive(Parser, Debug)]
 #[command(about, version, before_long_help = HEADER, after_long_help = FOOTER)]
 /// A command-line interface for interacting with NIP-34 and other Nostr
 /// code-related stuff.
 pub struct Cli {
     #[command(flatten)]
-    pub options:   CliOptions,
+    pub options:   commands::CliOptions,
     /// Controls the verbosity level of output
     #[command(flatten)]
     pub verbosity: Verbosity,
     /// The subcommand to execute
     #[command(subcommand)]
-    pub command:   Commands,
+    pub command:   commands::Commands,
 }
 
-/// N34 commands
-#[derive(Parser, Debug)]
-pub enum Commands {
-    /// Manage repositories
-    Repo {
-        #[command(subcommand)]
-        subcommands: RepoSubcommands,
-    },
-    /// Manage issues
-    Issue {
-        #[command(subcommand)]
-        subcommands: IssueSubcommands,
-    },
-    // /// Manage patches
-    // Patch {
-    //     #[command(subcommand)]
-    //     subcommands: PatchSubcommands,
-    // },
-    /// Reply to issues and patches.
-    Reply(ReplyArgs),
-}
 
 impl Cli {
     /// Executes the command
     pub async fn run(self) -> N34Result<()> {
         self.command.run(self.options).await
-    }
-}
-
-impl CommandRunner for Commands {
-    async fn run(self, options: CliOptions) -> N34Result<()> {
-        tracing::trace!("Options: {options:#?}");
-        tracing::trace!("Handling: {self:#?}");
-        match self {
-            Self::Repo { subcommands } => subcommands.run(options).await,
-            Self::Issue { subcommands } => subcommands.run(options).await,
-            Commands::Reply(args) => args.run(options).await,
-        }
-    }
-}
-
-impl CliOptions {
-    /// Gets the public key of the user.
-    pub async fn pubkey(&self) -> N34Result<PublicKey> {
-        if let Some(sk) = &self.secret_key {
-            return Ok(Keys::new(sk.clone()).public_key());
-        }
-        unreachable!("There is no other method until now")
-    }
-}
-
-impl fmt::Debug for CliOptions {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CliOptions")
-            .field("secret_key", &self.secret_key.as_ref().map(|_| "*******"))
-            .field("relays", &self.relays)
-            .finish()
     }
 }
