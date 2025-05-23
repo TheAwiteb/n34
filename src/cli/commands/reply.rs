@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::str::FromStr;
+use std::{fs, str::FromStr};
 
 use clap::{ArgGroup, Args};
 use nostr::{
@@ -80,7 +80,10 @@ pub struct ReplyArgs {
     /// The issue, patch, or comment to reply to
     #[arg(long)]
     to:      NostrEvent,
-    /// Repository address
+    /// Repository address in `naddr` format.
+    ///
+    /// If not provided, `n34` will look for the `nostr-address` file and if not
+    /// found, will get it from the root event if found.
     #[arg(short, long, value_parser = parsers::repo_naddr)]
     naddr:   Option<Nip19Coordinate>,
     /// The comment (cannot be used with --editor)
@@ -95,15 +98,13 @@ impl CommandRunner for ReplyArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
-        let relays_list = client.user_relays_list(user_pubk).await?;
-        let mut write_relays =
-            utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
+
         client.add_relays(&options.relays).await;
         client.add_relays(&self.to.relays).await;
 
-        if let Some(ref naddr) = self.naddr {
-            client.add_relays(&naddr.relays).await;
-        }
+        let relays_list = client.user_relays_list(user_pubk).await?;
+        let mut write_relays =
+            utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
 
         let reply_to = client
             .fetch_event(Filter::new().id(self.to.event_id))
@@ -112,7 +113,13 @@ impl CommandRunner for ReplyArgs {
         let root = client.find_root(reply_to.clone()).await?;
 
 
+        let nostr_address_path = utils::nostr_address_path()?;
         let repo_naddr = if let Some(naddr) = self.naddr {
+            client.add_relays(&naddr.relays).await;
+            naddr.coordinate
+        } else if fs::exists(&nostr_address_path).is_ok() {
+            let naddr = utils::naddr_or_file(None, &nostr_address_path)?;
+            client.add_relays(&naddr.relays).await;
             naddr.coordinate
         } else if let Some(ref root_event) = root {
             root_event
