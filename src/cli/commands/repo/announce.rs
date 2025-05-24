@@ -61,6 +61,8 @@ pub struct AnnounceArgs {
 
 impl CommandRunner for AnnounceArgs {
     async fn run(mut self, options: CliOptions) -> N34Result<()> {
+        options.ensure_relays()?;
+
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;

@@ -60,6 +60,8 @@ pub enum N34Error {
     EmptyNostrAddressFile,
     #[error("Invalid `nostr-address` file content: {0}")]
     InvalidNostrAddressFileContent(String),
+    #[error("This command requires at least one relay, but none were provided")]
+    EmptyRelays,
 }
 
 impl N34Error {

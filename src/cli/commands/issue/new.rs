@@ -91,7 +91,6 @@ impl CommandRunner for NewArgs {
         let user_pubk = options.pubkey().await?;
         let naddr = utils::naddr_or_file(self.naddr.clone(), &utils::nostr_address_path()?)?;
 
-        client.add_relays(&options.relays).await;
         client.add_relays(&naddr.relays).await;
 
         let relays_list = client.user_relays_list(user_pubk).await?;

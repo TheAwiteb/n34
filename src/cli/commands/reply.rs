@@ -21,7 +21,7 @@ use nostr::{
     event::{Event, EventBuilder, EventId, Kind, Tag},
     filter::Filter,
     nips::{
-        nip01::Metadata,
+        nip01::{Coordinate, Metadata},
         nip19::{self, FromBech32, Nip19Coordinate, ToBech32},
     },
     types::RelayUrl,
@@ -112,10 +112,21 @@ pub struct ReplyArgs {
 
 impl CommandRunner for ReplyArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
+        let nostr_address_path = utils::nostr_address_path()?;
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
 
-        client.add_relays(&options.relays).await;
+        let repo_naddr = if let Some(naddr) = self.naddr {
+            client.add_relays(&naddr.relays).await;
+            Some(naddr.coordinate)
+        } else if fs::exists(&nostr_address_path).is_ok() {
+            let naddr = utils::naddr_or_file(None, &nostr_address_path)?;
+            client.add_relays(&naddr.relays).await;
+            Some(naddr.coordinate)
+        } else {
+            None
+        };
+
         client.add_relays(&self.to.relays).await;
 
         let relays_list = client.user_relays_list(user_pubk).await?;
@@ -128,26 +139,10 @@ impl CommandRunner for ReplyArgs {
             .ok_or(N34Error::EventNotFound)?;
         let root = client.find_root(reply_to.clone()).await?;
 
-
-        let nostr_address_path = utils::nostr_address_path()?;
-        let repo_naddr = if let Some(naddr) = self.naddr {
-            client.add_relays(&naddr.relays).await;
-            naddr.coordinate
-        } else if fs::exists(&nostr_address_path).is_ok() {
-            let naddr = utils::naddr_or_file(None, &nostr_address_path)?;
-            client.add_relays(&naddr.relays).await;
-            naddr.coordinate
+        let repo_naddr = if let Some(naddr) = repo_naddr {
+            naddr
         } else if let Some(ref root_event) = root {
-            root_event
-                .tags
-                .coordinates()
-                .find(|c| c.kind == Kind::GitRepoAnnouncement)
-                .ok_or_else(|| {
-                    N34Error::InvalidEvent(
-                        "The Git issue/patch does not specify a target repository".to_owned(),
-                    )
-                })?
-                .clone()
+            naddr_from_root(root_event)?
         } else {
             return Err(N34Error::NotFoundRepo);
         };
@@ -246,4 +241,19 @@ async fn quote_reply_to_content(client: &NostrClient, quoted_event: &Event) -> S
         "{fdate}{author_name} wrote:\n> {}",
         quoted_event.content.trim().replace("\n", "\n> ")
     )
+}
+
+/// Gets the repository coordinate from a root Nostr event's tags.
+/// The event must contain a coordinate tag with GitRepoAnnouncement kind.
+fn naddr_from_root(root: &Event) -> N34Result<Coordinate> {
+    Ok(root
+        .tags
+        .coordinates()
+        .find(|c| c.kind == Kind::GitRepoAnnouncement)
+        .ok_or_else(|| {
+            N34Error::InvalidEvent(
+                "The Git issue/patch does not specify a target repository".to_owned(),
+            )
+        })?
+        .clone())
 }

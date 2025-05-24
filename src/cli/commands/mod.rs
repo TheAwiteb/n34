@@ -33,7 +33,7 @@ use self::issue::IssueSubcommands;
 use self::reply::ReplyArgs;
 use self::repo::RepoSubcommands;
 use super::traits::CommandRunner;
-use crate::error::N34Result;
+use crate::error::{N34Error, N34Result};
 
 /// The command-line interface options
 #[derive(Args, Clone)]
@@ -48,8 +48,9 @@ pub struct CliOptions {
     /// Your Nostr secret key
     #[arg(short, long)]
     pub secret_key: Option<SecretKey>,
-    /// Where your relays list. And repository relays if not included in naddr
-    #[arg(short, long, required = true)]
+    /// Fallbacks relay to write and read from it. Multiple relays can be
+    /// passed.
+    #[arg(short, long)]
     pub relays:     Vec<RelayUrl>,
     /// Proof of Work difficulty when creatring events
     #[arg(long, default_value_t = 0)]
@@ -98,6 +99,14 @@ impl CliOptions {
             return Ok(Keys::new(sk.clone()).public_key());
         }
         unreachable!("There is no other method until now")
+    }
+
+    /// Returns an error if there are no relays.
+    pub fn ensure_relays(&self) -> N34Result<()> {
+        if self.relays.is_empty() {
+            return Err(N34Error::EmptyRelays);
+        }
+        Ok(())
     }
 }
 
