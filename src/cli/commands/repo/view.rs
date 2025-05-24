@@ -28,10 +28,11 @@ use crate::{
 /// Arguments for the `repo view` command
 #[derive(Args, Debug)]
 pub struct ViewArgs {
-    /// Repository address in `naddr` format.
+    /// Repository address in `naddr` format or `<nip5>/repo_id`. e.g.
+    /// `4rs.nl/n34` and `_@4rs.nl/n34`
     ///
-    /// If not provided, `n34` will look for a `nostr-address` file.
-    #[arg(short, long, value_parser = parsers::repo_naddr)]
+    /// If not provided, `n34` will look for the `nostr-address` file.
+    #[arg(value_name = "NADDR-OR-NIP05", long = "repo", value_parser = parsers::repo_naddr)]
     naddr: Option<Nip19Coordinate>,
 }
 

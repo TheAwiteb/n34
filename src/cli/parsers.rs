@@ -16,17 +16,47 @@
 
 use nostr::{
     Kind,
-    nips::nip19::{FromBech32, Nip19Coordinate},
+    nips::{
+        self,
+        nip01::Coordinate,
+        nip19::{FromBech32, Nip19Coordinate},
+    },
 };
+use tokio::runtime::Handle;
 
-/// Parses a Nostr naddr string into a Git repository announcement coordinate.
+fn parse_nip5_repo(nip5: &str, repo_id: &str) -> Result<Nip19Coordinate, String> {
+    let (username, domain) = nip5.split_once("@").unwrap_or(("_", nip5));
+
+    let nip5_profile = tokio::task::block_in_place(|| {
+        Handle::current().block_on(async {
+            nips::nip05::profile(format!("{username}@{domain}"), None)
+                .await
+                .map_err(|err| err.to_string())
+        })
+    })?;
+
+    Ok(Nip19Coordinate::new(
+        Coordinate::new(Kind::GitRepoAnnouncement, nip5_profile.public_key).identifier(repo_id),
+        nip5_profile.relays,
+    )
+    .expect("The relays is `RelayUrl`"))
+}
+
+/// Parses a Git repository address which can be either:
+/// - A bech32-encoded naddr (e.g. "naddr1...") for Git repository announcements
+///   (kind 30617)
+/// - A NIP-05 identifier with repository ID (e.g. "4rs.nl/n34" or
+///   "_@4rs.nl/n34")
 ///
-/// # Errors
-/// Returns an error if:
-/// - The bech32 decoding fails
-/// - The naddr doesn't represent a Git repository announcement (kind != 30617)
-pub fn repo_naddr(naddr: &str) -> Result<Nip19Coordinate, String> {
-    let naddr = Nip19Coordinate::from_bech32(naddr).map_err(|err| err.to_string())?;
+/// Returns an error for invalid formats, failed bech32 decoding, wrong event
+/// kind.
+pub fn repo_naddr(repo_address: &str) -> Result<Nip19Coordinate, String> {
+    if repo_address.contains("/") {
+        let (nip5, repo_id) = repo_address.split_once("/").expect("There is a `/`");
+        return parse_nip5_repo(nip5, repo_id);
+    }
+
+    let naddr = Nip19Coordinate::from_bech32(repo_address).map_err(|err| err.to_string())?;
     if naddr.kind != Kind::GitRepoAnnouncement {
         return Err("The naddr is not repo announcement address".to_owned());
     }

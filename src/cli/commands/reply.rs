@@ -90,16 +90,17 @@ impl FromStr for NostrEvent {
 )]
 pub struct ReplyArgs {
     /// The issue, patch, or comment to reply to
-    #[arg(long)]
+    #[arg(long, value_name = "nevent1-or-note1")]
     to:       NostrEvent,
     /// Quote the replied-to event in the editor
     #[arg(long)]
     quote_to: bool,
-    /// Repository address in `naddr` format.
+    /// Repository address in `naddr` format or `<nip5>/repo_id`. e.g.
+    /// `4rs.nl/n34` and `_@4rs.nl/n34`
     ///
     /// If not provided, `n34` will look for the `nostr-address` file and if not
     /// found, will get it from the root event if found.
-    #[arg(short, long, value_parser = parsers::repo_naddr)]
+    #[arg(value_name = "NADDR-OR-NIP05", long = "repo", value_parser = parsers::repo_naddr)]
     naddr:    Option<Nip19Coordinate>,
     /// The comment (cannot be used with --editor)
     #[arg(short, long)]
