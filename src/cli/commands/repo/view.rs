@@ -38,6 +38,8 @@ pub struct ViewArgs {
 
 impl CommandRunner for ViewArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
+        // FIXME: The signer is not required here
+
         let naddr = utils::naddr_or_file(self.naddr, &utils::nostr_address_path()?)?;
         let client = NostrClient::init(&options).await;
         client.add_relays(&naddr.relays).await;

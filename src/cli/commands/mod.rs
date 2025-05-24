@@ -35,11 +35,12 @@ use self::repo::RepoSubcommands;
 use super::traits::CommandRunner;
 use crate::error::{N34Error, N34Result};
 
+// TODO: Make the `signer` group optional
 /// The command-line interface options
 #[derive(Args, Clone)]
 #[clap(
     group(
-        ArgGroup::new("auth")
+        ArgGroup::new("signer")
             .args(&["secret_key"])
             .required(true)
     )
@@ -92,6 +93,8 @@ impl CommandRunner for Commands {
     }
 }
 
+// TODO: Implement `ensure_signer` function with similar functionality to
+// `ensure_relays`
 impl CliOptions {
     /// Gets the public key of the user.
     pub async fn pubkey(&self) -> N34Result<PublicKey> {
