@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Read the `nostr-address` file in `repo view` command - by Awiteb
 - Read the `nostr-address` file in `issue new` command - by Awiteb
 - Read the `nostr-address` file in `reply` command - by Awiteb
+- A `--quote-to` flag to quote the replied to content in the editor - by Awiteb
+
+### Dependencies
+
+- Add `chrono@0.4.41` to the dependencies - by Awiteb
 
 ## [0.1.0] - 2025-05-21
 

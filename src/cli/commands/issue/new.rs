@@ -71,7 +71,7 @@ impl NewArgs {
             return Ok((None, content.trim().to_owned()));
         }
         // If the `self.content` is `None` then the `self.editor` is `true`
-        let file_content = utils::read_editor(".md")?;
+        let file_content = utils::read_editor(None, ".md")?;
         if file_content.contains('\n') {
             Ok(file_content
                 .split_once('\n')

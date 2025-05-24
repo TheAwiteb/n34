@@ -18,9 +18,12 @@ use std::{fs, str::FromStr};
 
 use clap::{ArgGroup, Args};
 use nostr::{
-    event::{EventBuilder, EventId, Kind, Tag},
+    event::{Event, EventBuilder, EventId, Kind, Tag},
     filter::Filter,
-    nips::nip19::{self, FromBech32, Nip19Coordinate},
+    nips::{
+        nip01::Metadata,
+        nip19::{self, FromBech32, Nip19Coordinate, ToBech32},
+    },
     types::RelayUrl,
 };
 
@@ -30,6 +33,11 @@ use crate::{
     error::{N34Error, N34Result},
     nostr_utils::{NostrClient, utils},
 };
+
+/// Length of a Nostr npub (public key) in characters.
+const NPUB_LEN: usize = 63;
+/// The max date "9999-01-01 at 00:00 UTC"
+const MAX_DATE: i64 = 253370764800;
 
 /// Parses and represents a Nostr `nevent1` or `note1`.
 #[derive(Debug, Clone)]
@@ -74,24 +82,31 @@ impl FromStr for NostrEvent {
         ArgGroup::new("comment-content")
             .args(["comment", "editor"])
             .required(true)
+    ),
+    group(
+        ArgGroup::new("quote-reply-to")
+            .args(["comment", "quote_to"])
     )
 )]
 pub struct ReplyArgs {
     /// The issue, patch, or comment to reply to
     #[arg(long)]
-    to:      NostrEvent,
+    to:       NostrEvent,
+    /// Quote the replied-to event in the editor
+    #[arg(long)]
+    quote_to: bool,
     /// Repository address in `naddr` format.
     ///
     /// If not provided, `n34` will look for the `nostr-address` file and if not
     /// found, will get it from the root event if found.
     #[arg(short, long, value_parser = parsers::repo_naddr)]
-    naddr:   Option<Nip19Coordinate>,
+    naddr:    Option<Nip19Coordinate>,
     /// The comment (cannot be used with --editor)
     #[arg(short, long)]
-    comment: Option<String>,
+    comment:  Option<String>,
     /// Open editor to write comment (cannot be used with --content)
     #[arg(short, long)]
-    editor:  bool,
+    editor:   bool,
 }
 
 impl CommandRunner for ReplyArgs {
@@ -148,7 +163,13 @@ impl CommandRunner for ReplyArgs {
                 .await;
         }
 
-        let content = utils::get_content(self.comment.as_ref(), ".txt")?;
+        let quoted_content = if self.quote_to {
+            Some(quote_reply_to_content(&client, &reply_to).await)
+        } else {
+            None
+        };
+
+        let content = utils::get_content(self.comment.as_ref(), quoted_content.as_ref(), ".txt")?;
         let content_details = client.parse_content(&content).await;
         write_relays.extend(content_details.write_relays.clone());
 
@@ -183,4 +204,45 @@ impl CommandRunner for ReplyArgs {
 
         Ok(())
     }
+}
+
+/// Creates a quoted reply string in the format "On yyyy-mm-dd at hh:mm UTC,
+/// <author> wrote:" followed by the event content. Uses display name if
+/// available, otherwise falls back to a shortened npub string. Dates are
+/// formatted in UTC.
+async fn quote_reply_to_content(client: &NostrClient, quoted_event: &Event) -> String {
+    let author_name = client
+        .fetch_event(
+            Filter::new()
+                .kind(Kind::Metadata)
+                .author(quoted_event.pubkey),
+        )
+        .await
+        .ok()
+        .flatten()
+        .and_then(|e| Metadata::try_from(&e).ok())
+        .and_then(|m| m.display_name.or(m.name))
+        .unwrap_or_else(|| {
+            let pubkey = quoted_event
+                .pubkey
+                .to_bech32()
+                .expect("The error is `Infallible`");
+            format!("{}...{}", &pubkey[..8], &pubkey[NPUB_LEN - 8..])
+        });
+
+    let fdate = chrono::DateTime::from_timestamp(
+        quoted_event
+            .created_at
+            .as_u64()
+            .try_into()
+            .unwrap_or(MAX_DATE),
+        0,
+    )
+    .map(|datetime| datetime.format("On %F at %R UTC, ").to_string())
+    .unwrap_or_default();
+
+    format!(
+        "{fdate}{author_name} wrote:\n> {}",
+        quoted_event.content.trim().replace("\n", "\n> ")
+    )
 }

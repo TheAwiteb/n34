@@ -162,12 +162,16 @@ pub fn add_read_relays(mut vector: Vec<RelayUrl>, event: Option<&Event>) -> Vec<
 /// Opens the user's default editor ($EDITOR) to edit a temporary file with
 /// given suffix, then reads and returns the file contents. The temporary file
 /// is automatically deleted.
-pub fn read_editor(file_suffix: &str) -> N34Result<String> {
+pub fn read_editor(file_pre_content: Option<&str>, file_suffix: &str) -> N34Result<String> {
     let Ok(editor) = std::env::var("EDITOR") else {
         return Err(N34Error::EditorNotFound);
     };
 
     let temp_path = tempfile::NamedTempFile::with_suffix(file_suffix)?.into_temp_path();
+
+    if let Some(pre_content) = file_pre_content {
+        fs::write(&temp_path, pre_content)?;
+    }
 
     // Disable the logs to not show up in a terminal text editor
     crate::EDITOR_OPEN.store(true, Ordering::Relaxed);
@@ -195,14 +199,18 @@ pub fn read_editor(file_suffix: &str) -> N34Result<String> {
 }
 
 /// Returns the given content if it's `Option::Some` or call [`read_editor`]
-pub fn get_content<S>(content: Option<S>, file_suffix: &str) -> N34Result<String>
-where
-    S: AsRef<str>,
-{
+pub fn get_content(
+    content: Option<impl AsRef<str>>,
+    quoted_content: Option<impl AsRef<str>>,
+    file_suffix: &str,
+) -> N34Result<String> {
     if let Some(content) = content {
         return Ok(content.as_ref().trim().to_owned());
     }
-    read_editor(file_suffix)
+    read_editor(
+        quoted_content.map(|s| s.as_ref().to_owned()).as_deref(),
+        file_suffix,
+    )
 }
 
 /// Path to the `nostr-address` file in current directory.
