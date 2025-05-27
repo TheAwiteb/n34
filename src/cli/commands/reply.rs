@@ -135,13 +135,6 @@ impl CommandRunner for ReplyArgs {
 
         client.add_relays(&self.to.relays).await;
 
-        let relays_list = client.user_relays_list(user_pubk).await?;
-        let mut write_relays = [
-            options.relays,
-            utils::add_write_relays(relays_list.as_ref()),
-        ]
-        .concat();
-
         let reply_to = client
             .fetch_event(Filter::new().id(self.to.event_id))
             .await?
@@ -157,24 +150,6 @@ impl CommandRunner for ReplyArgs {
         };
 
         let repos = client.fetch_repos(&repos_coordinate).await?;
-        // Merge repository announcement relays into write relays
-        write_relays.extend(repos.extract_relays());
-        // Include read relays for each repository owner (if found)
-        write_relays.extend(
-            future::join_all(
-                repos_coordinate
-                    .iter()
-                    .map(|c| client.read_relays_from_user(c.public_key)),
-            )
-            .await
-            .into_iter()
-            .flatten(),
-        );
-
-        write_relays.extend(client.read_relays_from_user(reply_to.pubkey).await);
-        if let Some(root_event) = &root {
-            write_relays.extend(client.read_relays_from_user(root_event.pubkey).await);
-        }
 
         let quoted_content = if self.quote_to {
             Some(quote_reply_to_content(&client, &reply_to).await)
@@ -184,7 +159,6 @@ impl CommandRunner for ReplyArgs {
 
         let content = utils::get_content(self.comment.as_ref(), quoted_content.as_ref(), ".txt")?;
         let content_details = client.parse_content(&content).await;
-        write_relays.extend(content_details.write_relays.clone());
 
         let event = EventBuilder::comment(
             content,
@@ -194,11 +168,40 @@ impl CommandRunner for ReplyArgs {
         )
         .dedup_tags()
         .pow(options.pow)
-        .tags(content_details.into_tags())
+        .tags(content_details.clone().into_tags())
         .build(user_pubk);
 
         let event_id = event.id.expect("There is an id");
-        let author_read_relays = utils::add_read_relays(relays_list.as_ref());
+        let relays_list = client.user_relays_list(user_pubk).await?;
+        let author_read_relays =
+            utils::add_read_relays(client.user_relays_list(user_pubk).await?.as_ref());
+        let write_relays = [
+            options.relays,
+            utils::add_write_relays(relays_list.as_ref()),
+            // Merge repository announcement relays into write relays
+            repos.extract_relays(),
+            // Include read relays for each repository owner (if found)
+            future::join_all(
+                repos_coordinate
+                    .iter()
+                    .map(|c| client.read_relays_from_user(c.public_key)),
+            )
+            .await
+            .into_iter()
+            .flatten()
+            .collect(),
+            // read relays of the root event and the reply to event
+            {
+                let (r1, r2) = future::join(
+                    client.read_relays_from_user(reply_to.pubkey),
+                    event_author_read_relays(&client, root.as_ref()),
+                )
+                .await;
+                [r1, r2].concat()
+            },
+            content_details.write_relays.into_iter().collect(),
+        ]
+        .concat();
 
         tracing::trace!(relays = ?write_relays, "Write relays list");
         let (success, ..) = futures::join!(
@@ -277,4 +280,13 @@ fn coordinates_from_root(root: &Event) -> N34Result<Vec<Coordinate>> {
     }
 
     Ok(coordinates)
+}
+
+/// Returns the event author read relays if found, otherwise an empty vector
+async fn event_author_read_relays(client: &NostrClient, event: Option<&Event>) -> Vec<RelayUrl> {
+    if let Some(root_event) = event {
+        client.read_relays_from_user(root_event.pubkey).await
+    } else {
+        Vec::new()
+    }
 }

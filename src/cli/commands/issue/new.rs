@@ -103,31 +103,9 @@ impl CommandRunner for NewArgs {
         client.add_relays(&naddrs.extract_relays()).await;
 
         let relays_list = client.user_relays_list(user_pubk).await?;
-        let mut write_relays = [
-            options.relays,
-            utils::add_write_relays(relays_list.as_ref()),
-            client
-                .fetch_repos(&naddrs.into_coordinates())
-                .await?
-                .extract_relays(),
-        ]
-        .concat();
 
         let (subject, content) = self.issue_content()?;
         let content_details = client.parse_content(&content).await;
-        write_relays.extend(content_details.write_relays.clone());
-
-        // Include read relays for each repository owner (if found)
-        write_relays.extend(
-            future::join_all(
-                naddrs_iter
-                    .clone()
-                    .map(|c| client.read_relays_from_user(c.public_key)),
-            )
-            .await
-            .into_iter()
-            .flatten(),
-        );
 
         let event = EventBuilder::new_git_issue(
             naddrs_iter
@@ -141,13 +119,30 @@ impl CommandRunner for NewArgs {
         )?
         .dedup_tags()
         .pow(options.pow)
-        .tags(content_details.into_tags())
+        .tags(content_details.clone().into_tags())
         // p-tag the reset of the reposotoies owners
         .tags(naddrs_iter.clone().map(|n| Tag::public_key(n.public_key)))
         // a-tag the reset of the reposotoies
-        .tags(naddrs_iter.map(|n| Tag::coordinate(n.coordinate, n.relays.first().cloned())))
+        .tags(naddrs_iter.clone().map(|n| Tag::coordinate(n.coordinate, n.relays.first().cloned())))
         .build(user_pubk);
         let event_id = event.id.expect("There is an id");
+
+        let write_relays = [
+            options.relays,
+            utils::add_write_relays(relays_list.as_ref()),
+            client
+                .fetch_repos(&naddrs.into_coordinates())
+                .await?
+                .extract_relays(),
+            // Include read relays for each repository owner (if found)
+            future::join_all(naddrs_iter.map(|c| client.read_relays_from_user(c.public_key)))
+                .await
+                .into_iter()
+                .flatten()
+                .collect(),
+            content_details.write_relays.clone().into_iter().collect(),
+        ]
+        .concat();
 
         tracing::trace!(relays = ?write_relays, "Write relays list");
         let success = client

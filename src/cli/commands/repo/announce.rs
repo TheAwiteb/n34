@@ -84,27 +84,10 @@ impl CommandRunner for AnnounceArgs {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;
-        let mut write_relays = [
-            options.relays.clone(),
-            utils::add_write_relays(relays_list.as_ref()),
-        ]
-        .concat();
 
         if !self.maintainers.contains(&user_pubk) {
             self.maintainers.insert(0, user_pubk);
         }
-
-        // Include read relays for each maintainer (if found)
-        write_relays.extend(
-            future::join_all(
-                self.maintainers
-                    .iter()
-                    .map(|pkey| client.read_relays_from_user(*pkey)),
-            )
-            .await
-            .into_iter()
-            .flatten(),
-        );
 
         let naddr = utils::repo_naddr(&self.repo_id, user_pubk, &options.relays)?;
         let event = EventBuilder::new_git_repo(
@@ -114,7 +97,7 @@ impl CommandRunner for AnnounceArgs {
             self.web,
             self.clone,
             options.relays.clone(),
-            self.maintainers,
+            self.maintainers.clone(),
             self.label.into_iter().map(utils::str_trim).collect(),
             self.force_id,
         )?
@@ -122,7 +105,6 @@ impl CommandRunner for AnnounceArgs {
         .pow(options.pow)
         .build(user_pubk);
 
-        let nevent = utils::new_nevent(event.id.expect("There is an id"), &write_relays)?;
 
         if self.address_file {
             let address_path = std::env::current_dir()?.join(NOSTR_ADDRESS_FILE);
@@ -141,6 +123,23 @@ impl CommandRunner for AnnounceArgs {
             file.write_all(format!("{naddr}\n").as_bytes())?;
             tracing::info!("Successfully wrote naddr to address file");
         }
+
+        let write_relays = [
+            options.relays.clone(),
+            utils::add_write_relays(relays_list.as_ref()),
+            // Include read relays for each maintainer (if found)
+            future::join_all(
+                self.maintainers
+                    .iter()
+                    .map(|pkey| client.read_relays_from_user(*pkey)),
+            )
+            .await
+            .into_iter()
+            .flatten()
+            .collect(),
+        ]
+        .concat();
+        let nevent = utils::new_nevent(event.id.expect("There is an id"), &write_relays)?;
 
         client
             .send_event_to(event, relays_list.as_ref(), &write_relays)

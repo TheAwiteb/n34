@@ -42,6 +42,7 @@ use crate::{
 const CLIENT_TIMEOUT: Duration = Duration::from_millis(1500);
 
 /// Parsed content details
+#[derive(Clone)]
 pub struct ContentDetails {
     /// Public keys of users mentioned in the content.
     pub p_tagged:     HashSet<PublicKey>,
