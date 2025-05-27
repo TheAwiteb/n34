@@ -41,6 +41,7 @@ const NOSTR_ADDRESS_FILE_HEADER: &str = r##"# This file contains NIP-19 `naddr` 
 # to assist client-side discovery.
 #
 # Empty lines are ignored. Lines starting with "#" are treated as comments.
+
 "##;
 
 /// Arguments for the `repo announce` command
@@ -102,6 +103,7 @@ impl CommandRunner for AnnounceArgs {
             .flatten(),
         );
 
+        let naddr = utils::repo_naddr(&self.repo_id, user_pubk, &options.relays)?;
         let event = EventBuilder::new_git_repo(
             self.repo_id,
             self.name.map(utils::str_trim),
@@ -117,7 +119,6 @@ impl CommandRunner for AnnounceArgs {
         .build(user_pubk);
 
         let nevent = utils::new_nevent(event.id.expect("There is an id"), &write_relays)?;
-        let naddr = utils::repo_naddr(user_pubk, &options.relays)?;
 
         if self.address_file {
             let address_path = std::env::current_dir()?.join(NOSTR_ADDRESS_FILE);
@@ -132,8 +133,8 @@ impl CommandRunner for AnnounceArgs {
 
             let mut file = fs::OpenOptions::new().append(true).open(&address_path)?;
 
-            tracing::info!("Appending naddr '{naddr}' to address file: '{NOSTR_ADDRESS_FILE}'",);
-            file.write_all(naddr.as_bytes())?;
+            tracing::info!("Appending naddr '{naddr}' to address file: '{NOSTR_ADDRESS_FILE}'");
+            file.write_all(format!("{naddr}\n").as_bytes())?;
             tracing::info!("Successfully wrote naddr to address file");
         }
 
