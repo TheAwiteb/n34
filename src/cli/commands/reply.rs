@@ -65,12 +65,13 @@ impl FromStr for NostrEvent {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.trim().starts_with("nevent1") {
-            let event = nip19::Nip19Event::from_bech32(s).map_err(|e| e.to_string())?;
+        let str_event = s.trim().trim_start_matches("nostr:");
+        if str_event.starts_with("nevent1") {
+            let event = nip19::Nip19Event::from_bech32(str_event).map_err(|e| e.to_string())?;
             Ok(Self::new(event.event_id, event.relays))
-        } else if s.trim().starts_with("note1") {
+        } else if str_event.starts_with("note1") {
             Ok(Self::new(
-                EventId::from_bech32(s).map_err(|e| e.to_string())?,
+                EventId::from_bech32(str_event).map_err(|e| e.to_string())?,
                 Vec::new(),
             ))
         } else {

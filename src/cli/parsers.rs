@@ -83,7 +83,7 @@ pub fn parse_nostr_address_file(file_path: &Path) -> N34Result<Vec<Nip19Coordina
 /// Returns an error for invalid formats, failed bech32 decoding, wrong event
 /// kind.
 pub fn repo_naddr(repo: &str) -> Result<Nip19Coordinate, String> {
-    let repo = repo.trim();
+    let repo = repo.trim().trim_start_matches("nostr:");
 
     if repo.contains("/") {
         let (nip5, repo_id) = repo.split_once("/").expect("There is a `/`");
