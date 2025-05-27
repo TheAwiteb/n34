@@ -82,6 +82,7 @@ impl ContentDetails {
         tags.extend(self.hashtags.into_iter().map(Tag::hashtag));
         tags.extend(self.p_tagged.into_iter().map(Tag::public_key));
         tags.extend(self.quotes.into_iter().map(|(event_id, relay_url)| {
+            // TODO: Add the author public key if we know it
             Tag::from_standardized(TagStandard::Quote {
                 event_id,
                 relay_url,
@@ -281,16 +282,10 @@ impl NostrClient {
             .map(|e| e.pubkey))
     }
 
-    /// Adds read relays from the user to the given vector of relays.
-    pub async fn read_relays_from_user(
-        &self,
-        vector: Vec<RelayUrl>,
-        user: PublicKey,
-    ) -> Vec<RelayUrl> {
-        utils::add_read_relays(
-            vector,
-            self.user_relays_list(user).await.ok().flatten().as_ref(),
-        )
+    /// Returns the read relays of the given user if found, otherwise empty
+    /// vector
+    pub async fn read_relays_from_user(&self, user: PublicKey) -> Vec<RelayUrl> {
+        utils::add_read_relays(self.user_relays_list(user).await.ok().flatten().as_ref())
     }
 
     /// Parse the given content and returns the details that inside it
@@ -313,14 +308,14 @@ impl NostrClient {
 
         for (user, relays) in &p_tagged_users {
             self.add_relays(relays).await;
-            write_relays = self.read_relays_from_user(write_relays, *user).await
+            write_relays.extend(self.read_relays_from_user(*user).await);
         }
         for (event_id, relays) in &quotes {
             self.add_relays(relays).await;
             // Add the event author to the p-tagged users
             if let Ok(Some(author)) = self.event_author(*event_id).await {
                 p_tagged_users.push((author, Vec::new()));
-                write_relays = self.read_relays_from_user(write_relays, author).await;
+                write_relays.extend(self.read_relays_from_user(author).await);
             }
         }
 

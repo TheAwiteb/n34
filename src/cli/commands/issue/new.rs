@@ -103,14 +103,15 @@ impl CommandRunner for NewArgs {
         client.add_relays(&naddrs.extract_relays()).await;
 
         let relays_list = client.user_relays_list(user_pubk).await?;
-        let mut write_relays =
-            utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
-        write_relays.extend(
+        let mut write_relays = [
+            options.relays,
+            utils::add_write_relays(relays_list.as_ref()),
             client
                 .fetch_repos(&naddrs.into_coordinates())
                 .await?
                 .extract_relays(),
-        );
+        ]
+        .concat();
 
         let (subject, content) = self.issue_content()?;
         let content_details = client.parse_content(&content).await;
@@ -121,7 +122,7 @@ impl CommandRunner for NewArgs {
             future::join_all(
                 naddrs_iter
                     .clone()
-                    .map(|c| client.read_relays_from_user(Vec::new(), c.public_key)),
+                    .map(|c| client.read_relays_from_user(c.public_key)),
             )
             .await
             .into_iter()

@@ -84,8 +84,11 @@ impl CommandRunner for AnnounceArgs {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;
-        let mut write_relays =
-            utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
+        let mut write_relays = [
+            options.relays.clone(),
+            utils::add_write_relays(relays_list.as_ref()),
+        ]
+        .concat();
 
         if !self.maintainers.contains(&user_pubk) {
             self.maintainers.insert(0, user_pubk);
@@ -96,7 +99,7 @@ impl CommandRunner for AnnounceArgs {
             future::join_all(
                 self.maintainers
                     .iter()
-                    .map(|pkey| client.read_relays_from_user(Vec::new(), *pkey)),
+                    .map(|pkey| client.read_relays_from_user(*pkey)),
             )
             .await
             .into_iter()

@@ -140,8 +140,10 @@ pub fn repo_naddr(
     .map_err(N34Error::from)
 }
 
-/// Extends the given vector with write relays found in the event (if any).
-pub fn add_write_relays(mut vector: Vec<RelayUrl>, event: Option<&Event>) -> Vec<RelayUrl> {
+/// Extracts write relay URLs from an event if present, otherwise returns an
+/// empty vector.
+pub fn add_write_relays(event: Option<&Event>) -> Vec<RelayUrl> {
+    let mut vector = Vec::new();
     if let Some(event) = event {
         vector.extend(
             nip65::extract_owned_relay_list(event.clone())
@@ -151,8 +153,10 @@ pub fn add_write_relays(mut vector: Vec<RelayUrl>, event: Option<&Event>) -> Vec
     vector
 }
 
-/// Extends the given vector with read relays found in the event (if any).
-pub fn add_read_relays(mut vector: Vec<RelayUrl>, event: Option<&Event>) -> Vec<RelayUrl> {
+/// Extracts read relay URLs from an event if present, otherwise returns an
+/// empty vector.
+pub fn add_read_relays(event: Option<&Event>) -> Vec<RelayUrl> {
+    let mut vector = Vec::new();
     if let Some(event) = event {
         vector.extend(
             nip65::extract_owned_relay_list(event.clone())
