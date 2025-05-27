@@ -1,3 +1,15 @@
-# Send issues and patches to this repository. For more details about NIP-34,
-# see: <https://github.com/nostr-protocol/nips/blob/master/34.md>
+# This file contains NIP-19 `naddr` entities for repositories that accept this
+# project's issues and patches.
+#
+# The file acts as a **read-only reference** for retrieving repository relays
+# when embedded in an `naddr` and mentions those repositories when opening
+# patches or issues. Modifications here will not affect in the relays, as the
+# file is **explicitly untracked**. Its goal is to simplify contributions by
+# removing the need for manual address entry.
+#
+# Each entry must start with "naddr". Embedded relays are **strongly recommended**
+# to assist client-side discovery.
+#
+# Empty lines are ignored. Lines starting with "#" are treated as comments.
+
 naddr1qqpkuve5qgsqqqqqq9g9uljgjfcyd6dm4fegk8em2yfz0c3qp3tc6mntkrrhawgrqsqqqaueqyf8wumn8ghj7mn0wd68yt35wfejumnvqyxhwumn8ghj7mn0wvhxcmmvqy28wumn8ghj7mn0wd68ytn00p68ytnyv4mqwuj6xc
