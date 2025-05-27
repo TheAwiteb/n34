@@ -192,9 +192,9 @@ impl CommandRunner for ReplyArgs {
             root.as_ref(),
             repos.first().and_then(|r| r.relays.first()).cloned(),
         )
+        .dedup_tags()
         .pow(options.pow)
         .tags(content_details.into_tags())
-        .tag(Tag::public_key(reply_to.pubkey))
         .build(user_pubk);
 
         let event_id = event.id.expect("There is an id");

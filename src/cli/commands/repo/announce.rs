@@ -115,6 +115,7 @@ impl CommandRunner for AnnounceArgs {
             self.label.into_iter().map(utils::str_trim).collect(),
             self.force_id,
         )?
+        .dedup_tags()
         .pow(options.pow)
         .build(user_pubk);
 

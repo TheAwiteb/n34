@@ -138,6 +138,7 @@ impl CommandRunner for NewArgs {
             subject,
             self.label,
         )?
+        .dedup_tags()
         .pow(options.pow)
         .tags(content_details.into_tags())
         // p-tag the reset of the reposotoies owners

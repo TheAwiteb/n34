@@ -102,6 +102,7 @@ impl EventBuilder {
                 euc: None,
                 maintainers,
             })?
+            .dedup_tags()
             .tags(labels.into_iter().map(Tag::hashtag)),
         )
     }
