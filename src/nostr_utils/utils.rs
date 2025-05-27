@@ -126,9 +126,13 @@ pub fn new_nevent(event_id: EventId, relays: &[RelayUrl]) -> N34Result<String> {
 
 /// Creates a NIP-19 naddr string for a git repository announcement and up to 3
 /// unique relay URLs.
-pub fn repo_naddr(pubk: PublicKey, relays: &[RelayUrl]) -> N34Result<String> {
+pub fn repo_naddr(
+    repo_id: impl Into<String>,
+    pubk: PublicKey,
+    relays: &[RelayUrl],
+) -> N34Result<String> {
     Nip19Coordinate::new(
-        Coordinate::new(Kind::GitRepoAnnouncement, pubk),
+        Coordinate::new(Kind::GitRepoAnnouncement, pubk).identifier(repo_id),
         dedup(relays.iter().cloned()).iter().take(3),
     )
     .expect("Valid relays")
