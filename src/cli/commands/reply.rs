@@ -19,7 +19,7 @@ use std::{fs, str::FromStr};
 use clap::{ArgGroup, Args};
 use futures::future;
 use nostr::{
-    event::{Event, EventBuilder, EventId, Kind, Tag},
+    event::{Event, EventBuilder, EventId, Kind},
     filter::Filter,
     nips::{
         nip01::{Coordinate, Metadata},
