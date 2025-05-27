@@ -16,12 +16,20 @@
 
 
 use clap::{ArgGroup, Args};
-use nostr::{event::EventBuilder, nips::nip19::Nip19Coordinate};
+use futures::future;
+use nostr::{
+    event::{EventBuilder, Tag},
+    nips::nip19::Nip19Coordinate,
+};
 
 use crate::{
     cli::{CliOptions, CommandRunner, parsers},
     error::N34Result,
-    nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement, utils},
+    nostr_utils::{
+        NostrClient,
+        traits::{NaddrsUtils, NewGitRepositoryAnnouncement, ReposUtils},
+        utils,
+    },
 };
 
 
@@ -44,7 +52,7 @@ pub struct NewArgs {
     ///
     /// If not provided, `n34` will look for the `nostr-address` file.
     #[arg(value_name = "NADDR-OR-NIP05", long = "repo", value_parser = parsers::repo_naddr)]
-    naddr:   Option<Nip19Coordinate>,
+    naddrs:  Option<Vec<Nip19Coordinate>>,
     /// Markdown content for the issue. Cannot be used together with the
     /// `--editor` flag.
     #[arg(short, long)]
@@ -89,24 +97,54 @@ impl CommandRunner for NewArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
-        let naddr = utils::naddr_or_file(self.naddr.clone(), &utils::nostr_address_path()?)?;
+        let naddrs = utils::naddrs_or_file(self.naddrs.clone(), &utils::nostr_address_path()?)?;
+        let mut naddrs_iter = naddrs.clone().into_iter();
 
-        client.add_relays(&naddr.relays).await;
+        client.add_relays(&naddrs.extract_relays()).await;
 
         let relays_list = client.user_relays_list(user_pubk).await?;
         let mut write_relays =
             utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
-        write_relays.extend(client.fetch_repo(&naddr.coordinate).await?.relays);
+        write_relays.extend(
+            client
+                .fetch_repos(&naddrs.into_coordinates())
+                .await?
+                .extract_relays(),
+        );
 
         let (subject, content) = self.issue_content()?;
         let content_details = client.parse_content(&content).await;
         write_relays.extend(content_details.write_relays.clone());
 
-        let event =
-            EventBuilder::new_git_issue(naddr.coordinate.clone(), content, subject, self.label)?
-                .tags(content_details.into_tags())
-                .pow(options.pow)
-                .build(user_pubk);
+        // Include read relays for each repository owner (if found)
+        write_relays.extend(
+            future::join_all(
+                naddrs_iter
+                    .clone()
+                    .map(|c| client.read_relays_from_user(Vec::new(), c.public_key)),
+            )
+            .await
+            .into_iter()
+            .flatten(),
+        );
+
+        let event = EventBuilder::new_git_issue(
+            naddrs_iter
+                .next()
+                .expect("There is at least one address")
+                .coordinate
+                .clone(),
+            content,
+            subject,
+            self.label,
+        )?
+        .pow(options.pow)
+        .tags(content_details.into_tags())
+        // p-tag the reset of the reposotoies owners
+        .tags(naddrs_iter.clone().map(|n| Tag::public_key(n.public_key)))
+        // a-tag the reset of the reposotoies
+        .tags(naddrs_iter.map(|n| Tag::coordinate(n.coordinate, n.relays.first().cloned())))
+        .build(user_pubk);
         let event_id = event.id.expect("There is an id");
 
         tracing::trace!(relays = ?write_relays, "Write relays list");

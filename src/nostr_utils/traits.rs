@@ -20,6 +20,7 @@ use nostr::{
     key::PublicKey,
     nips::{
         nip01::Coordinate,
+        nip19::Nip19Coordinate,
         nip21::Nip21,
         nip34::{GitIssue, GitRepositoryAnnouncement},
     },
@@ -162,5 +163,28 @@ impl Token<'_> {
             Token::Hashtag(tag) => Some(tag.trim().to_owned()),
             _ => None,
         }
+    }
+}
+
+/// Utility functions for working with lists of NIP-19 coordinates
+#[easy_ext::ext(NaddrsUtils)]
+impl Vec<Nip19Coordinate> {
+    /// Converts these coordinate addresses to basic coordinates
+    pub fn into_coordinates(self) -> Vec<Coordinate> {
+        self.into_iter().map(|n| n.coordinate).collect()
+    }
+
+    /// Extracts all relay URLs from these coordinates
+    pub fn extract_relays(&self) -> Vec<RelayUrl> {
+        self.iter().flat_map(|n| n.relays.clone()).collect()
+    }
+}
+
+/// Utility functions for working with lists of repository announcement
+#[easy_ext::ext(ReposUtils)]
+impl Vec<GitRepositoryAnnouncement> {
+    /// Extracts all relay URLs from these reposotoies
+    pub fn extract_relays(&self) -> Vec<RelayUrl> {
+        self.iter().flat_map(|n| n.relays.clone()).collect()
     }
 }

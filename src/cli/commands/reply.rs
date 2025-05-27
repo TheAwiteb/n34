@@ -17,6 +17,7 @@
 use std::{fs, str::FromStr};
 
 use clap::{ArgGroup, Args};
+use futures::future;
 use nostr::{
     event::{Event, EventBuilder, EventId, Kind, Tag},
     filter::Filter,
@@ -31,7 +32,11 @@ use super::{CliOptions, CommandRunner};
 use crate::{
     cli::parsers,
     error::{N34Error, N34Result},
-    nostr_utils::{NostrClient, utils},
+    nostr_utils::{
+        NostrClient,
+        traits::{NaddrsUtils, ReposUtils},
+        utils,
+    },
 };
 
 /// Length of a Nostr npub (public key) in characters.
@@ -101,7 +106,7 @@ pub struct ReplyArgs {
     /// If not provided, `n34` will look for the `nostr-address` file and if not
     /// found, will get it from the root event if found.
     #[arg(value_name = "NADDR-OR-NIP05", long = "repo", value_parser = parsers::repo_naddr)]
-    naddr:    Option<Nip19Coordinate>,
+    naddrs:   Option<Vec<Nip19Coordinate>>,
     /// The comment (cannot be used with --editor)
     #[arg(short, long)]
     comment:  Option<String>,
@@ -116,13 +121,13 @@ impl CommandRunner for ReplyArgs {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
 
-        let repo_naddr = if let Some(naddr) = self.naddr {
-            client.add_relays(&naddr.relays).await;
-            Some(naddr.coordinate)
+        let repo_naddrs = if let Some(naddrs) = self.naddrs {
+            client.add_relays(&naddrs.extract_relays()).await;
+            Some(naddrs)
         } else if fs::exists(&nostr_address_path).is_ok() {
-            let naddr = utils::naddr_or_file(None, &nostr_address_path)?;
-            client.add_relays(&naddr.relays).await;
-            Some(naddr.coordinate)
+            let naddrs = utils::naddrs_or_file(None, &nostr_address_path)?;
+            client.add_relays(&naddrs.extract_relays()).await;
+            Some(naddrs)
         } else {
             None
         };
@@ -139,16 +144,28 @@ impl CommandRunner for ReplyArgs {
             .ok_or(N34Error::EventNotFound)?;
         let root = client.find_root(reply_to.clone()).await?;
 
-        let repo_naddr = if let Some(naddr) = repo_naddr {
-            naddr
+        let repos_coordinate = if let Some(naddrs) = repo_naddrs {
+            naddrs.into_coordinates()
         } else if let Some(ref root_event) = root {
-            naddr_from_root(root_event)?
+            coordinates_from_root(root_event)?
         } else {
             return Err(N34Error::NotFoundRepo);
         };
 
-        let repo = client.fetch_repo(&repo_naddr).await?;
-        write_relays.extend(repo.relays.clone());
+        let repos = client.fetch_repos(&repos_coordinate).await?;
+        // Merge repository announcement relays into write relays
+        write_relays.extend(repos.extract_relays());
+        // Include read relays for each repository owner (if found)
+        write_relays.extend(
+            future::join_all(
+                repos_coordinate
+                    .iter()
+                    .map(|c| client.read_relays_from_user(Vec::new(), c.public_key)),
+            )
+            .await
+            .into_iter()
+            .flatten(),
+        );
 
         write_relays = client
             .read_relays_from_user(write_relays, reply_to.pubkey)
@@ -173,11 +190,11 @@ impl CommandRunner for ReplyArgs {
             content,
             &reply_to,
             root.as_ref(),
-            repo.relays.first().cloned(),
+            repos.first().and_then(|r| r.relays.first()).cloned(),
         )
-        .tag(Tag::public_key(repo_naddr.public_key))
-        .tags(content_details.into_tags())
         .pow(options.pow)
+        .tags(content_details.into_tags())
+        .tag(Tag::public_key(reply_to.pubkey))
         .build(user_pubk);
 
         let event_id = event.id.expect("There is an id");
@@ -245,15 +262,19 @@ async fn quote_reply_to_content(client: &NostrClient, quoted_event: &Event) -> S
 
 /// Gets the repository coordinate from a root Nostr event's tags.
 /// The event must contain a coordinate tag with GitRepoAnnouncement kind.
-fn naddr_from_root(root: &Event) -> N34Result<Coordinate> {
-    Ok(root
+fn coordinates_from_root(root: &Event) -> N34Result<Vec<Coordinate>> {
+    let coordinates: Vec<Coordinate> = root
         .tags
         .coordinates()
-        .find(|c| c.kind == Kind::GitRepoAnnouncement)
-        .ok_or_else(|| {
-            N34Error::InvalidEvent(
-                "The Git issue/patch does not specify a target repository".to_owned(),
-            )
-        })?
-        .clone())
+        .filter(|c| c.kind == Kind::GitRepoAnnouncement)
+        .cloned()
+        .collect();
+
+    if coordinates.is_empty() {
+        return Err(N34Error::InvalidEvent(
+            "The Git issue/patch does not specify a target repository".to_owned(),
+        ));
+    }
+
+    Ok(coordinates)
 }

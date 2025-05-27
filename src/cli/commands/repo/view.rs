@@ -22,7 +22,7 @@ use nostr::nips::nip19::Nip19Coordinate;
 use crate::{
     cli::{CliOptions, CommandRunner, parsers},
     error::N34Result,
-    nostr_utils::{NostrClient, utils},
+    nostr_utils::{NostrClient, traits::NaddrsUtils, utils},
 };
 
 /// Arguments for the `repo view` command
@@ -33,46 +33,51 @@ pub struct ViewArgs {
     ///
     /// If not provided, `n34` will look for the `nostr-address` file.
     #[arg(value_name = "NADDR-OR-NIP05", long = "repo", value_parser = parsers::repo_naddr)]
-    naddr: Option<Nip19Coordinate>,
+    naddrs: Option<Vec<Nip19Coordinate>>,
 }
 
 impl CommandRunner for ViewArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         // FIXME: The signer is not required here
 
-        let naddr = utils::naddr_or_file(self.naddr, &utils::nostr_address_path()?)?;
+        let naddrs = utils::naddrs_or_file(self.naddrs, &utils::nostr_address_path()?)?;
         let client = NostrClient::init(&options).await;
-        client.add_relays(&naddr.relays).await;
+        client.add_relays(&naddrs.extract_relays()).await;
 
-        let repo = client.fetch_repo(&naddr.coordinate).await?;
-        let mut msg = format!("ID: {}", repo.id);
+        let repos = client.fetch_repos(&naddrs.into_coordinates()).await?;
+        let mut repos_details: Vec<String> = Vec::new();
 
-        if let Some(name) = repo.name {
-            msg.push_str(&format!("\nName: {name}"));
-        }
-        if let Some(desc) = repo.description {
-            msg.push_str(&format!("\nDescription: {desc}"));
-        }
-        if !repo.web.is_empty() {
-            msg.push_str(&format!("\nWebpages:\n{}", format_list(repo.web)));
-        }
-        if !repo.clone.is_empty() {
-            msg.push_str(&format!("\nClone urls:\n{}", format_list(repo.clone)));
-        }
-        if !repo.relays.is_empty() {
-            msg.push_str(&format!("\nRelays:\n{}", format_list(repo.relays)));
-        }
-        if let Some(euc) = repo.euc {
-            msg.push_str(&format!("\nEarliest unique commit: {euc}"));
-        }
-        if !repo.maintainers.is_empty() {
-            msg.push_str(&format!(
-                "\nMaintainers:\n{}",
-                format_list(repo.maintainers)
-            ));
+        for repo in repos {
+            let mut repo_details = format!("ID: {}", repo.id);
+
+            if let Some(name) = repo.name {
+                repo_details.push_str(&format!("\nName: {name}"));
+            }
+            if let Some(desc) = repo.description {
+                repo_details.push_str(&format!("\nDescription: {desc}"));
+            }
+            if !repo.web.is_empty() {
+                repo_details.push_str(&format!("\nWebpages:\n{}", format_list(repo.web)));
+            }
+            if !repo.clone.is_empty() {
+                repo_details.push_str(&format!("\nClone urls:\n{}", format_list(repo.clone)));
+            }
+            if !repo.relays.is_empty() {
+                repo_details.push_str(&format!("\nRelays:\n{}", format_list(repo.relays)));
+            }
+            if let Some(euc) = repo.euc {
+                repo_details.push_str(&format!("\nEarliest unique commit: {euc}"));
+            }
+            if !repo.maintainers.is_empty() {
+                repo_details.push_str(&format!(
+                    "\nMaintainers:\n{}",
+                    format_list(repo.maintainers)
+                ));
+            }
+            repos_details.push(repo_details);
         }
 
-        println!("{msg}");
+        println!("{}", repos_details.join("\n----------\n"));
         Ok(())
     }
 }

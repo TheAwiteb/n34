@@ -220,21 +220,12 @@ pub fn nostr_address_path() -> std::io::Result<PathBuf> {
 
 /// If the given coordinate is Some, return it. Otherwise, try to read and parse
 /// the first non-comment line from the `nostr-address` file.
-pub fn naddr_or_file(
-    naddr: Option<Nip19Coordinate>,
+pub fn naddrs_or_file(
+    naddrs: Option<Vec<Nip19Coordinate>>,
     address_file_path: &Path,
-) -> N34Result<Nip19Coordinate> {
-    if let Some(naddr) = naddr {
-        return Ok(naddr);
+) -> N34Result<Vec<Nip19Coordinate>> {
+    if let Some(naddrs) = naddrs {
+        return Ok(naddrs);
     }
-
-    parsers::repo_naddr(
-        fs::read_to_string(address_file_path)
-            .map_err(N34Error::CanNotReadNostrAddressFile)?
-            .split("\n")
-            .find(|line| !line.starts_with("#") && !line.trim().is_empty())
-            .ok_or(N34Error::EmptyNostrAddressFile)?
-            .trim(),
-    )
-    .map_err(N34Error::InvalidNostrAddressFileContent)
+    parsers::parse_nostr_address_file(address_file_path)
 }

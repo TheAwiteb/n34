@@ -195,20 +195,27 @@ impl NostrClient {
             .first_owned())
     }
 
-    /// Try to fetch a repository and returns it
-    pub async fn fetch_repo(
+    /// Try to fetch the reposotoies and returns them
+    pub async fn fetch_repos(
         &self,
-        repo_naddr: &Coordinate,
-    ) -> N34Result<GitRepositoryAnnouncement> {
-        let filter = Filter::new()
-            .author(repo_naddr.public_key)
-            .kind(Kind::GitRepoAnnouncement)
-            .identifier(&repo_naddr.identifier);
-
-        self.fetch_event(filter)
-            .await?
-            .map(|e| utils::event_into_repo(e, &repo_naddr.identifier))
-            .ok_or(N34Error::NotFoundRepo)
+        repo_naddrs: &[Coordinate],
+    ) -> N34Result<Vec<GitRepositoryAnnouncement>> {
+        future::join_all(repo_naddrs.iter().map(|c| {
+            async {
+                self.fetch_event(
+                    Filter::new()
+                        .author(c.public_key)
+                        .identifier(&c.identifier)
+                        .kind(Kind::GitRepoAnnouncement),
+                )
+                .await?
+                .map(|e| utils::event_into_repo(e, &c.identifier))
+                .ok_or(N34Error::NotFoundRepo)
+            }
+        }))
+        .await
+        .into_iter()
+        .collect()
     }
 
     /// Finds the root issue or patch for a given event. If the event is already

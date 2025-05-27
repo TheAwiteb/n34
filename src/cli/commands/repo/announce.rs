@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::fs;
+use std::{fs, io::Write};
 
 use clap::Args;
+use futures::future;
 use nostr::{event::EventBuilder, key::PublicKey, types::Url};
 
 use crate::{
@@ -25,6 +26,22 @@ use crate::{
     nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement, utils},
 };
 
+/// Header written to new `nostr-address` files. Contains two trailing newline
+/// for formatting.
+const NOSTR_ADDRESS_FILE_HEADER: &str = r##"# This file contains NIP-19 `naddr` entities for repositories that accept this
+# project's issues and patches.
+#
+# The file acts as a **read-only reference** for retrieving repository relays
+# when embedded in an `naddr` and mentions those repositories when opening
+# patches or issues. Modifications here will not affect in the relays, as the
+# file is **explicitly untracked**. Its goal is to simplify contributions by
+# removing the need for manual address entry.
+#
+# Each entry must start with "naddr". Embedded relays are **strongly recommended**
+# to assist client-side discovery.
+#
+# Empty lines are ignored. Lines starting with "#" are treated as comments.
+"##;
 
 /// Arguments for the `repo announce` command
 #[derive(Args, Debug)]
@@ -66,11 +83,24 @@ impl CommandRunner for AnnounceArgs {
         let client = NostrClient::init(&options).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;
-        let write_relays = utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
+        let mut write_relays =
+            utils::add_write_relays(options.relays.clone(), relays_list.as_ref());
 
         if !self.maintainers.contains(&user_pubk) {
             self.maintainers.insert(0, user_pubk);
         }
+
+        // Include read relays for each maintainer (if found)
+        write_relays.extend(
+            future::join_all(
+                self.maintainers
+                    .iter()
+                    .map(|pkey| client.read_relays_from_user(Vec::new(), *pkey)),
+            )
+            .await
+            .into_iter()
+            .flatten(),
+        );
 
         let event = EventBuilder::new_git_repo(
             self.repo_id,
@@ -90,9 +120,21 @@ impl CommandRunner for AnnounceArgs {
         let naddr = utils::repo_naddr(user_pubk, &options.relays)?;
 
         if self.address_file {
-            let path = std::env::current_dir()?.join(NOSTR_ADDRESS_FILE);
-            tracing::info!("Create the `nostr-address` file at `{}`", path.display());
-            fs::write(path, &naddr)?;
+            let address_path = std::env::current_dir()?.join(NOSTR_ADDRESS_FILE);
+            if !address_path.exists() {
+                tracing::info!(
+                    "Creating new address file: '{NOSTR_ADDRESS_FILE}' at path '{}' with default \
+                     header",
+                    address_path.display()
+                );
+                fs::write(&address_path, NOSTR_ADDRESS_FILE_HEADER)?;
+            }
+
+            let mut file = fs::OpenOptions::new().append(true).open(&address_path)?;
+
+            tracing::info!("Appending naddr '{naddr}' to address file: '{NOSTR_ADDRESS_FILE}'",);
+            file.write_all(naddr.as_bytes())?;
+            tracing::info!("Successfully wrote naddr to address file");
         }
 
         client

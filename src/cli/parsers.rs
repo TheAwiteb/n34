@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+use std::{fs, path::Path};
+
 use nostr::{
     Kind,
     nips::{
@@ -23,6 +25,8 @@ use nostr::{
     },
 };
 use tokio::runtime::Handle;
+
+use crate::error::{N34Error, N34Result};
 
 fn parse_nip5_repo(nip5: &str, repo_id: &str) -> Result<Nip19Coordinate, String> {
     let (username, domain) = nip5.split_once("@").unwrap_or(("_", nip5));
@@ -42,6 +46,34 @@ fn parse_nip5_repo(nip5: &str, repo_id: &str) -> Result<Nip19Coordinate, String>
     .expect("The relays is `RelayUrl`"))
 }
 
+fn parse_repo_naddr(repo_naddr: &str) -> Result<Nip19Coordinate, String> {
+    let naddr = Nip19Coordinate::from_bech32(repo_naddr).map_err(|err| err.to_string())?;
+    if naddr.relays.is_empty() {
+        tracing::warn!("The repository naddr does not contain any relay hints");
+    }
+
+    (naddr.kind == Kind::GitRepoAnnouncement)
+        .then_some(naddr)
+        .ok_or_else(|| "Invalid naddr: must be of kind 30617 (GitRepoAnnouncement)".to_owned())
+}
+
+/// Parses a nostr-address file into a NIP-19 coordinates. Expects the file to
+/// contain a repository announcements.
+pub fn parse_nostr_address_file(file_path: &Path) -> N34Result<Vec<Nip19Coordinate>> {
+    let addresses = fs::read_to_string(file_path)
+        .map_err(N34Error::CanNotReadNostrAddressFile)?
+        .split("\n")
+        .filter_map(|line| {
+            (!line.starts_with("#") && !line.trim().is_empty())
+                .then_some(parse_repo_naddr(line).map_err(N34Error::InvalidNostrAddressFileContent))
+        })
+        .collect::<N34Result<Vec<Nip19Coordinate>>>()?;
+    if addresses.is_empty() {
+        return Err(N34Error::EmptyNostrAddressFile);
+    }
+    Ok(addresses)
+}
+
 /// Parses a Git repository address which can be either:
 /// - A bech32-encoded naddr (e.g. "naddr1...") for Git repository announcements
 ///   (kind 30617)
@@ -50,20 +82,19 @@ fn parse_nip5_repo(nip5: &str, repo_id: &str) -> Result<Nip19Coordinate, String>
 ///
 /// Returns an error for invalid formats, failed bech32 decoding, wrong event
 /// kind.
-pub fn repo_naddr(repo_address: &str) -> Result<Nip19Coordinate, String> {
-    if repo_address.contains("/") {
-        let (nip5, repo_id) = repo_address.split_once("/").expect("There is a `/`");
-        return parse_nip5_repo(nip5, repo_id);
-    }
+pub fn repo_naddr(repo: &str) -> Result<Nip19Coordinate, String> {
+    let repo = repo.trim();
 
-    let naddr = Nip19Coordinate::from_bech32(repo_address).map_err(|err| err.to_string())?;
-    if naddr.kind != Kind::GitRepoAnnouncement {
-        return Err("The naddr is not repo announcement address".to_owned());
+    if repo.contains("/") {
+        let (nip5, repo_id) = repo.split_once("/").expect("There is a `/`");
+        parse_nip5_repo(nip5, repo_id)
+    } else if repo.starts_with("naddr1") {
+        parse_repo_naddr(repo)
+    } else {
+        Err(
+            "Invalid repository address format. It can be A NIP-05 identifier with repository ID \
+             in format `<nip5>/<repo_id>` or A valid naddr1 string (NIP-19)"
+                .to_owned(),
+        )
     }
-
-    if naddr.relays.is_empty() {
-        tracing::warn!("The repository naddr does not contain any relay hints");
-    }
-
-    Ok(naddr)
 }
