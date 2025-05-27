@@ -162,18 +162,24 @@ impl NostrClient {
         relays_list: Option<&Event>,
         relays: &[RelayUrl],
     ) -> N34Result<Vec<RelayUrl>> {
-        event.ensure_id();
         self.add_relays(relays).await;
-        let event_id = event.id.expect("It's there");
+        let event_id = event.id();
 
-        if let Some(event) = relays_list {
-            let _ = self.client.send_event_to(relays, event).await;
-        }
-
-        let result = self
-            .client
-            .send_event_to(relays, &event.sign(&self.client.signer().await?).await?)
-            .await?;
+        let (result, ..) = futures::join!(
+            async {
+                N34Result::Ok(
+                    self.client
+                        .send_event_to(relays, &event.sign(&self.client.signer().await?).await?)
+                        .await?,
+                )
+            },
+            async {
+                if let Some(event) = relays_list {
+                    let _ = self.client.send_event_to(relays, event).await;
+                }
+            }
+        );
+        let result = result?;
 
         for relay in &result.success {
             tracing::info!(event_id = %event_id, relay = %relay, "Event sent successfully");
