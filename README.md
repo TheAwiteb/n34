@@ -28,7 +28,7 @@ details, see the following section.
 - [X] Proof of Work ([NIP-13])
 - [X] `nostr:` URI scheme, in the issue/reply content ([NIP-21])
 - [ ] Code Snippets ([NIP-C0])
-- [ ] In device relays and repos bookmark
+- [X] In device relays and repos bookmark (`sets` command)
 
 
 ## Why Nostr?
