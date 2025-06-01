@@ -19,7 +19,8 @@ tag_change_body := '''{% for group, commits in commits | group_by(attribute="gro
 {{ group | upper_first }}
 
 {% for commit in commits %}
-- {{ commit.message | split(pat="\n") | first | split(pat=":") | slice(start=1) | join(sep=":") | upper_first | trim }} - (by {{ commit.author.name}}){% endfor %}{% endfor %}'''
+- {{ commit.message | split(pat="\n") | first | split(pat=":") | slice(start=1) | join(sep=":") | upper_first | trim }} - by {{ commit.author.name}}{% endfor %}{% endfor %}
+'''
 
 export TZ := "UTC"
 
@@ -64,7 +65,7 @@ changelog:
 [script]
 release version:
     set -e
-    TAG_MSG="Version {{ version }}\n\n$(git-cliff --strip all --unreleased --body '{{ tag_change_body }}')\n"
+    TAG_MSG="Version {{ version }}$(git-cliff --strip all --unreleased --body '{{ tag_change_body }}')"
     sed -i "s/^version\s*= \".*\"/version = \"{{ version }}\"/" ./Cargo.toml
     taplo fmt --config ./.taplo.toml ./Cargo.toml
     {{ JUST_EXECUTABLE }} ci
