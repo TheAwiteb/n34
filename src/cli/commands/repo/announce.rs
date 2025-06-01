@@ -21,7 +21,7 @@ use futures::future;
 use nostr::{event::EventBuilder, key::PublicKey, types::Url};
 
 use crate::{
-    cli::{CliOptions, CommandRunner, NOSTR_ADDRESS_FILE},
+    cli::{CliConfig, CliOptions, CommandRunner, NOSTR_ADDRESS_FILE, types::RelayOrSetVecExt},
     error::N34Result,
     nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement, utils},
 };
@@ -81,7 +81,9 @@ impl CommandRunner for AnnounceArgs {
     async fn run(mut self, options: CliOptions) -> N34Result<()> {
         options.ensure_relays()?;
 
-        let client = NostrClient::init(&options).await;
+        let config = CliConfig::load_toml(&options.config_path)?;
+        let relays = options.relays.clone().flat_relays(&config.sets)?;
+        let client = NostrClient::init(&options, &relays).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;
 
@@ -89,14 +91,14 @@ impl CommandRunner for AnnounceArgs {
             self.maintainers.insert(0, user_pubk);
         }
 
-        let naddr = utils::repo_naddr(&self.repo_id, user_pubk, &options.relays)?;
+        let naddr = utils::repo_naddr(&self.repo_id, user_pubk, &relays)?;
         let event = EventBuilder::new_git_repo(
             self.repo_id,
             self.name.map(utils::str_trim),
             self.description.map(utils::str_trim),
             self.web,
             self.clone,
-            options.relays.clone(),
+            relays.clone(),
             self.maintainers.clone(),
             self.label.into_iter().map(utils::str_trim).collect(),
             self.force_id,
@@ -125,7 +127,7 @@ impl CommandRunner for AnnounceArgs {
         }
 
         let write_relays = [
-            options.relays.clone(),
+            relays,
             utils::add_write_relays(relays_list.as_ref()),
             // Include read relays for each maintainer (if found)
             future::join_all(

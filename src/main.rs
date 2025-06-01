@@ -61,7 +61,14 @@ fn set_log_level(verbosity: Verbosity) {
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    let cli = Cli::parse();
+    let cli = match cli::parsers::post_parse_cli(Cli::parse()) {
+        Ok(cli) => cli,
+        Err(err) => {
+            eprintln!("{err}");
+            return ExitCode::FAILURE;
+        }
+    };
+
     set_log_level(cli.verbosity);
 
     if let Err(err) = cli.run().await {

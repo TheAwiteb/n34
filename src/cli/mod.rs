@@ -15,16 +15,23 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 /// Commands module
-mod commands;
+pub mod commands;
+/// The CLI config
+pub mod config;
+/// Default lazy values for CLI arguments
+pub mod defaults;
 /// CLI arguments parsers
 pub mod parsers;
 /// CLI traits
-mod traits;
+pub mod traits;
+/// Common helper types used throughout the CLI.
+pub mod types;
 
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
 
 pub use self::commands::*;
+pub use self::config::*;
 use self::traits::CommandRunner;
 use crate::error::N34Result;
 

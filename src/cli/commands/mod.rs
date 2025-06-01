@@ -14,26 +14,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-
 /// `issue` subcommands
 mod issue;
 /// 'reply` command
 mod reply;
 /// `repo` subcommands
 mod repo;
-
+/// `sets` subcommands
+mod sets;
 
 use std::fmt;
+use std::path::PathBuf;
 
 use clap::{ArgGroup, Args, Parser};
 use nostr::key::{Keys, PublicKey, SecretKey};
-use nostr::types::RelayUrl;
 
 use self::issue::IssueSubcommands;
 use self::reply::ReplyArgs;
 use self::repo::RepoSubcommands;
+use self::sets::SetsSubcommands;
 use super::traits::CommandRunner;
+use super::types::RelayOrSet;
 use crate::error::{N34Error, N34Result};
+
+/// Default path used when no path is provided via command line arguments.
+///
+/// This is a workaround since Clap doesn't support lazy evaluation of defaults.
+pub const DEFAULT_FALLBACK_PATH: &str = "I_DO_NOT_KNOW_WHY_CLAP_DO_NOT_SUPPORT_LAZY_DEFAULT";
 
 // TODO: Make the `signer` group optional
 /// The command-line interface options
@@ -48,19 +55,29 @@ use crate::error::{N34Error, N34Result};
 pub struct CliOptions {
     /// Your Nostr secret key
     #[arg(short, long)]
-    pub secret_key: Option<SecretKey>,
+    pub secret_key:  Option<SecretKey>,
     /// Fallbacks relay to write and read from it. Multiple relays can be
     /// passed.
     #[arg(short, long)]
-    pub relays:     Vec<RelayUrl>,
+    pub relays:      Vec<RelayOrSet>,
     /// Proof of Work difficulty when creatring events
     #[arg(long, default_value_t = 0)]
-    pub pow:        u8,
+    pub pow:         u8,
+    /// Config path [default: `$XDG_CONFIG_HOME` or `$HOME/.config`]
+    #[arg(long, value_name = "PATH", default_value = DEFAULT_FALLBACK_PATH,
+         hide_default_value = true
+     )]
+    pub config_path: PathBuf,
 }
 
 /// N34 commands
 #[derive(Parser, Debug)]
 pub enum Commands {
+    /// Manage reposotoies and relays sets
+    Sets {
+        #[command(subcommand)]
+        subcommands: SetsSubcommands,
+    },
     /// Manage repositories
     Repo {
         #[command(subcommand)]
@@ -89,6 +106,7 @@ impl CommandRunner for Commands {
             Self::Repo { subcommands } => subcommands.run(options).await,
             Self::Issue { subcommands } => subcommands.run(options).await,
             Commands::Reply(args) => args.run(options).await,
+            Commands::Sets { subcommands } => subcommands.run(options).await,
         }
     }
 }

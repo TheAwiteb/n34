@@ -17,13 +17,15 @@
 
 use clap::{ArgGroup, Args};
 use futures::future;
-use nostr::{
-    event::{EventBuilder, Tag},
-    nips::nip19::Nip19Coordinate,
-};
+use nostr::event::{EventBuilder, Tag};
 
 use crate::{
-    cli::{CliOptions, CommandRunner, parsers},
+    cli::{
+        CliConfig,
+        CliOptions,
+        CommandRunner,
+        types::{NaddrOrSet, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+    },
     error::N34Result,
     nostr_utils::{
         NostrClient,
@@ -47,12 +49,12 @@ use crate::{
     )
 )]
 pub struct NewArgs {
-    /// Repository address in `naddr` format or `<nip5>/repo_id`. e.g.
-    /// `4rs.nl/n34` and `_@4rs.nl/n34`
+    /// Repository address in `naddr` format (`naddr1...`), NIP-05 format
+    /// (`4rs.nl/n34` or `_@4rs.nl/n34`), or a set name like `kernel`.
     ///
-    /// If not provided, `n34` will look for the `nostr-address` file.
-    #[arg(value_name = "NADDR-OR-NIP05", long = "repo", value_parser = parsers::repo_naddr)]
-    naddrs:  Option<Vec<Nip19Coordinate>>,
+    /// If omitted, looks for a `nostr-address` file.
+    #[arg(value_name = "NADDR-NIP05-OR-SET", long = "repo")]
+    naddrs:  Option<Vec<NaddrOrSet>>,
     /// Markdown content for the issue. Cannot be used together with the
     /// `--editor` flag.
     #[arg(short, long)]
@@ -95,9 +97,14 @@ impl NewArgs {
 
 impl CommandRunner for NewArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        let client = NostrClient::init(&options).await;
+        let config = CliConfig::load_toml(&options.config_path)?;
+        let naddrs = utils::naddrs_or_file(
+            self.naddrs.flat_naddrs(&config.sets)?,
+            &utils::nostr_address_path()?,
+        )?;
+        let relays = options.relays.clone().flat_relays(&config.sets)?;
+        let client = NostrClient::init(&options, &relays).await;
         let user_pubk = options.pubkey().await?;
-        let naddrs = utils::naddrs_or_file(self.naddrs.clone(), &utils::nostr_address_path()?)?;
         let mut naddrs_iter = naddrs.clone().into_iter();
 
         client.add_relays(&naddrs.extract_relays()).await;
@@ -128,7 +135,7 @@ impl CommandRunner for NewArgs {
         let event_id = event.id.expect("There is an id");
 
         let write_relays = [
-            options.relays,
+            relays,
             utils::add_write_relays(relays_list.as_ref()),
             client
                 .fetch_repos(&naddrs.into_coordinates())

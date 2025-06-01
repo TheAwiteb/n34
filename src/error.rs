@@ -19,6 +19,8 @@ use std::process::ExitCode;
 use nostr::event::builder::Error as EventBuilderError;
 use nostr_sdk::client::Error as ClientError;
 
+use crate::cli::ConfigError;
+
 pub type N34Result<T> = Result<T, N34Error>;
 
 /// N34 errors
@@ -26,6 +28,8 @@ pub type N34Result<T> = Result<T, N34Error>;
 pub enum N34Error {
     #[error("IO: {0}")]
     Io(#[from] std::io::Error),
+    #[error("{0}")]
+    Config(#[from] ConfigError),
     #[error("No editor specified in the `EDITOR` environment variable")]
     EditorNotFound,
     #[error("The file you edited is empty. Please save your changes before exiting the editor.")]
@@ -62,6 +66,19 @@ pub enum N34Error {
     InvalidNostrAddressFileContent(String),
     #[error("This command requires at least one relay, but none were provided")]
     EmptyRelays,
+    #[error(
+        "Invalid repository address. Expected one of these formats:\n- NIP-05 identifier with \
+         repository ID: `<user@domain.com>/<repo_id>`\n- Valid NIP-19 naddr string (starts with \
+         'naddr1...')\n- Existing set name (merges all repositories in set)\nError: No set named \
+         '{0}' exists."
+    )]
+    InvalidNaddrArg(String),
+    #[error(
+        "The set '{0}' doesn't contain any addresses. Use 'sets update' to add addresses to it."
+    )]
+    EmptySetNaddrs(String),
+    #[error("The set '{0}' doesn't contain any relays. Use 'sets update' to add addresses to it.")]
+    EmptySetRelays(String),
 }
 
 impl N34Error {

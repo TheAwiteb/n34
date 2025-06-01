@@ -18,35 +18,16 @@ use std::{fs, path::Path};
 
 use nostr::{
     Kind,
-    nips::{
-        self,
-        nip01::Coordinate,
-        nip19::{FromBech32, Nip19Coordinate},
-    },
+    nips::nip19::{FromBech32, Nip19Coordinate},
 };
-use tokio::runtime::Handle;
 
-use crate::error::{N34Error, N34Result};
+use super::Cli;
+use crate::{
+    cli::DEFAULT_FALLBACK_PATH,
+    error::{N34Error, N34Result},
+};
 
-fn parse_nip5_repo(nip5: &str, repo_id: &str) -> Result<Nip19Coordinate, String> {
-    let (username, domain) = nip5.split_once("@").unwrap_or(("_", nip5));
-
-    let nip5_profile = tokio::task::block_in_place(|| {
-        Handle::current().block_on(async {
-            nips::nip05::profile(format!("{username}@{domain}"), None)
-                .await
-                .map_err(|err| err.to_string())
-        })
-    })?;
-
-    Ok(Nip19Coordinate::new(
-        Coordinate::new(Kind::GitRepoAnnouncement, nip5_profile.public_key).identifier(repo_id),
-        nip5_profile.relays,
-    )
-    .expect("The relays is `RelayUrl`"))
-}
-
-fn parse_repo_naddr(repo_naddr: &str) -> Result<Nip19Coordinate, String> {
+pub fn parse_repo_naddr(repo_naddr: &str) -> Result<Nip19Coordinate, String> {
     let naddr = Nip19Coordinate::from_bech32(repo_naddr).map_err(|err| err.to_string())?;
     if naddr.relays.is_empty() {
         tracing::warn!("The repository naddr does not contain any relay hints");
@@ -74,27 +55,11 @@ pub fn parse_nostr_address_file(file_path: &Path) -> N34Result<Vec<Nip19Coordina
     Ok(addresses)
 }
 
-/// Parses a Git repository address which can be either:
-/// - A bech32-encoded naddr (e.g. "naddr1...") for Git repository announcements
-///   (kind 30617)
-/// - A NIP-05 identifier with repository ID (e.g. "4rs.nl/n34" or
-///   "_@4rs.nl/n34")
-///
-/// Returns an error for invalid formats, failed bech32 decoding, wrong event
-/// kind.
-pub fn repo_naddr(repo: &str) -> Result<Nip19Coordinate, String> {
-    let repo = repo.trim().trim_start_matches("nostr:");
-
-    if repo.contains("/") {
-        let (nip5, repo_id) = repo.split_once("/").expect("There is a `/`");
-        parse_nip5_repo(nip5, repo_id)
-    } else if repo.starts_with("naddr1") {
-        parse_repo_naddr(repo)
-    } else {
-        Err(
-            "Invalid repository address format. It can be A NIP-05 identifier with repository ID \
-             in format `<nip5>/<repo_id>` or A valid naddr1 string (NIP-19)"
-                .to_owned(),
-        )
+/// Post parse cli arguments
+pub fn post_parse_cli(mut cli: Cli) -> N34Result<Cli> {
+    if let Some(DEFAULT_FALLBACK_PATH) = cli.options.config_path.to_str() {
+        cli.options.config_path = super::defaults::config_path()?;
     }
+
+    Ok(cli)
 }

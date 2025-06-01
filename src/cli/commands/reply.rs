@@ -23,14 +23,17 @@ use nostr::{
     filter::Filter,
     nips::{
         nip01::{Coordinate, Metadata},
-        nip19::{self, FromBech32, Nip19Coordinate, ToBech32},
+        nip19::{self, FromBech32, ToBech32},
     },
     types::RelayUrl,
 };
 
 use super::{CliOptions, CommandRunner};
 use crate::{
-    cli::parsers,
+    cli::{
+        CliConfig,
+        types::{NaddrOrSet, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+    },
     error::{N34Error, N34Result},
     nostr_utils::{
         NostrClient,
@@ -101,13 +104,12 @@ pub struct ReplyArgs {
     /// Quote the replied-to event in the editor
     #[arg(long)]
     quote_to: bool,
-    /// Repository address in `naddr` format or `<nip5>/repo_id`. e.g.
-    /// `4rs.nl/n34` and `_@4rs.nl/n34`
+    /// Repository address in `naddr` format (`naddr1...`), NIP-05 format
+    /// (`4rs.nl/n34` or `_@4rs.nl/n34`), or a set name like `kernel`.
     ///
-    /// If not provided, `n34` will look for the `nostr-address` file and if not
-    /// found, will get it from the root event if found.
-    #[arg(value_name = "NADDR-OR-NIP05", long = "repo", value_parser = parsers::repo_naddr)]
-    naddrs:   Option<Vec<Nip19Coordinate>>,
+    /// If omitted, looks for a `nostr-address` file.
+    #[arg(value_name = "NADDR-NIP05-OR-SET", long = "repo")]
+    naddrs:   Option<Vec<NaddrOrSet>>,
     /// The comment (cannot be used with --editor)
     #[arg(short, long)]
     comment:  Option<String>,
@@ -119,10 +121,12 @@ pub struct ReplyArgs {
 impl CommandRunner for ReplyArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         let nostr_address_path = utils::nostr_address_path()?;
-        let client = NostrClient::init(&options).await;
+        let config = CliConfig::load_toml(&options.config_path)?;
+        let relays = options.relays.clone().flat_relays(&config.sets)?;
+        let client = NostrClient::init(&options, &relays).await;
         let user_pubk = options.pubkey().await?;
 
-        let repo_naddrs = if let Some(naddrs) = self.naddrs {
+        let repo_naddrs = if let Some(naddrs) = self.naddrs.flat_naddrs(&config.sets)? {
             client.add_relays(&naddrs.extract_relays()).await;
             Some(naddrs)
         } else if fs::exists(&nostr_address_path).is_ok() {
@@ -176,7 +180,7 @@ impl CommandRunner for ReplyArgs {
         let author_read_relays =
             utils::add_read_relays(client.user_relays_list(user_pubk).await?.as_ref());
         let write_relays = [
-            options.relays,
+            relays,
             utils::add_write_relays(relays_list.as_ref()),
             // Merge repository announcement relays into write relays
             repos.extract_relays(),

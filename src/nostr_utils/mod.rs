@@ -102,7 +102,7 @@ impl NostrClient {
 
     /// Initializes a new [`NostrClient`] instance and connects to the specified
     /// relays.
-    pub async fn init(options: &CliOptions) -> Self {
+    pub async fn init(options: &CliOptions, relays: &[RelayUrl]) -> Self {
         let client = Self::new(
             Client::builder()
                 .signer(Keys::new(
@@ -115,7 +115,7 @@ impl NostrClient {
                 .build(),
         );
 
-        client.add_relays(&options.relays).await;
+        client.add_relays(relays).await;
         client
     }
 

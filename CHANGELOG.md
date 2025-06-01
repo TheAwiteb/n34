@@ -15,10 +15,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Read the `nostr-address` file in `issue new` command - by Awiteb
 - Read the `nostr-address` file in `reply` command - by Awiteb
 - A `--quote-to` flag to quote the replied to content in the editor - by Awiteb
+- Enter repository as nip5 - by Awiteb
+- Make the relays list optional - by Awiteb
+- Events and naddrs can starts with `nostr:` - by Awiteb
+- Support relays and naddrs sets - by Awiteb
 
 ### Dependencies
 
 - Add `chrono@0.4.41` to the dependencies - by Awiteb
+- Enable `nip05` feature of `nostr` crate - by Awiteb
+- Add `serde@1.0.219`, `dirs@6.0.0` and `toml@0.8.22` - by Awiteb
+
+### Fixed
+
+- Create a valid naddr string - by Awiteb
+
+### Refactor
+
+- Support more than one naddr instead of one - by Awiteb
 
 ## [0.1.0] - 2025-05-21
 
