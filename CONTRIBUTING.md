@@ -81,6 +81,9 @@ to their read relays, most tools handle this automatically.
 - For all other changes, use `chore`.
 - Add `!` to the subject if your patch contains a breacking change, e.g.
 `remove!: text` and `fix(reply)!: text`
+- Use the `--cover-letter` flag to include a cover letter with your patch. Describe the issue you’re addressing, whether it’s a one-line bug fix or a 5000-line new feature.
+- Specify the base commit for your patch using the `--base` flag.
+- First-time contributors: Review the [Submitting Patches guide](https://www.kernel.org/doc/html/latest/process/submitting-patches.html) before sending your patch.
 
 #### Code Style
 
