@@ -110,6 +110,9 @@ impl CommandRunner for NewArgs {
         client.add_relays(&naddrs.extract_relays()).await;
 
         let relays_list = client.user_relays_list(user_pubk).await?;
+        client
+            .add_relays(&utils::add_read_relays(relays_list.as_ref()))
+            .await;
 
         let (subject, content) = self.issue_content()?;
         let content_details = client.parse_content(&content).await;

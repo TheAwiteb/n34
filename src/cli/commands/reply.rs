@@ -101,6 +101,11 @@ impl CommandRunner for ReplyArgs {
         };
 
         client.add_relays(&self.to.relays).await;
+        let relays_list = client.user_relays_list(user_pubk).await?;
+        let author_read_relays =
+            utils::add_read_relays(client.user_relays_list(user_pubk).await?.as_ref());
+        client.add_relays(&author_read_relays).await;
+
 
         let reply_to = client
             .fetch_event(Filter::new().id(self.to.event_id))
@@ -139,9 +144,6 @@ impl CommandRunner for ReplyArgs {
         .build(user_pubk);
 
         let event_id = event.id.expect("There is an id");
-        let relays_list = client.user_relays_list(user_pubk).await?;
-        let author_read_relays =
-            utils::add_read_relays(client.user_relays_list(user_pubk).await?.as_ref());
         let write_relays = [
             relays,
             utils::add_write_relays(relays_list.as_ref()),

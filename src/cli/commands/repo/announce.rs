@@ -86,6 +86,9 @@ impl CommandRunner for AnnounceArgs {
         let client = NostrClient::init(&options, &relays).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;
+        client
+            .add_relays(&utils::add_read_relays(relays_list.as_ref()))
+            .await;
 
         if !self.maintainers.contains(&user_pubk) {
             self.maintainers.insert(0, user_pubk);
