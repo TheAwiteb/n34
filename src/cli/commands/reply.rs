@@ -14,16 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::{fs, str::FromStr};
+use std::fs;
 
 use clap::{ArgGroup, Args};
 use futures::future;
 use nostr::{
-    event::{Event, EventBuilder, EventId, Kind},
+    event::{Event, EventBuilder, Kind},
     filter::Filter,
     nips::{
         nip01::{Coordinate, Metadata},
-        nip19::{self, FromBech32, ToBech32},
+        nip19::ToBech32,
     },
     types::RelayUrl,
 };
@@ -32,7 +32,7 @@ use super::{CliOptions, CommandRunner};
 use crate::{
     cli::{
         CliConfig,
-        types::{NaddrOrSet, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+        types::{NaddrOrSet, NostrEvent, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
     },
     error::{N34Error, N34Result},
     nostr_utils::{
@@ -46,43 +46,6 @@ use crate::{
 const NPUB_LEN: usize = 63;
 /// The max date "9999-01-01 at 00:00 UTC"
 const MAX_DATE: i64 = 253370764800;
-
-/// Parses and represents a Nostr `nevent1` or `note1`.
-#[derive(Debug, Clone)]
-struct NostrEvent {
-    /// Unique identifier for the event.
-    event_id: EventId,
-    /// List of relay URLs associated with the event. Empty if parsing a
-    /// `note1`.
-    relays:   Vec<RelayUrl>,
-}
-
-impl NostrEvent {
-    /// Create a new [`NostrEvent`] instance
-    fn new(event_id: EventId, relays: Vec<RelayUrl>) -> Self {
-        Self { event_id, relays }
-    }
-}
-
-impl FromStr for NostrEvent {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let str_event = s.trim().trim_start_matches("nostr:");
-        if str_event.starts_with("nevent1") {
-            let event = nip19::Nip19Event::from_bech32(str_event).map_err(|e| e.to_string())?;
-            Ok(Self::new(event.event_id, event.relays))
-        } else if str_event.starts_with("note1") {
-            Ok(Self::new(
-                EventId::from_bech32(str_event).map_err(|e| e.to_string())?,
-                Vec::new(),
-            ))
-        } else {
-            Err("Invalid event id, must starts with `note1` or `nevent1`".to_owned())
-        }
-    }
-}
-
 
 /// Arguments for the `reply` command
 #[derive(Args, Debug)]

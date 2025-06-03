@@ -17,8 +17,12 @@
 use std::str::FromStr;
 
 use nostr::{
-    event::Kind,
-    nips::{self, nip01::Coordinate, nip19::Nip19Coordinate},
+    event::{EventId, Kind},
+    nips::{
+        self,
+        nip01::Coordinate,
+        nip19::{self, FromBech32, Nip19Coordinate},
+    },
     types::RelayUrl,
 };
 use tokio::runtime::Handle;
@@ -45,6 +49,16 @@ pub enum RelayOrSet {
     Relay(RelayUrl),
     /// Name of a set (may not exist).
     Set(String),
+}
+
+/// Parses and represents a Nostr `nevent1` or `note1`.
+#[derive(Debug, Clone)]
+pub struct NostrEvent {
+    /// Unique identifier for the event.
+    pub event_id: EventId,
+    /// List of relay URLs associated with the event. Empty if parsing a
+    /// `note1`.
+    pub relays:   Vec<RelayUrl>,
 }
 
 impl NaddrOrSet {
@@ -83,6 +97,13 @@ impl RelayOrSet {
                 }
             }
         }
+    }
+}
+
+impl NostrEvent {
+    /// Create a new [`NostrEvent`] instance
+    fn new(event_id: EventId, relays: Vec<RelayUrl>) -> Self {
+        Self { event_id, relays }
     }
 }
 
@@ -132,24 +153,23 @@ impl FromStr for RelayOrSet {
     }
 }
 
-fn parse_nip5_repo(nip5: &str, repo_id: &str) -> Result<NaddrOrSet, String> {
-    let (username, domain) = nip5.split_once("@").unwrap_or(("_", nip5));
+impl FromStr for NostrEvent {
+    type Err = String;
 
-    let nip5_profile = tokio::task::block_in_place(|| {
-        Handle::current().block_on(async {
-            nips::nip05::profile(format!("{username}@{domain}"), None)
-                .await
-                .map_err(|err| err.to_string())
-        })
-    })?;
-
-    Ok(NaddrOrSet::Naddr(
-        Nip19Coordinate::new(
-            Coordinate::new(Kind::GitRepoAnnouncement, nip5_profile.public_key).identifier(repo_id),
-            nip5_profile.relays,
-        )
-        .expect("The relays is `RelayUrl`"),
-    ))
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let str_event = s.trim().trim_start_matches("nostr:");
+        if str_event.starts_with("nevent1") {
+            let event = nip19::Nip19Event::from_bech32(str_event).map_err(|e| e.to_string())?;
+            Ok(Self::new(event.event_id, event.relays))
+        } else if str_event.starts_with("note1") {
+            Ok(Self::new(
+                EventId::from_bech32(str_event).map_err(|e| e.to_string())?,
+                Vec::new(),
+            ))
+        } else {
+            Err("Invalid event id, must starts with `note1` or `nevent1`".to_owned())
+        }
+    }
 }
 
 #[easy_ext::ext(NaddrOrSetVecExt)]
@@ -191,4 +211,24 @@ impl Option<Vec<NaddrOrSet>> {
             .map(|naddrs| naddrs.flat_naddrs(sets))
             .transpose()
     }
+}
+
+fn parse_nip5_repo(nip5: &str, repo_id: &str) -> Result<NaddrOrSet, String> {
+    let (username, domain) = nip5.split_once("@").unwrap_or(("_", nip5));
+
+    let nip5_profile = tokio::task::block_in_place(|| {
+        Handle::current().block_on(async {
+            nips::nip05::profile(format!("{username}@{domain}"), None)
+                .await
+                .map_err(|err| err.to_string())
+        })
+    })?;
+
+    Ok(NaddrOrSet::Naddr(
+        Nip19Coordinate::new(
+            Coordinate::new(Kind::GitRepoAnnouncement, nip5_profile.public_key).identifier(repo_id),
+            nip5_profile.relays,
+        )
+        .expect("The relays is `RelayUrl`"),
+    ))
 }
