@@ -235,6 +235,7 @@ async fn make_patch(
     // duplicate.
     let mut safe_dedup_tags = Tags::new();
     safe_dedup_tags.push(Tag::alt(format!("{PATCH_ALT_PREFIX}{}", patch.subject)));
+    safe_dedup_tags.push(Tag::description(patch.subject));
     safe_dedup_tags.push(Tag::reference(euc.to_string()));
     safe_dedup_tags.extend(content_details.into_tags());
     safe_dedup_tags.extend(

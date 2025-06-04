@@ -27,12 +27,13 @@ use super::{CliOptions, CommandRunner};
 use crate::error::N34Result;
 
 
+/// Regular expression for extracting the patch subject.
 static SUBJECT_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?m)^Subject: (.*(?:\n .*)*)").unwrap());
 
+/// Regular expression for extracting the patch body.
 static BODY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\n\n((?:.|\n)*?)(?:\n--[ -]|\z)").unwrap());
-
 
 #[derive(Subcommand, Debug)]
 pub enum PatchSubcommands {

@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - New `patch send` command to send patches - by Awiteb
+- Add `alt` tag to the git issue - by Awiteb
+- Add `description` tag to the patch - by Awiteb
 
 ## [0.2.0] - 2025-06-01
 
