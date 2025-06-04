@@ -139,6 +139,7 @@ impl CommandRunner for NewArgs {
 
         let write_relays = [
             relays,
+            naddrs.extract_relays(),
             utils::add_write_relays(relays_list.as_ref()),
             client
                 .fetch_repos(&naddrs.into_coordinates())
