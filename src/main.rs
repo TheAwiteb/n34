@@ -15,11 +15,11 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 /// Command line interface module
-mod cli;
+pub mod cli;
 /// N34 errors
-mod error;
+pub mod error;
 /// Nostr utils module
-mod nostr_utils;
+pub mod nostr_utils;
 
 use std::{
     process::ExitCode,

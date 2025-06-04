@@ -15,15 +15,15 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 /// `issue` subcommands
-mod issue;
+pub mod issue;
 /// `patch` subcommands
-mod patch;
+pub mod patch;
 /// 'reply` command
-mod reply;
+pub mod reply;
 /// `repo` subcommands
-mod repo;
+pub mod repo;
 /// `sets` subcommands
-mod sets;
+pub mod sets;
 
 use std::fmt;
 use std::path::PathBuf;

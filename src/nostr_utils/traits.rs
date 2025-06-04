@@ -28,6 +28,7 @@ use nostr::{
     types::{RelayUrl, Url},
 };
 
+use crate::cli::issue::ISSUE_ALT_PREFIX;
 use crate::error::{N34Error, N34Result};
 
 
@@ -115,13 +116,20 @@ impl EventBuilder {
         subject: Option<String>,
         labels: Vec<String>,
     ) -> N34Result<EventBuilder> {
-        EventBuilder::git_issue(GitIssue {
+        let mut event_builder = EventBuilder::git_issue(GitIssue {
             repository,
             content,
-            subject,
+            subject: subject.clone(),
             labels: labels.into_iter().map(|l| l.trim().to_owned()).collect(),
         })
-        .map_err(N34Error::from)
+        .map_err(N34Error::from)?;
+
+        if let Some(issue_subject) = subject {
+            event_builder =
+                event_builder.tag(Tag::alt(format!("{ISSUE_ALT_PREFIX}{issue_subject}")))
+        }
+
+        Ok(event_builder)
     }
 }
 

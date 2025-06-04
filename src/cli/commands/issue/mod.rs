@@ -23,6 +23,9 @@ use self::new::NewArgs;
 use super::{CliOptions, CommandRunner};
 use crate::error::N34Result;
 
+/// Prefix used for git issue alt.
+pub const ISSUE_ALT_PREFIX: &str = "git issue: ";
+
 #[derive(Subcommand, Debug)]
 pub enum IssueSubcommands {
     /// Create a new repository issue
