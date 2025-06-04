@@ -23,11 +23,12 @@ use std::{
 };
 
 use nostr::{
-    event::{Event, EventId, Kind, TagKind, TagStandard},
+    event::{Event, EventId, Kind, Tag, TagKind, TagStandard},
     filter::{Alphabet, SingleLetterTag},
     key::PublicKey,
     nips::{
         nip01::Coordinate,
+        nip10::Marker,
         nip19::{Nip19Coordinate, Nip19Event, ToBech32},
         nip34::GitRepositoryAnnouncement,
         nip65::{self, RelayMetadata},
@@ -236,4 +237,17 @@ pub fn naddrs_or_file(
         return Ok(naddrs);
     }
     parsers::parse_nostr_address_file(address_file_path)
+}
+
+/// Generate a reply tag for an event with the given ID, relay URL (if any), and
+/// marker.
+pub fn event_reply_tag(reply_to: &EventId, relay: Option<&RelayUrl>, marker: Marker) -> Tag {
+    Tag::custom(
+        TagKind::single_letter(Alphabet::E, false),
+        [
+            reply_to.to_hex(),
+            relay.map(|r| r.to_string()).unwrap_or_default(),
+            marker.to_string(),
+        ],
+    )
 }

@@ -16,6 +16,8 @@
 
 /// `issue` subcommands
 mod issue;
+/// `patch` subcommands
+mod patch;
 /// 'reply` command
 mod reply;
 /// `repo` subcommands
@@ -30,6 +32,7 @@ use clap::{ArgGroup, Args, Parser};
 use nostr::key::{Keys, PublicKey, SecretKey};
 
 use self::issue::IssueSubcommands;
+use self::patch::PatchSubcommands;
 use self::reply::ReplyArgs;
 use self::repo::RepoSubcommands;
 use self::sets::SetsSubcommands;
@@ -88,11 +91,11 @@ pub enum Commands {
         #[command(subcommand)]
         subcommands: IssueSubcommands,
     },
-    // /// Manage patches
-    // Patch {
-    //     #[command(subcommand)]
-    //     subcommands: PatchSubcommands,
-    // },
+    /// Manage patches
+    Patch {
+        #[command(subcommand)]
+        subcommands: PatchSubcommands,
+    },
     /// Reply to issues and patches.
     Reply(ReplyArgs),
 }
@@ -105,8 +108,9 @@ impl CommandRunner for Commands {
         match self {
             Self::Repo { subcommands } => subcommands.run(options).await,
             Self::Issue { subcommands } => subcommands.run(options).await,
-            Commands::Reply(args) => args.run(options).await,
-            Commands::Sets { subcommands } => subcommands.run(options).await,
+            Self::Reply(args) => args.run(options).await,
+            Self::Sets { subcommands } => subcommands.run(options).await,
+            Self::Patch { subcommands } => subcommands.run(options).await,
         }
     }
 }
