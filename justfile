@@ -36,7 +36,8 @@ ci: && msrv _done_ci
     taplo fmt --check --config ./.taplo.toml
     echo "🧹 Running linter checks..."
     cargo clippy -q -- -D warnings
-    taplo check --config ./.taplo.toml
+    echo "🧪 Running tests..."
+    cargo test
 
 # Check that the current MSRV is correct
 msrv:
