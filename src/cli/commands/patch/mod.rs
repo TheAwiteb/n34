@@ -121,6 +121,38 @@ index 4120f5a..e68783c 100644
         assert_eq!(patch.body, "Abc patch");
     }
 
+
+    #[test]
+    fn patch_normal_with_patch_in_content() {
+        let patch_content = r#"From 24e8522268ad675996fc3b35209ce23951236bdc Mon Sep 17 00:00:00 2001
+From: Awiteb <a@4rs.nl>
+Date: Tue, 27 May 2025 19:20:42 +0000
+Subject: [PATCH] chore: Subject in subject
+
+A good test patch
+---
+ src/nostr_utils/mod.rs            |  1 +
+ 1files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/src/nostr_utils/mod.rs b/src/nostr_utils/mod.rs
+index 4120f5a..e68783c 100644
+--- a/src/nostr_utils/mod.rs
++++ b/src/nostr_utils/mod.rs
+@@ -103,31 +103,9 @@ impl CommandRunner for NewArgs {
+
+From: Awiteb <a@4rs.nl>
+Date: Tue, 27 May 2025 19:20:42 +0000
+Subject: [PATCH] chore: What a subject
+
+hi
+---
+-- 
+2.49.0"#;
+        let patch = GitPatch::from_str(patch_content).unwrap();
+        assert_eq!(patch.subject, "[PATCH] chore: Subject in subject");
+        assert_eq!(patch.body, "A good test patch");
+    }
+
     #[test]
     fn patch_multiline_subject() {
         let patch_content = r#"From 24e8522268ad675996fc3b35209ce23951236bdc Mon Sep 17 00:00:00 2001
