@@ -80,7 +80,7 @@ pub struct RepoRelaySet {
 impl CliConfig {
     /// Reads and parse a TOML config file from the given path, creating it if
     /// missing.
-    pub fn load_toml(file_path: PathBuf) -> N34Result<Self> {
+    pub fn load(file_path: PathBuf) -> N34Result<Self> {
         tracing::info!(path = %file_path.display(), "Loading configuration from file");
         // Make sure the file is exist
         if let Some(parent) = file_path.parent() {
@@ -101,7 +101,7 @@ impl CliConfig {
     }
 
     /// Dump the config as toml in a file
-    pub fn dump_toml(mut self) -> N34Result<()> {
+    pub fn dump(mut self) -> N34Result<()> {
         tracing::debug!(config = ?self, "Writing configuration to {}", self.path.display());
         self.post_sets()?;
 

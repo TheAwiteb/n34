@@ -65,6 +65,6 @@ impl CommandRunner for UpdateArgs {
             set.naddrs.extend(naddrs);
         }
 
-        options.config.dump_toml()
+        options.config.dump()
     }
 }

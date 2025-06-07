@@ -67,5 +67,5 @@ pub fn parse_config_path(config_path: &str) -> N34Result<CliConfig> {
         path = super::defaults::config_path()?;
     };
 
-    CliConfig::load_toml(path)
+    CliConfig::load(path)
 }

@@ -52,6 +52,6 @@ impl CommandRunner for NewArgs {
         }
 
         options.config.sets.push_set(self.name, naddrs, relays)?;
-        options.config.dump_toml()
+        options.config.dump()
     }
 }

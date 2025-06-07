@@ -64,6 +64,6 @@ impl CommandRunner for RemoveArgs {
             }
         }
 
-        options.config.dump_toml()
+        options.config.dump()
     }
 }
