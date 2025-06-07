@@ -73,7 +73,10 @@ impl Cli {
 }
 
 /// Processes the CLI configuration and returns it if successful.
-pub fn post_cli(cli: Cli) -> N34Result<Cli> {
-    // TODO
+pub fn post_cli(mut cli: Cli) -> N34Result<Cli> {
+    if cli.options.pow.is_none() && cli.options.config.pow.is_some() {
+        cli.options.pow = cli.options.config.pow;
+    }
+
     Ok(cli)
 }

@@ -126,7 +126,7 @@ impl CommandRunner for NewArgs {
             self.label,
         )?
         .dedup_tags()
-        .pow(options.pow)
+        .pow(options.pow.unwrap_or_default())
         .tags(content_details.clone().into_tags())
         // p-tag the reset of the reposotoies owners
         .tags(naddrs_iter.clone().map(|n| Tag::public_key(n.public_key)))

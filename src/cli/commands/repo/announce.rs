@@ -106,7 +106,7 @@ impl CommandRunner for AnnounceArgs {
             self.force_id,
         )?
         .dedup_tags()
-        .pow(options.pow)
+        .pow(options.pow.unwrap_or_default())
         .build(user_pubk);
 
 

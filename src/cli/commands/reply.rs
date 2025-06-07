@@ -135,7 +135,7 @@ impl CommandRunner for ReplyArgs {
             repos.first().and_then(|r| r.relays.first()).cloned(),
         )
         .dedup_tags()
-        .pow(options.pow)
+        .pow(options.pow.unwrap_or_default())
         .tags(content_details.clone().into_tags())
         .build(user_pubk);
 

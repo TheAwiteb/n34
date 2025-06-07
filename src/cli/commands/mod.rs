@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+/// `config` subcommands
+pub mod config;
 /// `issue` subcommands
 pub mod issue;
 /// `patch` subcommands
@@ -30,6 +32,7 @@ use std::fmt;
 use clap::{ArgGroup, Args, Parser};
 use nostr::key::{Keys, PublicKey, SecretKey};
 
+use self::config::ConfigSubcommands;
 use self::issue::IssueSubcommands;
 use self::patch::PatchSubcommands;
 use self::reply::ReplyArgs;
@@ -64,8 +67,8 @@ pub struct CliOptions {
     #[arg(short, long)]
     pub relays:     Vec<RelayOrSet>,
     /// Proof of Work difficulty when creatring events
-    #[arg(long, default_value_t = 0)]
-    pub pow:        u8,
+    #[arg(long, value_name = "DIFFICULTY")]
+    pub pow:        Option<u8>,
     /// Config path [default: `$XDG_CONFIG_HOME` or `$HOME/.config`]
     #[arg(long, value_name = "PATH", default_value = DEFAULT_FALLBACK_PATH,
          hide_default_value = true, value_parser = parsers::parse_config_path
@@ -96,6 +99,11 @@ pub enum Commands {
         #[command(subcommand)]
         subcommands: PatchSubcommands,
     },
+    /// Manage configuration
+    Config {
+        #[command(subcommand)]
+        subcommands: ConfigSubcommands,
+    },
     /// Reply to issues and patches.
     Reply(ReplyArgs),
 }
@@ -111,6 +119,7 @@ impl CommandRunner for Commands {
             Self::Reply(args) => args.run(options).await,
             Self::Sets { subcommands } => subcommands.run(options).await,
             Self::Patch { subcommands } => subcommands.run(options).await,
+            Self::Config { subcommands } => subcommands.run(options).await,
         }
     }
 }
@@ -140,6 +149,8 @@ impl fmt::Debug for CliOptions {
         f.debug_struct("CliOptions")
             .field("secret_key", &self.secret_key.as_ref().map(|_| "*******"))
             .field("relays", &self.relays)
+            .field("pow", &self.pow)
+            .field("config", &self.config)
             .finish()
     }
 }

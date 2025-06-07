@@ -57,6 +57,9 @@ pub struct CliConfig {
     /// Groups of repositories and relays.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sets: Vec<RepoRelaySet>,
+    /// The default PoW difficulty
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pow:  Option<u8>,
 }
 
 /// A named group of repositories and relays.
