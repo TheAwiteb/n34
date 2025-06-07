@@ -29,6 +29,7 @@ pub mod types;
 
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
+use types::RelayOrSet;
 
 pub use self::commands::*;
 pub use self::config::*;
@@ -72,10 +73,15 @@ impl Cli {
     }
 }
 
-/// Processes the CLI configuration and returns it if successful.
+/// Processes the CLI configuration by applying fallback values from config if
+/// needed. Returns the processed Cli configuration if successful.
 pub fn post_cli(mut cli: Cli) -> N34Result<Cli> {
-    if cli.options.pow.is_none() && cli.options.config.pow.is_some() {
-        cli.options.pow = cli.options.config.pow;
+    cli.options.pow = cli.options.pow.or(cli.options.config.pow);
+
+    if cli.options.relays.is_empty() {
+        if let Some(relays) = &cli.options.config.fallback_relays {
+            cli.options.relays = relays.iter().cloned().map(RelayOrSet::Relay).collect();
+        }
     }
 
     Ok(cli)

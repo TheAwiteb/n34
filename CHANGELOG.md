@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `patch send` command to send patches - by Awiteb
 - Add `alt` tag to the git issue - by Awiteb
 - Add `description` tag to the patch - by Awiteb
+- New `config pow` command to set the default PoW difficulty - by Awiteb
+- New `config relays` command to set the default fallbacks relays - by Awiteb
 
 ### Refactor
 

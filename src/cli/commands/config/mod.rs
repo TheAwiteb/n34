@@ -16,10 +16,13 @@
 
 /// `config pow` subcommand
 mod pow;
+/// `config relays` subcommand
+mod relays;
 
 use clap::Subcommand;
 
 use self::pow::PowArgs;
+use self::relays::RelaysArgs;
 use super::CliOptions;
 use crate::{cli::traits::CommandRunner, error::N34Result};
 
@@ -28,12 +31,16 @@ use crate::{cli::traits::CommandRunner, error::N34Result};
 pub enum ConfigSubcommands {
     /// Sets the default PoW difficulty (0 if not specified)
     Pow(PowArgs),
+    /// Sets the default fallback relays if none provided. Use this relays for
+    /// read and write.
+    Relays(RelaysArgs),
 }
 
 impl CommandRunner for ConfigSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         match self {
             Self::Pow(args) => args.run(options).await,
+            Self::Relays(args) => args.run(options).await,
         }
     }
 }
