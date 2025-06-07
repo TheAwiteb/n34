@@ -21,7 +21,7 @@ use futures::future;
 use nostr::{event::EventBuilder, key::PublicKey, types::Url};
 
 use crate::{
-    cli::{CliConfig, CliOptions, CommandRunner, NOSTR_ADDRESS_FILE, types::RelayOrSetVecExt},
+    cli::{CliOptions, CommandRunner, NOSTR_ADDRESS_FILE, types::RelayOrSetVecExt},
     error::N34Result,
     nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement, utils},
 };
@@ -81,8 +81,7 @@ impl CommandRunner for AnnounceArgs {
     async fn run(mut self, options: CliOptions) -> N34Result<()> {
         options.ensure_relays()?;
 
-        let config = CliConfig::load_toml(&options.config_path)?;
-        let relays = options.relays.clone().flat_relays(&config.sets)?;
+        let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
         let user_pubk = options.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;

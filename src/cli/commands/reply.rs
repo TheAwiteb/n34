@@ -30,10 +30,7 @@ use nostr::{
 
 use super::{CliOptions, CommandRunner};
 use crate::{
-    cli::{
-        CliConfig,
-        types::{NaddrOrSet, NostrEvent, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
-    },
+    cli::types::{NaddrOrSet, NostrEvent, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
     error::{N34Error, N34Result},
     nostr_utils::{
         NostrClient,
@@ -84,12 +81,11 @@ pub struct ReplyArgs {
 impl CommandRunner for ReplyArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         let nostr_address_path = utils::nostr_address_path()?;
-        let config = CliConfig::load_toml(&options.config_path)?;
-        let relays = options.relays.clone().flat_relays(&config.sets)?;
+        let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
         let user_pubk = options.pubkey().await?;
 
-        let repo_naddrs = if let Some(naddrs) = self.naddrs.flat_naddrs(&config.sets)? {
+        let repo_naddrs = if let Some(naddrs) = self.naddrs.flat_naddrs(&options.config.sets)? {
             client.add_relays(&naddrs.extract_relays()).await;
             Some(naddrs)
         } else if fs::exists(&nostr_address_path).is_ok() {

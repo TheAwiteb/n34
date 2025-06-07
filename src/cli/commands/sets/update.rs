@@ -20,7 +20,6 @@ use clap::Args;
 
 use crate::{
     cli::{
-        CliConfig,
         CliOptions,
         MutRepoRelaySetsExt,
         traits::CommandRunner,
@@ -48,12 +47,11 @@ pub struct UpdateArgs {
 
 impl CommandRunner for UpdateArgs {
     // FIXME: The signer is not required here
-    async fn run(self, options: CliOptions) -> N34Result<()> {
-        let mut config = CliConfig::load_toml(&options.config_path)?;
-        let naddrs = self.naddrs.flat_naddrs(&config.sets)?;
-        let relays = self.relays.flat_relays(&config.sets)?;
+    async fn run(self, mut options: CliOptions) -> N34Result<()> {
+        let naddrs = self.naddrs.flat_naddrs(&options.config.sets)?;
+        let relays = self.relays.flat_relays(&options.config.sets)?;
 
-        let set = config.sets.get_mut_set(&self.name)?;
+        let set = options.config.sets.get_mut_set(&self.name)?;
 
         if self.override_set {
             if !relays.is_empty() {
@@ -67,6 +65,6 @@ impl CommandRunner for UpdateArgs {
             set.naddrs.extend(naddrs);
         }
 
-        config.dump_toml(&options.config_path)
+        options.config.dump_toml()
     }
 }

@@ -14,14 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use nostr::{
     Kind,
     nips::nip19::{FromBech32, Nip19Coordinate},
 };
 
-use super::Cli;
+use super::CliConfig;
 use crate::{
     cli::DEFAULT_FALLBACK_PATH,
     error::{N34Error, N34Result},
@@ -55,11 +58,14 @@ pub fn parse_nostr_address_file(file_path: &Path) -> N34Result<Vec<Nip19Coordina
     Ok(addresses)
 }
 
-/// Post parse cli arguments
-pub fn post_parse_cli(mut cli: Cli) -> N34Result<Cli> {
-    if let Some(DEFAULT_FALLBACK_PATH) = cli.options.config_path.to_str() {
-        cli.options.config_path = super::defaults::config_path()?;
-    }
+/// Loads CLI configuration from given path. Uses default config path if input
+/// matches fallback path.
+pub fn parse_config_path(config_path: &str) -> N34Result<CliConfig> {
+    let mut path = PathBuf::from(config_path.trim());
 
-    Ok(cli)
+    if config_path == DEFAULT_FALLBACK_PATH {
+        path = super::defaults::config_path()?;
+    };
+
+    CliConfig::load_toml(path)
 }

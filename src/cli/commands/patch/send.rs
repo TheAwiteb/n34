@@ -29,7 +29,6 @@ use nostr::{
 use super::GitPatch;
 use crate::{
     cli::{
-        CliConfig,
         CliOptions,
         traits::CommandRunner,
         types::{NaddrOrSet, NostrEvent, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
@@ -72,13 +71,12 @@ pub struct SendArgs {
 
 impl CommandRunner for SendArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        let config = CliConfig::load_toml(&options.config_path)?;
         let naddrs = utils::naddrs_or_file(
-            self.naddrs.flat_naddrs(&config.sets)?,
+            self.naddrs.flat_naddrs(&options.config.sets)?,
             &utils::nostr_address_path()?,
         )?;
         let repo_coordinates = naddrs.clone().into_coordinates();
-        let relays = options.relays.clone().flat_relays(&config.sets)?;
+        let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let user_pubk = options.pubkey().await?;
         let client = NostrClient::init(&options, &relays).await;
 

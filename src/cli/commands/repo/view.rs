@@ -20,7 +20,6 @@ use clap::Args;
 
 use crate::{
     cli::{
-        CliConfig,
         CliOptions,
         CommandRunner,
         types::{NaddrOrSet, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
@@ -44,12 +43,11 @@ impl CommandRunner for ViewArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
         // FIXME: The signer is not required here
 
-        let config = CliConfig::load_toml(&options.config_path)?;
         let naddrs = utils::naddrs_or_file(
-            self.naddrs.flat_naddrs(&config.sets)?,
+            self.naddrs.flat_naddrs(&options.config.sets)?,
             &utils::nostr_address_path()?,
         )?;
-        let relays = options.relays.clone().flat_relays(&config.sets)?;
+        let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
         client.add_relays(&naddrs.extract_relays()).await;
 

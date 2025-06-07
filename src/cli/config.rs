@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::{collections::HashSet, fs, path::Path};
+use std::{collections::HashSet, fs, path::PathBuf};
 
 use nostr::{
     nips::nip19::{FromBech32, Nip19Coordinate, ToBech32},
@@ -51,6 +51,9 @@ pub enum ConfigError {
 /// Configuration for the command-line interface.
 #[derive(serde::Serialize, serde::Deserialize, Clone, Default, Debug)]
 pub struct CliConfig {
+    /// Path to the configuration file (not serialized)
+    #[serde(skip)]
+    path:     PathBuf,
     /// Groups of repositories and relays.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sets: Vec<RepoRelaySet>,
@@ -77,7 +80,7 @@ pub struct RepoRelaySet {
 impl CliConfig {
     /// Reads and parse a TOML config file from the given path, creating it if
     /// missing.
-    pub fn load_toml(file_path: &Path) -> N34Result<Self> {
+    pub fn load_toml(file_path: PathBuf) -> N34Result<Self> {
         tracing::info!(path = %file_path.display(), "Loading configuration from file");
         // Make sure the file is exist
         if let Some(parent) = file_path.parent() {
@@ -85,11 +88,12 @@ impl CliConfig {
                 fs::create_dir_all(parent)?;
             }
         }
-        let _ = fs::File::create_new(file_path);
+        let _ = fs::File::create_new(&file_path);
 
         let mut config: Self =
-            toml::from_str(&fs::read_to_string(file_path).map_err(ConfigError::ReadFile)?)
+            toml::from_str(&fs::read_to_string(&file_path).map_err(ConfigError::ReadFile)?)
                 .map_err(ConfigError::ParseFile)?;
+        config.path = file_path;
 
         config.post_sets()?;
 
@@ -97,12 +101,12 @@ impl CliConfig {
     }
 
     /// Dump the config as toml in a file
-    pub fn dump_toml(mut self, file_path: &Path) -> N34Result<()> {
-        tracing::debug!(config = ?self, "Writing configuration to {}", file_path.display());
+    pub fn dump_toml(mut self) -> N34Result<()> {
+        tracing::debug!(config = ?self, "Writing configuration to {}", self.path.display());
         self.post_sets()?;
 
         fs::write(
-            file_path,
+            &self.path,
             toml::to_string_pretty(&self).map_err(ConfigError::Serialize)?,
         )
         .map_err(ConfigError::WriteFile)?;

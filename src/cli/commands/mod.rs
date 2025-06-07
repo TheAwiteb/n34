@@ -26,7 +26,6 @@ pub mod repo;
 pub mod sets;
 
 use std::fmt;
-use std::path::PathBuf;
 
 use clap::{ArgGroup, Args, Parser};
 use nostr::key::{Keys, PublicKey, SecretKey};
@@ -36,8 +35,9 @@ use self::patch::PatchSubcommands;
 use self::reply::ReplyArgs;
 use self::repo::RepoSubcommands;
 use self::sets::SetsSubcommands;
-use super::traits::CommandRunner;
+use super::CliConfig;
 use super::types::RelayOrSet;
+use super::{parsers, traits::CommandRunner};
 use crate::error::{N34Error, N34Result};
 
 /// Default path used when no path is provided via command line arguments.
@@ -58,19 +58,19 @@ pub const DEFAULT_FALLBACK_PATH: &str = "I_DO_NOT_KNOW_WHY_CLAP_DO_NOT_SUPPORT_L
 pub struct CliOptions {
     /// Your Nostr secret key
     #[arg(short, long)]
-    pub secret_key:  Option<SecretKey>,
+    pub secret_key: Option<SecretKey>,
     /// Fallbacks relay to write and read from it. Multiple relays can be
     /// passed.
     #[arg(short, long)]
-    pub relays:      Vec<RelayOrSet>,
+    pub relays:     Vec<RelayOrSet>,
     /// Proof of Work difficulty when creatring events
     #[arg(long, default_value_t = 0)]
-    pub pow:         u8,
+    pub pow:        u8,
     /// Config path [default: `$XDG_CONFIG_HOME` or `$HOME/.config`]
     #[arg(long, value_name = "PATH", default_value = DEFAULT_FALLBACK_PATH,
-         hide_default_value = true
+         hide_default_value = true, value_parser = parsers::parse_config_path
      )]
-    pub config_path: PathBuf,
+    pub config:     CliConfig,
 }
 
 /// N34 commands

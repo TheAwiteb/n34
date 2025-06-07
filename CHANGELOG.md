@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `alt` tag to the git issue - by Awiteb
 - Add `description` tag to the patch - by Awiteb
 
+### Refactor
+
+- Store the config in `CliOptions` instead of its path - by Awiteb
+
 ## [0.2.0] - 2025-06-01
 
 ### Added

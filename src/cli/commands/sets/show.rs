@@ -18,7 +18,7 @@ use clap::Args;
 use nostr::nips::nip19::ToBech32;
 
 use crate::{
-    cli::{CliConfig, CliOptions, RepoRelaySet, RepoRelaySetsExt, traits::CommandRunner},
+    cli::{CliOptions, RepoRelaySet, RepoRelaySetsExt, traits::CommandRunner},
     error::N34Result,
 };
 
@@ -31,14 +31,16 @@ pub struct ShowArgs {
 impl CommandRunner for ShowArgs {
     // FIXME: The signer is not required here
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        let config = CliConfig::load_toml(&options.config_path)?;
-
         if let Some(name) = self.name {
-            println!("{}", format_set(config.sets.as_slice().get_set(&name)?));
+            println!(
+                "{}",
+                format_set(options.config.sets.as_slice().get_set(&name)?)
+            );
         } else {
             println!(
                 "{}",
-                config
+                options
+                    .config
                     .sets
                     .iter()
                     .map(format_set)

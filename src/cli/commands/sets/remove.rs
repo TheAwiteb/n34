@@ -18,7 +18,6 @@ use clap::Args;
 
 use crate::{
     cli::{
-        CliConfig,
         CliOptions,
         MutRepoRelaySetsExt,
         traits::CommandRunner,
@@ -44,22 +43,27 @@ pub struct RemoveArgs {
 
 impl CommandRunner for RemoveArgs {
     // FIXME: The signer is not required here
-    async fn run(self, options: CliOptions) -> N34Result<()> {
-        let mut config = CliConfig::load_toml(&options.config_path)?;
-        let naddrs = self.naddrs.flat_naddrs(&config.sets)?;
-        let relays = self.relays.flat_relays(&config.sets)?;
+    async fn run(self, mut options: CliOptions) -> N34Result<()> {
+        let naddrs = self.naddrs.flat_naddrs(&options.config.sets)?;
+        let relays = self.relays.flat_relays(&options.config.sets)?;
 
         if relays.is_empty() && naddrs.is_empty() {
-            config.sets.remove_set(self.name)?;
+            options.config.sets.remove_set(self.name)?;
         } else {
             if !relays.is_empty() {
-                config.sets.remove_relays(&self.name, relays.into_iter())?;
+                options
+                    .config
+                    .sets
+                    .remove_relays(&self.name, relays.into_iter())?;
             }
             if !naddrs.is_empty() {
-                config.sets.remove_naddrs(self.name, naddrs.into_iter())?;
+                options
+                    .config
+                    .sets
+                    .remove_naddrs(self.name, naddrs.into_iter())?;
             }
         }
 
-        config.dump_toml(&options.config_path)
+        options.config.dump_toml()
     }
 }

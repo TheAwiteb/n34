@@ -71,3 +71,9 @@ impl Cli {
         self.command.run(self.options).await
     }
 }
+
+/// Processes the CLI configuration and returns it if successful.
+pub fn post_cli(cli: Cli) -> N34Result<Cli> {
+    // TODO
+    Ok(cli)
+}
