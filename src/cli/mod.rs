@@ -20,6 +20,8 @@ pub mod commands;
 pub mod config;
 /// Default lazy values for CLI arguments
 pub mod defaults;
+/// Macros for CLI application.
+pub mod macros;
 /// CLI arguments parsers
 pub mod parsers;
 /// CLI traits

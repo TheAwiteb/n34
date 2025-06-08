@@ -48,14 +48,13 @@ use crate::error::{N34Error, N34Result};
 /// This is a workaround since Clap doesn't support lazy evaluation of defaults.
 pub const DEFAULT_FALLBACK_PATH: &str = "I_DO_NOT_KNOW_WHY_CLAP_DO_NOT_SUPPORT_LAZY_DEFAULT";
 
-// TODO: Make the `signer` group optional
 /// The command-line interface options
 #[derive(Args, Clone)]
 #[clap(
     group(
         ArgGroup::new("signer")
             .args(&["secret_key"])
-            .required(true)
+            .required(false)
     )
 )]
 pub struct CliOptions {
@@ -109,23 +108,6 @@ pub enum Commands {
 }
 
 
-impl CommandRunner for Commands {
-    async fn run(self, options: CliOptions) -> N34Result<()> {
-        tracing::trace!("Options: {options:#?}");
-        tracing::trace!("Handling: {self:#?}");
-        match self {
-            Self::Repo { subcommands } => subcommands.run(options).await,
-            Self::Issue { subcommands } => subcommands.run(options).await,
-            Self::Reply(args) => args.run(options).await,
-            Self::Sets { subcommands } => subcommands.run(options).await,
-            Self::Patch { subcommands } => subcommands.run(options).await,
-            Self::Config { subcommands } => subcommands.run(options).await,
-        }
-    }
-}
-
-// TODO: Implement `ensure_signer` function with similar functionality to
-// `ensure_relays`
 impl CliOptions {
     /// Gets the public key of the user.
     pub async fn pubkey(&self) -> N34Result<PublicKey> {
@@ -142,6 +124,15 @@ impl CliOptions {
         }
         Ok(())
     }
+
+    /// Returns an error if there are no signers
+    pub fn ensure_signer(&self) -> N34Result<()> {
+        if self.secret_key.is_none() {
+            Err(N34Error::SignerRequired)
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl fmt::Debug for CliOptions {
@@ -152,5 +143,14 @@ impl fmt::Debug for CliOptions {
             .field("pow", &self.pow)
             .field("config", &self.config)
             .finish()
+    }
+}
+
+impl CommandRunner for Commands {
+    async fn run(self, options: CliOptions) -> N34Result<()> {
+        tracing::trace!("Options: {options:#?}");
+        tracing::trace!("Handling: {self:#?}");
+
+        crate::run_command!(self, options, Repo Issue Sets Patch Config & Reply)
     }
 }

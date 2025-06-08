@@ -54,9 +54,7 @@ pub struct GitPatch {
 
 impl CommandRunner for PatchSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        match self {
-            Self::Send(args) => args.run(options).await,
-        }
+        crate::run_command!(self, options, &Send)
     }
 }
 

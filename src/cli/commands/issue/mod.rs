@@ -34,8 +34,6 @@ pub enum IssueSubcommands {
 
 impl CommandRunner for IssueSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        match self {
-            Self::New(args) => args.run(options).await,
-        }
+        crate::run_command!(self, options, &New)
     }
 }

@@ -38,9 +38,6 @@ pub enum RepoSubcommands {
 
 impl CommandRunner for RepoSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        match self {
-            Self::View(args) => args.run(options).await,
-            Self::Announce(args) => args.run(options).await,
-        }
+        crate::run_command!(self, options, & View Announce)
     }
 }

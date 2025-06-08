@@ -42,7 +42,8 @@ pub struct NewArgs {
 }
 
 impl CommandRunner for NewArgs {
-    // FIXME: The signer is not required here
+    const NEED_SIGNER: bool = false;
+
     async fn run(self, mut options: CliOptions) -> N34Result<()> {
         let naddrs = self.naddrs.flat_naddrs(&options.config.sets)?;
         let relays = self.relays.flat_relays(&options.config.sets)?;

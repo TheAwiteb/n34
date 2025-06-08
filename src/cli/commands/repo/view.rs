@@ -40,9 +40,9 @@ pub struct ViewArgs {
 }
 
 impl CommandRunner for ViewArgs {
-    async fn run(self, options: CliOptions) -> N34Result<()> {
-        // FIXME: The signer is not required here
+    const NEED_SIGNER: bool = false;
 
+    async fn run(self, options: CliOptions) -> N34Result<()> {
         let naddrs = utils::naddrs_or_file(
             self.naddrs.flat_naddrs(&options.config.sets)?,
             &utils::nostr_address_path()?,

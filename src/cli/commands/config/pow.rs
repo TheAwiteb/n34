@@ -28,9 +28,9 @@ pub struct PowArgs {
 }
 
 impl CommandRunner for PowArgs {
-    async fn run(self, mut options: CliOptions) -> N34Result<()> {
-        // FIXME: The signer is not required here
+    const NEED_SIGNER: bool = false;
 
+    async fn run(self, mut options: CliOptions) -> N34Result<()> {
         options.config.pow = Some(self.difficulty);
         options.config.dump()
     }

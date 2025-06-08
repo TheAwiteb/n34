@@ -66,6 +66,8 @@ pub enum N34Error {
     InvalidNostrAddressFileContent(String),
     #[error("This command requires at least one relay, but none were provided")]
     EmptyRelays,
+    #[error("This command requires a signer to sign events")]
+    SignerRequired,
     #[error(
         "Invalid repository address. Expected one of these formats:\n- NIP-05 identifier with \
          repository ID: `<user@domain.com>/<repo_id>`\n- Valid NIP-19 naddr string (starts with \

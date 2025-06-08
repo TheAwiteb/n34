@@ -19,6 +19,13 @@ use crate::error::N34Result;
 
 /// A trait defining the interface for command runners in the CLI.
 pub trait CommandRunner {
+    /// Whether this command needs the relays option (false by default).
+    /// Only applies to commands, not subcommands.
+    const NEED_RELAYS: bool = false;
+    /// Indicates if this command requires the signer. Defaults to true.
+    /// Only applies to commands, not subcommands.
+    const NEED_SIGNER: bool = true;
+
     /// Executes the command and returns a Result indicating success or failure.
     fn run(self, options: CliOptions) -> impl Future<Output = N34Result<()>> + Send;
 }

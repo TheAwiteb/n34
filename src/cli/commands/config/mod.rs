@@ -38,9 +38,6 @@ pub enum ConfigSubcommands {
 
 impl CommandRunner for ConfigSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        match self {
-            Self::Pow(args) => args.run(options).await,
-            Self::Relays(args) => args.run(options).await,
-        }
+        crate::run_command!(self, options, & Pow Relays)
     }
 }

@@ -29,7 +29,8 @@ pub struct ShowArgs {
 }
 
 impl CommandRunner for ShowArgs {
-    // FIXME: The signer is not required here
+    const NEED_SIGNER: bool = false;
+
     async fn run(self, options: CliOptions) -> N34Result<()> {
         if let Some(name) = self.name {
             println!(

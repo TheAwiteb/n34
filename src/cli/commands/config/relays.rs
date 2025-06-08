@@ -33,9 +33,9 @@ pub struct RelaysArgs {
 }
 
 impl CommandRunner for RelaysArgs {
-    async fn run(self, mut options: CliOptions) -> N34Result<()> {
-        // FIXME: The signer is not required here
+    const NEED_SIGNER: bool = false;
 
+    async fn run(self, mut options: CliOptions) -> N34Result<()> {
         if self.relays.is_empty() {
             options.config.fallback_relays = None;
         } else if self.override_relays {

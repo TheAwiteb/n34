@@ -47,11 +47,6 @@ pub enum SetsSubcommands {
 
 impl CommandRunner for SetsSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        match self {
-            Self::Remove(args) => args.run(options).await,
-            Self::New(args) => args.run(options).await,
-            Self::Update(args) => args.run(options).await,
-            Self::Show(args) => args.run(options).await,
-        }
+        crate::run_command!(self, options, & Remove New Update Show)
     }
 }
