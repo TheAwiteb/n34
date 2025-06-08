@@ -25,7 +25,7 @@ use futures::future;
 use nostr::{
     event::{Event, EventId, Kind, Tag, TagStandard, Tags, UnsignedEvent},
     filter::Filter,
-    key::{Keys, PublicKey},
+    key::PublicKey,
     nips::{nip01::Coordinate, nip22, nip34::GitRepositoryAnnouncement},
     parser::NostrParser,
     types::RelayUrl,
@@ -103,17 +103,13 @@ impl NostrClient {
     /// Initializes a new [`NostrClient`] instance and connects to the specified
     /// relays.
     pub async fn init(options: &CliOptions, relays: &[RelayUrl]) -> Self {
-        let client = Self::new(
-            Client::builder()
-                .signer(Keys::new(
-                    options
-                        .secret_key
-                        .as_ref()
-                        .expect("This the only method for now")
-                        .clone(),
-                ))
-                .build(),
-        );
+        let mut client_builder = Client::builder();
+
+        if let Some(signer) = options.signer() {
+            client_builder = client_builder.signer(signer);
+        }
+
+        let client = Self::new(client_builder.build());
 
         client.add_relays(relays).await;
         client

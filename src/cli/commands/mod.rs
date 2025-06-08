@@ -117,6 +117,14 @@ impl CliOptions {
         unreachable!("There is no other method until now")
     }
 
+    /// Returns the signer
+    pub fn signer(&self) -> Option<impl nostr::signer::IntoNostrSigner> {
+        if let Some(sk) = &self.secret_key {
+            return Some(Keys::new(sk.clone()));
+        }
+        None
+    }
+
     /// Returns an error if there are no relays.
     pub fn ensure_relays(&self) -> N34Result<()> {
         if self.relays.is_empty() {
