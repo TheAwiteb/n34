@@ -114,7 +114,11 @@ impl CliOptions {
         if let Some(sk) = &self.secret_key {
             return Ok(Keys::new(sk.clone()).public_key());
         }
-        unreachable!("There is no other method until now")
+        unreachable!(
+            "This method should only be called when a signer is required. If this panic occurs, \
+             it indicates a bug where the command failed to properly require a signer (which is \
+             the default behavior)"
+        )
     }
 
     /// Returns the signer
