@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `description` tag to the patch - by Awiteb
 - New `config pow` command to set the default PoW difficulty - by Awiteb
 - New `config relays` command to set the default fallbacks relays - by Awiteb
+- New `issue view` command to view an issue - by Awiteb
 
 ### Refactor
 

@@ -251,3 +251,28 @@ pub fn event_reply_tag(reply_to: &EventId, relay: Option<&RelayUrl>, marker: Mar
         ],
     )
 }
+
+/// Wraps text into lines no longer than max_width, breaking only at whitespace.
+pub fn smart_wrap(text: &str, max_width: usize) -> String {
+    text.lines()
+        .map(|line| {
+            if !line.trim().is_empty() {
+                line.split(" ")
+                    .fold((String::new(), 0), |(result, last_newline), word| {
+                        let result_len = result.chars().count();
+                        if result_len == 0 {
+                            (word.to_owned(), 0)
+                        } else if (result_len - last_newline) + word.chars().count() > max_width {
+                            (format!("{result}\n{word}"), result_len + 1)
+                        } else {
+                            (format!("{result} {word}"), last_newline)
+                        }
+                    })
+                    .0
+            } else {
+                String::new()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}

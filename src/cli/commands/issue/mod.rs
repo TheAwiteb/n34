@@ -16,10 +16,13 @@
 
 /// `issue new` subcommand
 mod new;
+/// `issue view` subcommand
+mod view;
 
 use clap::Subcommand;
 
 use self::new::NewArgs;
+use self::view::ViewArgs;
 use super::{CliOptions, CommandRunner};
 use crate::error::N34Result;
 
@@ -30,10 +33,12 @@ pub const ISSUE_ALT_PREFIX: &str = "git issue: ";
 pub enum IssueSubcommands {
     /// Create a new repository issue
     New(NewArgs),
+    /// View an issue by its ID
+    View(ViewArgs),
 }
 
 impl CommandRunner for IssueSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, &New)
+        crate::run_command!(self, options, & New View)
     }
 }

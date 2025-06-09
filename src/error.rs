@@ -81,6 +81,10 @@ pub enum N34Error {
     EmptySetNaddrs(String),
     #[error("The set '{0}' doesn't contain any relays. Use 'sets update' to add addresses to it.")]
     EmptySetRelays(String),
+    #[error(
+        "Issue not found, make sure it is in the relays and make sure that the ID is an issue ID"
+    )]
+    CanNotFoundIssue,
 }
 
 impl N34Error {
