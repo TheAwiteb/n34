@@ -194,7 +194,7 @@ impl NostrClient {
     pub async fn fetch_event(&self, filter: Filter) -> N34Result<Option<Event>> {
         Ok(self
             .client
-            .fetch_events(filter, CLIENT_TIMEOUT)
+            .fetch_events(filter.limit(1), CLIENT_TIMEOUT)
             .await?
             .first_owned())
     }
