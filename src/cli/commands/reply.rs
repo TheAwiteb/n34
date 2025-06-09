@@ -21,10 +21,7 @@ use futures::future;
 use nostr::{
     event::{Event, EventBuilder, Kind},
     filter::Filter,
-    nips::{
-        nip01::{Coordinate, Metadata},
-        nip19::ToBech32,
-    },
+    nips::nip01::Coordinate,
     types::RelayUrl,
 };
 
@@ -39,8 +36,6 @@ use crate::{
     },
 };
 
-/// Length of a Nostr npub (public key) in characters.
-const NPUB_LEN: usize = 63;
 /// The max date "9999-01-01 at 00:00 UTC"
 const MAX_DATE: i64 = 253370764800;
 
@@ -192,24 +187,7 @@ impl CommandRunner for ReplyArgs {
 /// available, otherwise falls back to a shortened npub string. Dates are
 /// formatted in UTC.
 async fn quote_reply_to_content(client: &NostrClient, quoted_event: &Event) -> String {
-    let author_name = client
-        .fetch_event(
-            Filter::new()
-                .kind(Kind::Metadata)
-                .author(quoted_event.pubkey),
-        )
-        .await
-        .ok()
-        .flatten()
-        .and_then(|e| Metadata::try_from(&e).ok())
-        .and_then(|m| m.display_name.or(m.name))
-        .unwrap_or_else(|| {
-            let pubkey = quoted_event
-                .pubkey
-                .to_bech32()
-                .expect("The error is `Infallible`");
-            format!("{}...{}", &pubkey[..8], &pubkey[NPUB_LEN - 8..])
-        });
+    let author_name = client.get_username(quoted_event.pubkey).await;
 
     let fdate = chrono::DateTime::from_timestamp(
         quoted_event

@@ -26,7 +26,12 @@ use nostr::{
     event::{Event, EventId, Kind, Tag, TagStandard, Tags, UnsignedEvent},
     filter::Filter,
     key::PublicKey,
-    nips::{nip01::Coordinate, nip22, nip34::GitRepositoryAnnouncement},
+    nips::{
+        nip01::{Coordinate, Metadata},
+        nip19::ToBech32,
+        nip22,
+        nip34::GitRepositoryAnnouncement,
+    },
     parser::NostrParser,
     types::RelayUrl,
 };
@@ -40,6 +45,8 @@ use crate::{
 
 /// Timeout duration for the clinet.
 const CLIENT_TIMEOUT: Duration = Duration::from_millis(1500);
+/// Length of a Nostr npub (public key) in characters.
+const NPUB_LEN: usize = 63;
 
 /// Parsed content details
 #[derive(Clone)]
@@ -220,6 +227,19 @@ impl NostrClient {
         .await
         .into_iter()
         .collect()
+    }
+
+    pub async fn get_username(&self, user: PublicKey) -> String {
+        self.fetch_event(Filter::new().kind(Kind::Metadata).author(user))
+            .await
+            .ok()
+            .flatten()
+            .and_then(|e| Metadata::try_from(&e).ok())
+            .and_then(|m| m.display_name.or(m.name))
+            .unwrap_or_else(|| {
+                let pubkey = user.to_bech32().expect("The error is `Infallible`");
+                format!("{}...{}", &pubkey[..8], &pubkey[NPUB_LEN - 8..])
+            })
     }
 
     /// Finds the root issue or patch for a given event. If the event is already
