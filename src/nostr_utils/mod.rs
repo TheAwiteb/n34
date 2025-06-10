@@ -206,6 +206,16 @@ impl NostrClient {
             .first_owned())
     }
 
+    /// Fetches the events matching the given filter
+    pub async fn fetch_events(&self, filter: Filter) -> N34Result<Vec<Event>> {
+        // Multiply timeout by 5 to account for multiple events being fetched
+        Ok(self
+            .client
+            .fetch_events(filter, CLIENT_TIMEOUT * 5)
+            .await?
+            .to_vec())
+    }
+
     /// Try to fetch the reposotoies and returns them
     pub async fn fetch_repos(
         &self,

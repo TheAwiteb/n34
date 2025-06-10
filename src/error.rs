@@ -85,6 +85,12 @@ pub enum N34Error {
         "Issue not found, make sure it is in the relays and make sure that the ID is an issue ID"
     )]
     CanNotFoundIssue,
+    #[error(
+        "Patch not found, make sure it is in the relays and make sure that the ID is an patch ID"
+    )]
+    CanNotFoundPatch,
+    #[error("The given patch id is not a root patch")]
+    NotRootPatch,
 }
 
 impl N34Error {

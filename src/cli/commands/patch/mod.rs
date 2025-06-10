@@ -14,17 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+/// `patch fetch` subcommand
+mod fetch;
 /// `patch send` subcommand
 mod send;
 
-use std::{str::FromStr, sync::LazyLock};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+    sync::LazyLock,
+};
 
 use clap::Subcommand;
 use regex::Regex;
 
+use self::fetch::FetchArgs;
 use self::send::SendArgs;
 use super::{CliOptions, CommandRunner};
-use crate::error::N34Result;
+use crate::error::{N34Error, N34Result};
 
 
 /// Regular expression for extracting the patch subject.
@@ -35,10 +42,17 @@ static SUBJECT_RE: LazyLock<Regex> =
 static BODY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\n\n((?:.|\n)*?)(?:\n--[ -]|\z)").unwrap());
 
+/// Regular expiration for extracting the patch version and number
+static PATCH_VERSION_NUMBER_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\[PATCH\s+(?:v(?<version>\d+)\s*)?(?<number>\d+)/(?:\d+)").unwrap()
+});
+
 #[derive(Subcommand, Debug)]
 pub enum PatchSubcommands {
     /// Send one or more patches to a repository
     Send(SendArgs),
+    /// Fetches a patch by its id
+    Fetch(FetchArgs),
 }
 
 /// Represents a git patch
@@ -52,9 +66,31 @@ pub struct GitPatch {
     pub body:    String,
 }
 
+impl GitPatch {
+    /// Returns the patch file name from the subject
+    pub fn filename(&self, parent: impl AsRef<Path>) -> N34Result<PathBuf> {
+        let (patch_version, patch_number) = if self.subject.contains("[PATCH]") {
+            (String::new(), "1")
+        } else {
+            patch_version_and_subject(&self.subject)?
+        };
+
+        let patch_name = if patch_number == "0" {
+            "cover-letter".to_owned()
+        } else {
+            patch_file_name(&self.subject)?
+        };
+
+        Ok(parent
+            .as_ref()
+            .join(format!("{patch_version}{:0>4}-{patch_name}", patch_number).replace("--", "-"))
+            .with_extension("patch"))
+    }
+}
+
 impl CommandRunner for PatchSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, &Send)
+        crate::run_command!(self, options, & Send Fetch)
     }
 }
 
@@ -87,6 +123,53 @@ impl FromStr for GitPatch {
         })
     }
 }
+
+/// Extracts the version prefix and patch number from a patch subject string.
+///
+/// The version prefix is formatted as "v{version}-" if present, or an empty
+/// string. The patch number is mandatory and will cause an error if not found.
+fn patch_version_and_subject(subject: &str) -> N34Result<(String, &str)> {
+    let captures = PATCH_VERSION_NUMBER_RE.captures(subject).ok_or_else(|| {
+        N34Error::InvalidEvent(format!("Can not parse the patch subject `{subject}`"))
+    })?;
+    Ok((
+        captures
+            .name("version")
+            .map(|m| format!("v{}-", m.as_str()))
+            .unwrap_or_default(),
+        captures
+            .name("number")
+            .map(|m| m.as_str())
+            .expect("It's not optional, regex will fail if it's not found"),
+    ))
+}
+
+/// Extracts a clean file name from the patch subject by removing version info
+/// and special characters. Converts to lowercase and ensures the name only
+/// contains alphanumeric, '.', '-', or '_' characters.
+fn patch_file_name(subject: &str) -> N34Result<String> {
+    Ok(subject
+        .split_once("]")
+        .ok_or_else(|| {
+            N34Error::InvalidEvent(format!(
+                "Invalid patch subject. No `[PATCH ...]`: `{subject}`",
+            ))
+        })?
+        .1
+        .trim()
+        .to_lowercase()
+        .replace(
+            |c: char| !c.is_ascii_alphanumeric() && !['.', '-', '_'].contains(&c),
+            "-",
+        )
+        .chars()
+        .take(60)
+        .collect::<String>()
+        .trim_matches('-')
+        .trim()
+        .replace("--", "-"))
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -338,5 +421,96 @@ Awiteb (1):
 
 base-commit: f670859b92d525874fd621452080c8479964ac6a"
         );
+    }
+
+    #[test]
+    fn normal_patch_filename() {
+        let mut patch = GitPatch {
+            inner:   String::new(),
+            subject: String::new(),
+            body:    String::new(),
+        };
+
+        patch.subject = "[PATCH v2 0/3] feat: Some test just a test".to_owned();
+        assert_eq!(
+            patch.filename("").unwrap(),
+            PathBuf::from("v2-0000-cover-letter.patch")
+        );
+        patch.subject = "[PATCH 0/3] feat: Some test just a test".to_owned();
+        assert_eq!(
+            patch.filename("").unwrap(),
+            PathBuf::from("0000-cover-letter.patch")
+        );
+        patch.subject = "[PATCH v2 1/3] feat: Some test just a test".to_owned();
+        assert_eq!(
+            patch.filename("").unwrap(),
+            PathBuf::from("v2-0001-feat-some-test-just-a-test.patch")
+        );
+        patch.subject = "[PATCH v42 1/3] feat: Some test just a test".to_owned();
+        assert_eq!(
+            patch.filename("").unwrap(),
+            PathBuf::from("v42-0001-feat-some-test-just-a-test.patch")
+        );
+        patch.subject = "[PATCH v42 23/30] feat: Some test just a test".to_owned();
+        assert_eq!(
+            patch.filename("").unwrap(),
+            PathBuf::from("v42-0023-feat-some-test-just-a-test.patch")
+        );
+        patch.subject = "[PATCH 1/3] feat: Some test just a test".to_owned();
+        assert_eq!(
+            patch.filename("").unwrap(),
+            PathBuf::from("0001-feat-some-test-just-a-test.patch")
+        );
+        patch.subject = "[PATCH 32/50] feat: Some test just a test".to_owned();
+        assert_eq!(
+            patch.filename("").unwrap(),
+            PathBuf::from("0032-feat-some-test-just-a-test.patch")
+        );
+        patch.subject = "[PATCH v100 32/50] feat: some long subject some long subject some long \
+                         subject some long subject"
+            .to_owned();
+        assert_eq!(
+            patch.filename("").unwrap(),
+            PathBuf::from(
+                "v100-0032-feat-some-long-subject-some-long-subject-some-long-subject-s.patch"
+            )
+        );
+    }
+
+    #[test]
+    fn patch_filename_without_patch() {
+        let mut patch = GitPatch {
+            inner:   String::new(),
+            subject: "[RFC v5 1/2] Something".to_owned(),
+            body:    String::new(),
+        };
+
+        assert!(patch.filename("").is_err());
+        patch.subject = "Something".to_owned();
+        assert!(patch.filename("").is_err());
+    }
+
+    #[test]
+    fn patch_filename_without_number() {
+        let mut patch = GitPatch {
+            inner:   String::new(),
+            subject: "[PATCH v5 /2] Something".to_owned(),
+            body:    String::new(),
+        };
+
+        assert!(patch.filename("").is_err());
+        patch.subject = "[PATCH v5 2/] Something".to_owned();
+        assert!(patch.filename("").is_err());
+    }
+
+    #[test]
+    fn patch_filename_without_version() {
+        let patch = GitPatch {
+            inner:   String::new(),
+            subject: "[PATCH 1/2] Something".to_owned(),
+            body:    String::new(),
+        };
+
+        assert!(patch.filename("").is_ok());
     }
 }

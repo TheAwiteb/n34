@@ -20,10 +20,10 @@ details, see the following section.
 
 - [X] Repository announcements
 - [ ] Repository state announcements
-- [ ] Patches (Send and download)
-- [ ] Issues (Send and view)
+- [X] Patches (Send and fetch)
+- [X] Issues (Send and view)
 - [X] Replies
-- [ ] Status
+- [ ] Issues and patches status
 - [X] Gossip Model ([NIP-65])
 - [X] Proof of Work ([NIP-13])
 - [X] `nostr:` URI scheme, in the issue/reply content ([NIP-21])
