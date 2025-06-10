@@ -41,6 +41,11 @@ Nostr-compatible client using the address:
 yf8wumn8ghj7mn0wd68yt35wfejumnvqyxhwumn8ghj7mn0wvhxcmmvqy28wumn8ghj7mn0wd68ytn00
 p68ytnyv4mqwuj6xc`
 
+
+When using `n34`, there's no need to specify the address, it will automatically
+check the `nostr-address` file. Simply submit your issues and patches without
+worrying about this detail.
+
 ## Contribution Workflow
 
 Before submitting changes, open an issue to discuss your proposed contribution.
@@ -84,6 +89,9 @@ to their read relays, most tools handle this automatically.
 - Use the `--cover-letter` flag to include a cover letter with your patch. Describe the issue you’re addressing, whether it’s a one-line bug fix or a 5000-line new feature.
 - Specify the base commit for your patch using the `--base` flag.
 - First-time contributors: Review the [Submitting Patches guide](https://www.kernel.org/doc/html/latest/process/submitting-patches.html) before sending your patch.
+- If you revise your patch, you should reference all previous revisions (or the
+root patch if this is the first revision) and explain the changes made (i.e.,
+the differences between this patch and the prior one).
 
 #### Code Style
 
