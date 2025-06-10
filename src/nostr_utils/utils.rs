@@ -24,7 +24,7 @@ use std::{
 
 use nostr::{
     event::{Event, EventId, Kind, Tag, TagKind, TagStandard},
-    filter::{Alphabet, SingleLetterTag},
+    filter::Alphabet,
     key::PublicKey,
     nips::{
         nip01::Coordinate,
@@ -82,7 +82,7 @@ pub fn event_into_repo(event: Event, repo_id: impl Into<String>) -> GitRepositor
         description: tags.map_tag(TagKind::Description, tag_value),
         euc:         tags
             .map_marker(
-                TagKind::SingleLetter(SingleLetterTag::lowercase(Alphabet::R)),
+                TagKind::single_letter(Alphabet::R, false),
                 "euc",
                 parse_value,
             )
@@ -243,7 +243,7 @@ pub fn naddrs_or_file(
 /// marker.
 pub fn event_reply_tag(reply_to: &EventId, relay: Option<&RelayUrl>, marker: Marker) -> Tag {
     Tag::custom(
-        TagKind::single_letter(Alphabet::E, false),
+        TagKind::e(),
         [
             reply_to.to_hex(),
             relay.map(|r| r.to_string()).unwrap_or_default(),

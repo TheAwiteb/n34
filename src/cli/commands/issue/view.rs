@@ -17,7 +17,7 @@
 use clap::Args;
 use nostr::{
     event::{Kind, TagKind},
-    filter::{Alphabet, Filter},
+    filter::Filter,
 };
 
 use crate::{
@@ -89,7 +89,7 @@ impl CommandRunner for ViewArgs {
         let mut issue_labels = utils::smart_wrap(
             &issue
                 .tags
-                .filter(TagKind::single_letter(Alphabet::T, false))
+                .filter(TagKind::t())
                 .filter_map(|t| t.content().map(|l| format!("#{l}")))
                 .collect::<Vec<_>>()
                 .join(", "),
