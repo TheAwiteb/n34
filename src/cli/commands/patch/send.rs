@@ -133,8 +133,7 @@ impl CommandRunner for SendArgs {
                     .find(TagKind::Alt)
                     .and_then(Tag::content)
                     .expect("There is an alt")
-                    .replace(PATCH_ALT_PREFIX, "")
-                    .to_string();
+                    .replace(PATCH_ALT_PREFIX, "");
                 client
                     .send_event_to(event, relays_list.as_ref(), &write_relays)
                     .await
