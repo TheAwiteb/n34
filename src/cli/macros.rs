@@ -33,22 +33,21 @@ pub fn get_signer_state<T: CommandRunner>(_v: &T) -> bool {
 /// last.
 #[macro_export]
 macro_rules! run_command {
-    (r $command:ident $options:ident) => {{
-        if $crate::cli::macros::get_relays_state(&$command) {
-            $options.ensure_relays()?;
-        }
-        if $crate::cli::macros::get_signer_state(&$command) {
-            $options.ensure_signer()?;
-        }
-        $command.run($options).await
-    }};
     ($command:ident, $options:ident, $($subcommands:ident)* & $($commands:ident)*) => {
         match $command {
             $(
                 Self::$subcommands { subcommands } => subcommands.run($options).await,
             )*
             $(
-                Self::$commands ( args ) => $crate::run_command!(r args $options),
+                Self::$commands ( args ) => {
+                    if $crate::cli::macros::get_relays_state(&args) {
+                        $options.ensure_relays()?;
+                    }
+                    if $crate::cli::macros::get_signer_state(&args) {
+                        $options.ensure_signer()?;
+                    }
+                    args.run($options).await
+                },
             )*
         }
     };
