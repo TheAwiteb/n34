@@ -95,10 +95,10 @@ impl NewArgs {
 
 impl CommandRunner for NewArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        let naddrs = utils::naddrs_or_file(
+        let naddrs = utils::check_empty_naddrs(utils::naddrs_or_file(
             self.naddrs.flat_naddrs(&options.config.sets)?,
             &utils::nostr_address_path()?,
-        )?;
+        )?)?;
         let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
         let user_pubk = options.pubkey().await?;

@@ -282,3 +282,12 @@ pub fn smart_wrap(text: &str, max_width: usize) -> String {
         .collect::<Vec<_>>()
         .join("\n")
 }
+
+/// Returns an error if the given naddrs is empty otherwise returned it
+pub fn check_empty_naddrs(naddrs: Vec<Nip19Coordinate>) -> N34Result<Vec<Nip19Coordinate>> {
+    if naddrs.is_empty() {
+        return Err(N34Error::EmptyNaddrs);
+    }
+
+    Ok(naddrs)
+}
