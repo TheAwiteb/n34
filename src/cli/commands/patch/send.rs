@@ -88,17 +88,15 @@ impl CommandRunner for SendArgs {
         client
             .add_relays(&utils::add_read_relays(relays_list.as_ref()))
             .await;
-        let repos_relays = client
-            .fetch_repos(&repo_coordinates)
-            .await?
-            .extract_relays();
-        client.add_relays(&repos_relays).await;
+        let repos = client.fetch_repos(&repo_coordinates).await?;
+        let maintainers = repos.extract_maintainers();
+        client.add_relays(&repos.extract_relays()).await;
 
         let (events, events_write_relays) = make_patch_series(
             &client,
             self.patches,
             self.original_patch.as_ref().map(|e| e.event_id),
-            repos_relays.first().cloned(),
+            repos.extract_relays().first().cloned(),
             repo_coordinates,
             &self.euc,
             user_pubk,
@@ -107,20 +105,12 @@ impl CommandRunner for SendArgs {
 
         let write_relays = [
             relays,
-            repos_relays,
+            repos.extract_relays(),
             events_write_relays,
             naddrs.extract_relays(),
             self.original_patch.map(|e| e.relays).unwrap_or_default(),
             utils::add_write_relays(relays_list.as_ref()),
-            future::join_all(
-                naddrs
-                    .iter()
-                    .map(|c| client.read_relays_from_user(c.public_key)),
-            )
-            .await
-            .into_iter()
-            .flatten()
-            .collect(),
+            client.read_relays_from_users(&maintainers).await,
         ]
         .concat();
 

@@ -111,18 +111,27 @@ impl EventBuilder {
     /// Creates a new [`GitIssue`] event builder with the given
     /// issue details.
     pub fn new_git_issue(
-        repository: Coordinate,
+        coordinates: &[Coordinate],
         content: String,
         subject: Option<String>,
         labels: Vec<String>,
     ) -> N34Result<EventBuilder> {
+        let mut coordinates = coordinates.iter();
+        let first_coordinate = coordinates.next().ok_or(N34Error::EmptyNaddrs)?;
+
         let mut event_builder = EventBuilder::git_issue(GitIssue {
-            repository,
+            repository: first_coordinate.clone(),
             content,
             subject: subject.clone(),
             labels: labels.into_iter().map(|l| l.trim().to_owned()).collect(),
         })
-        .map_err(N34Error::from)?;
+        .map_err(N34Error::from)?
+        .tags(
+            coordinates
+                .clone()
+                .map(|c| Tag::coordinate(c.clone(), None)),
+        )
+        .tags(coordinates.map(|c| Tag::public_key(c.public_key)));
 
         if let Some(issue_subject) = subject {
             event_builder =
@@ -196,4 +205,10 @@ impl Vec<GitRepositoryAnnouncement> {
     pub fn extract_relays(&self) -> Vec<RelayUrl> {
         self.iter().flat_map(|n| n.relays.clone()).collect()
     }
+
+    /// Extract all the maintainers from these repositories
+    pub fn extract_maintainers(&self) -> Vec<PublicKey> {
+        self.iter().flat_map(|r| r.maintainers.clone()).collect()
+    }
+}
 }

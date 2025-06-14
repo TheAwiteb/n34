@@ -342,6 +342,21 @@ impl NostrClient {
         utils::add_read_relays(self.user_relays_list(user).await.ok().flatten().as_ref())
     }
 
+    /// Returns the read relays of the given users if found, otherwise empty
+    /// vector
+    pub async fn read_relays_from_users(&self, users: &[PublicKey]) -> Vec<RelayUrl> {
+        self.fetch_events(
+            Filter::new()
+                .kind(nostr::event::Kind::RelayList)
+                .authors(utils::dedup(users.iter().copied())),
+        )
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .flat_map(|e| utils::add_read_relays(Some(&e)))
+        .collect()
+    }
+
     /// Parse the given content and returns the details that inside it
     pub async fn parse_content(&self, content: &str) -> ContentDetails {
         let mut write_relays = Vec::new();

@@ -16,7 +16,6 @@
 
 
 use clap::{ArgGroup, Args};
-use futures::future;
 use nostr::event::{EventBuilder, Tag};
 
 use crate::{
@@ -103,10 +102,11 @@ impl CommandRunner for NewArgs {
         let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
         let user_pubk = options.pubkey().await?;
-        let mut naddrs_iter = naddrs.clone().into_iter();
-
+        let coordinates = naddrs.clone().into_coordinates();
         client.add_relays(&naddrs.extract_relays()).await;
-
+        let repos = client.fetch_repos(coordinates.as_slice()).await?;
+        let maintainers = repos.extract_maintainers();
+        client.add_relays(&repos.extract_relays()).await;
         let relays_list = client.user_relays_list(user_pubk).await?;
         client
             .add_relays(&utils::add_read_relays(relays_list.as_ref()))
@@ -115,24 +115,13 @@ impl CommandRunner for NewArgs {
         let (subject, content) = self.issue_content()?;
         let content_details = client.parse_content(&content).await;
 
-        let event = EventBuilder::new_git_issue(
-            naddrs_iter
-                .next()
-                .expect("There is at least one address")
-                .coordinate
-                .clone(),
-            content,
-            subject,
-            self.label,
-        )?
-        .dedup_tags()
-        .pow(options.pow.unwrap_or_default())
-        .tags(content_details.clone().into_tags())
-        // p-tag the reset of the reposotoies owners
-        .tags(naddrs_iter.clone().map(|n| Tag::public_key(n.public_key)))
-        // a-tag the reset of the reposotoies
-        .tags(naddrs_iter.clone().map(|n| Tag::coordinate(n.coordinate, n.relays.first().cloned())))
-        .build(user_pubk);
+        let event =
+            EventBuilder::new_git_issue(coordinates.as_slice(), content, subject, self.label)?
+                .dedup_tags()
+                .pow(options.pow.unwrap_or_default())
+                .tags(maintainers.iter().map(|p| Tag::public_key(*p)))
+                .tags(content_details.clone().into_tags())
+                .build(user_pubk);
         let event_id = event.id.expect("There is an id");
 
         let write_relays = [
@@ -143,12 +132,8 @@ impl CommandRunner for NewArgs {
                 .fetch_repos(&naddrs.into_coordinates())
                 .await?
                 .extract_relays(),
-            // Include read relays for each repository owner (if found)
-            future::join_all(naddrs_iter.map(|c| client.read_relays_from_user(c.public_key)))
-                .await
-                .into_iter()
-                .flatten()
-                .collect(),
+            // Include read relays for each maintainer (if found)
+            client.read_relays_from_users(&maintainers).await,
             content_details.write_relays.clone().into_iter().collect(),
         ]
         .concat();

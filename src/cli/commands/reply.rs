@@ -113,6 +113,7 @@ impl CommandRunner for ReplyArgs {
         };
 
         let repos = client.fetch_repos(&repos_coordinate).await?;
+        let maintainers = repos.extract_maintainers();
 
         let quoted_content = if self.quote_to {
             Some(quote_reply_to_content(&client, &reply_to).await)
@@ -140,16 +141,8 @@ impl CommandRunner for ReplyArgs {
             utils::add_write_relays(relays_list.as_ref()),
             // Merge repository announcement relays into write relays
             repos.extract_relays(),
-            // Include read relays for each repository owner (if found)
-            future::join_all(
-                repos_coordinate
-                    .iter()
-                    .map(|c| client.read_relays_from_user(c.public_key)),
-            )
-            .await
-            .into_iter()
-            .flatten()
-            .collect(),
+            // Include read relays for each repository maintainer (if found)
+            client.read_relays_from_users(&maintainers).await,
             // read relays of the root event and the reply to event
             {
                 let (r1, r2) = future::join(

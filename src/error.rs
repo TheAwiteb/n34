@@ -99,6 +99,8 @@ pub enum N34Error {
     RevisionRootNotFound,
     #[error("Invalid status for the issue/patch: {0}")]
     InvalidStatus(String),
+    #[error("One naddr is required for this command")]
+    EmptyNaddrs,
 }
 
 impl N34Error {

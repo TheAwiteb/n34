@@ -56,7 +56,7 @@ pub async fn issue_status_command(
 
     let coordinates = naddrs.clone().into_coordinates();
     let repos = client.fetch_repos(&coordinates).await?;
-    let maintainers = utils::dedup(repos.iter().flat_map(|r| r.maintainers.clone()));
+    let maintainers = repos.extract_maintainers();
     let relay_hint = repos.extract_relays().first().cloned();
     client.add_relays(&repos.extract_relays()).await;
 
@@ -99,17 +99,7 @@ pub async fn issue_status_command(
         repos.extract_relays(),
         utils::add_write_relays(user_relays_list.as_ref()),
         client.read_relays_from_user(issue_event.pubkey).await,
-        // TODO: Make this a function and use it elsewhere.
-        client
-            .fetch_events(
-                Filter::new()
-                    .kind(nostr::event::Kind::RelayList)
-                    .authors(maintainers),
-            )
-            .await?
-            .into_iter()
-            .flat_map(|e| utils::add_read_relays(Some(&e)))
-            .collect(),
+        client.read_relays_from_users(&maintainers).await,
     ]
     .concat();
 
