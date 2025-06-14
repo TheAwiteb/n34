@@ -14,17 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+/// `issue close` subcommand
+mod close;
 /// `issue new` subcommand
 mod new;
+/// `issue reopen` subcommand
+mod reopen;
+/// `issue resolve` subcommand
+mod resolve;
 /// `issue view` subcommand
 mod view;
 
 use clap::Subcommand;
+use nostr::event::Kind;
 
+use self::close::CloseArgs;
 use self::new::NewArgs;
+use self::reopen::ReopenArgs;
+use self::resolve::ResolveArgs;
 use self::view::ViewArgs;
 use super::{CliOptions, CommandRunner};
-use crate::error::N34Result;
+use crate::error::{N34Error, N34Result};
 
 /// Prefix used for git issue alt.
 pub const ISSUE_ALT_PREFIX: &str = "git issue: ";
@@ -35,10 +45,66 @@ pub enum IssueSubcommands {
     New(NewArgs),
     /// View an issue by its ID
     View(ViewArgs),
+    /// Reopens a closed issue.
+    Reopen(ReopenArgs),
+    /// Closes an open issue.
+    Close(CloseArgs),
+    /// Resolves an open issue.
+    Resolve(ResolveArgs),
+}
+
+/// Possible states for a Git issue
+#[derive(Debug)]
+pub enum IssueStatus {
+    /// The issue is currently open
+    Open,
+    /// The issue has been resolved
+    Resolved,
+    /// The issue has been closed
+    Closed,
+}
+
+impl IssueStatus {
+    /// Maps the issue status to its corresponding Nostr kind.
+    pub fn kind(&self) -> Kind {
+        match self {
+            Self::Open => Kind::GitStatusOpen,
+            Self::Resolved => Kind::GitStatusApplied,
+            Self::Closed => Kind::GitStatusClosed,
+        }
+    }
+
+    /// Check if the issue is open.
+    pub fn is_open(&self) -> bool {
+        matches!(self, Self::Open)
+    }
+
+    /// Check if the issue is resolved.
+    pub fn is_resolved(&self) -> bool {
+        matches!(self, Self::Resolved)
+    }
+
+    /// Check if the issue is closed.
+    pub fn is_closed(&self) -> bool {
+        matches!(self, Self::Closed)
+    }
+}
+
+impl TryFrom<Kind> for IssueStatus {
+    type Error = N34Error;
+
+    fn try_from(kind: Kind) -> Result<Self, Self::Error> {
+        match kind {
+            Kind::GitStatusOpen => Ok(Self::Open),
+            Kind::GitStatusApplied => Ok(Self::Resolved),
+            Kind::GitStatusClosed => Ok(Self::Closed),
+            _ => Err(N34Error::InvalidIssueStatus(kind)),
+        }
+    }
 }
 
 impl CommandRunner for IssueSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, & New View)
+        crate::run_command!(self, options, & New View Reopen Close Resolve)
     }
 }

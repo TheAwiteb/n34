@@ -39,7 +39,7 @@ use nostr_sdk::Client;
 use traits::TokenUtils;
 
 use crate::{
-    cli::CliOptions,
+    cli::{CliOptions, issue::IssueStatus},
     error::{N34Error, N34Result},
 };
 
@@ -239,6 +239,8 @@ impl NostrClient {
         .collect()
     }
 
+    /// Returns the username for a given public key. If no username is found,
+    /// falls back to a shortened version of the public key.
     pub async fn get_username(&self, user: PublicKey) -> String {
         self.fetch_event(Filter::new().kind(Kind::Metadata).author(user))
             .await
@@ -250,6 +252,31 @@ impl NostrClient {
                 let pubkey = user.to_bech32().expect("The error is `Infallible`");
                 format!("{}...{}", &pubkey[..8], &pubkey[NPUB_LEN - 8..])
             })
+    }
+
+    /// Get the latest status of an issue by its ID, only considering status
+    /// events from authorized_pubkeys. If no valid status event is found,
+    /// defaults to Open.
+    pub async fn fetch_issue_status(
+        &self,
+        issue_id: EventId,
+        authorized_pubkeys: Vec<PublicKey>,
+    ) -> N34Result<IssueStatus> {
+        self.fetch_events(
+            Filter::new()
+                .event(issue_id)
+                .kinds([
+                    Kind::GitStatusOpen,
+                    Kind::GitStatusApplied,
+                    Kind::GitStatusClosed,
+                ])
+                .authors(utils::dedup(authorized_pubkeys.into_iter())),
+        )
+        .await?
+        .into_iter()
+        .max_by_key(|e| e.created_at)
+        .map(|status| IssueStatus::try_from(status.kind))
+        .unwrap_or_else(|| Ok(IssueStatus::Open))
     }
 
     /// Finds the root issue or patch for a given event. If the event is already

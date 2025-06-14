@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `config relays` command to set the default fallbacks relays - by Awiteb
 - New `issue view` command to view an issue - by Awiteb
 - New `patch fetch` command to fetch patches - by Awiteb
+- New `issue {reopen,close,resolve}` commands to manage issue status - by Awiteb
 
 ### Refactor
 

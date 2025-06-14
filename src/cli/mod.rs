@@ -16,6 +16,8 @@
 
 /// Commands module
 pub mod commands;
+/// Common commands used by multiply commands
+pub mod common_commands;
 /// The CLI config
 pub mod config;
 /// Default lazy values for CLI arguments

@@ -16,7 +16,7 @@
 
 use std::process::ExitCode;
 
-use nostr::event::builder::Error as EventBuilderError;
+use nostr::event::{Kind, builder::Error as EventBuilderError};
 use nostr_sdk::client::Error as ClientError;
 
 use crate::cli::ConfigError;
@@ -89,8 +89,16 @@ pub enum N34Error {
         "Patch not found, make sure it is in the relays and make sure that the ID is an patch ID"
     )]
     CanNotFoundPatch,
-    #[error("The given patch id is not a root patch")]
+    #[error(r#"The given patch id is not a root patch. It must contains `["t", "root"]` tag"#)]
     NotRootPatch,
+    #[error("This status kind can't be set for an issue: {0}")]
+    InvalidIssueStatus(Kind),
+    #[error("This status kind can't be set for a patch: {0}")]
+    InvalidPatchStatus(Kind),
+    #[error("Can't find the root patch of the given patch-revision")]
+    RevisionRootNotFound,
+    #[error("Invalid status for the issue/patch: {0}")]
+    InvalidStatus(String),
 }
 
 impl N34Error {
