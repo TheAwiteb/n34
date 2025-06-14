@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `patch fetch` command to fetch patches - by Awiteb
 - New `issue {reopen,close,resolve}` commands to manage issue status - by Awiteb
 
+### Fixed
+
+- Not to return an error if `nostr-address` file does not exist - by Awiteb
+
 ### Refactor
 
 - Store the config in `CliOptions` instead of its path - by Awiteb

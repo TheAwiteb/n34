@@ -227,8 +227,9 @@ pub fn nostr_address_path() -> std::io::Result<PathBuf> {
     std::env::current_dir().map(|p| p.join(NOSTR_ADDRESS_FILE))
 }
 
-/// If the given coordinate is Some, return it. Otherwise, try to read and parse
-/// the first non-comment line from the `nostr-address` file.
+/// Returns the given coordinates if Some, otherwise attempts to read and parse
+/// coordinates from the specified file. Returns an empty vector if the file
+/// doesn't exist.
 pub fn naddrs_or_file(
     naddrs: Option<Vec<Nip19Coordinate>>,
     address_file_path: &Path,
@@ -236,7 +237,12 @@ pub fn naddrs_or_file(
     if let Some(naddrs) = naddrs {
         return Ok(naddrs);
     }
-    parsers::parse_nostr_address_file(address_file_path)
+
+    if address_file_path.exists() {
+        parsers::parse_nostr_address_file(address_file_path)
+    } else {
+        Ok(Vec::new())
+    }
 }
 
 /// Generate a reply tag for an event with the given ID, relay URL (if any), and
