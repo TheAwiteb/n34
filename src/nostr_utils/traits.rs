@@ -192,6 +192,11 @@ impl Vec<Nip19Coordinate> {
         self.into_iter().map(|n| n.coordinate).collect()
     }
 
+    /// Returns all repository owners' public keys from these coordinates.
+    pub fn extract_owners(&self) -> Vec<PublicKey> {
+        self.iter().map(|n| n.public_key).collect()
+    }
+
     /// Extracts all relay URLs from these coordinates
     pub fn extract_relays(&self) -> Vec<RelayUrl> {
         self.iter().flat_map(|n| n.relays.clone()).collect()

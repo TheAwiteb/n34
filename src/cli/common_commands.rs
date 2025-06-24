@@ -54,6 +54,7 @@ pub async fn issue_status_command(
         .add_relays(&[naddrs.extract_relays(), issue_id.relays].concat())
         .await;
 
+    let owners = naddrs.extract_owners();
     let coordinates = naddrs.clone().into_coordinates();
     let repos = client.fetch_repos(&coordinates).await?;
     let maintainers = repos.extract_maintainers();
@@ -68,7 +69,7 @@ pub async fn issue_status_command(
     let issue_status = client
         .fetch_issue_status(
             issue_id.event_id,
-            [maintainers.as_slice(), &[issue_event.pubkey]].concat(),
+            [maintainers.as_slice(), &[issue_event.pubkey], &owners].concat(),
         )
         .await?;
 
@@ -83,6 +84,7 @@ pub async fn issue_status_command(
         ))
         .tag(Tag::public_key(issue_event.pubkey))
         .tags(maintainers.iter().map(|p| Tag::public_key(*p)))
+        .tags(owners.iter().map(|p| Tag::public_key(*p)))
         .tags(
             coordinates
                 .into_iter()
