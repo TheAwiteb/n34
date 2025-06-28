@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `issue view` command to view an issue - by Awiteb
 - New `patch fetch` command to fetch patches - by Awiteb
 - New `issue {reopen,close,resolve}` commands to manage issue status - by Awiteb
+- New `patch` subcommands apply,close,draft,merge and reopen to manage the patch status - by Awiteb
+
+### Dependencies
+
+- Add `either@1.15.0` to the dependencies - by Awiteb
+- Update `nostr` to `0.42.2` - by Awiteb
 
 ### Fixed
 

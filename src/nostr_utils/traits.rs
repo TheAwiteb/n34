@@ -16,7 +16,7 @@
 
 use convert_case::{Case, Casing};
 use nostr::{
-    event::{EventBuilder, EventId, Tag, TagKind, TagStandard, Tags},
+    event::{Event, EventBuilder, EventId, Kind, Tag, TagKind, TagStandard, Tags},
     key::PublicKey,
     nips::{
         nip01::Coordinate,
@@ -216,4 +216,43 @@ impl Vec<GitRepositoryAnnouncement> {
         self.iter().flat_map(|r| r.maintainers.clone()).collect()
     }
 }
+
+/// Utility functions for working with patch events
+#[easy_ext::ext(GitPatchUtils)]
+impl Event {
+    /// Returns whether the patch is a root or not
+    pub fn is_root_patch(&self) -> bool {
+        self.kind == Kind::GitPatch
+            && self
+                .tags
+                .filter(TagKind::t())
+                .any(|t| t.content() == Some("root"))
+    }
+
+    /// Returns whether the patch is patch-revision or not
+    pub fn is_revision_patch(&self) -> bool {
+        self.kind == Kind::GitPatch
+            && self
+                .tags
+                .filter(TagKind::t())
+                .any(|t| t.content() == Some("root-revision"))
+    }
+
+    /// Gets the root patch ID from a patch-revision event by finding the `e`
+    /// tag that replies to it. Fails if no such tag is found or if the tag
+    /// contains an invalid event ID.
+    pub fn root_patch_from_revision(&self) -> N34Result<EventId> {
+        self.tags
+            .iter()
+            .find(|tag| tag.is_reply())
+            .ok_or_else(|| {
+                N34Error::InvalidEvent(
+                    "A patch revision without `e`-reply to the root patch".to_owned(),
+                )
+            })?
+            .content()
+            .ok_or_else(|| N34Error::InvalidEvent("`e` tag without an event".to_owned()))?
+            .parse()
+            .map_err(|err| N34Error::InvalidEvent(format!("Invalid event ID in `e` tag: {err}")))
+    }
 }

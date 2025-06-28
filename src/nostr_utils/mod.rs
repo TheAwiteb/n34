@@ -23,7 +23,7 @@ use std::{collections::HashSet, time::Duration};
 
 use futures::future;
 use nostr::{
-    event::{Event, EventId, Kind, Tag, TagStandard, Tags, UnsignedEvent},
+    event::{Event, EventId, Kind, Tag, TagKind, TagStandard, Tags, UnsignedEvent},
     filter::Filter,
     key::PublicKey,
     nips::{
@@ -39,7 +39,7 @@ use nostr_sdk::Client;
 use traits::TokenUtils;
 
 use crate::{
-    cli::{CliOptions, issue::IssueStatus},
+    cli::{CliOptions, issue::IssueStatus, patch::PatchStatus},
     error::{N34Error, N34Result},
 };
 
@@ -239,6 +239,13 @@ impl NostrClient {
         .collect()
     }
 
+    /// Fetch the patch by the given id. None if not found
+    pub async fn fetch_patch(&self, patch_id: EventId) -> N34Result<Event> {
+        self.fetch_event(Filter::new().id(patch_id).kind(Kind::GitPatch))
+            .await?
+            .ok_or(N34Error::CanNotFoundPatch)
+    }
+
     /// Returns the username for a given public key. If no username is found,
     /// falls back to a shortened version of the public key.
     pub async fn get_username(&self, user: PublicKey) -> String {
@@ -277,6 +284,69 @@ impl NostrClient {
         .max_by_key(|e| e.created_at)
         .map(|status| IssueStatus::try_from(status.kind))
         .unwrap_or_else(|| Ok(IssueStatus::Open))
+    }
+
+    /// Gets the status of a patch. If it's a revision patch, checks if it's
+    /// closed when the root patch is already merged/applied but doesn't
+    /// reference this revision. Defaults to Open status if no status event
+    /// is found.
+    pub async fn fetch_patch_status(
+        &self,
+        root_patch: EventId,
+        root_revision: Option<EventId>,
+        authorized_pubkeys: Vec<PublicKey>,
+    ) -> N34Result<PatchStatus> {
+        let (root_status, event_tags) = self
+            .fetch_events(
+                Filter::new()
+                    .event(root_patch)
+                    .kinds([
+                        Kind::GitStatusOpen,
+                        Kind::GitStatusApplied,
+                        Kind::GitStatusClosed,
+                        Kind::GitStatusDraft,
+                    ])
+                    .authors(utils::dedup(authorized_pubkeys.into_iter())),
+            )
+            .await?
+            .into_iter()
+            .max_by_key(|e| e.created_at)
+            .map(|status| N34Result::Ok((PatchStatus::try_from(status.kind)?, status.tags)))
+            .unwrap_or_else(|| Ok((PatchStatus::Open, Tags::new())))?;
+
+        if let Some(revision_id) = root_revision {
+            if root_status.is_merged_or_applied()
+                && !event_tags
+                    .filter(TagKind::e())
+                    .any(|t| t.is_reply() && t.content().is_some_and(|c| c == revision_id.to_hex()))
+            {
+                return Ok(PatchStatus::Closed);
+            }
+        }
+
+        Ok(root_status)
+    }
+
+    pub async fn fetch_patch_series(
+        &self,
+        root_patch_id: EventId,
+        root_patch_author: PublicKey,
+    ) -> N34Result<Vec<Event>> {
+        Ok(self
+            .fetch_events(
+                Filter::new()
+                    .kind(Kind::GitPatch)
+                    .author(root_patch_author)
+                    .event(root_patch_id),
+            )
+            .await?
+            .into_iter()
+            .filter(|e| {
+                e.tags.iter().any(|t| {
+                    t.is_root() && t.content().is_some_and(|c| c == root_patch_id.to_hex())
+                })
+            })
+            .collect())
     }
 
     /// Finds the root issue or patch for a given event. If the event is already

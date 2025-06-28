@@ -14,8 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+/// `patch apply` suubcommand
+mod apply;
+/// `patch close` subcommand
+mod close;
+/// `patch draft` subcommand
+mod draft;
 /// `patch fetch` subcommand
 mod fetch;
+/// `patch merge` subcommand
+mod merge;
+/// `patch reopen` subcommand
+mod reopen;
 /// `patch send` subcommand
 mod send;
 
@@ -26,13 +36,18 @@ use std::{
 };
 
 use clap::Subcommand;
+use nostr::event::Kind;
 use regex::Regex;
 
+use self::apply::ApplyArgs;
+use self::close::CloseArgs;
+use self::draft::DraftArgs;
 use self::fetch::FetchArgs;
+use self::merge::MergeArgs;
+use self::reopen::ReopenArgs;
 use self::send::SendArgs;
 use super::{CliOptions, CommandRunner};
 use crate::error::{N34Error, N34Result};
-
 
 /// Regular expression for extracting the patch subject.
 static SUBJECT_RE: LazyLock<Regex> =
@@ -49,10 +64,20 @@ static PATCH_VERSION_NUMBER_RE: LazyLock<Regex> = LazyLock::new(|| {
 
 #[derive(Subcommand, Debug)]
 pub enum PatchSubcommands {
-    /// Send one or more patches to a repository
+    /// Send one or more patches to a repository.
     Send(SendArgs),
-    /// Fetches a patch by its id
+    /// Fetches a patch by its id.
     Fetch(FetchArgs),
+    /// Closes an open or drafted patch.
+    Close(CloseArgs),
+    /// Converts the closed or open patch to draft state.
+    Draft(DraftArgs),
+    /// Reopens a closed or drafted patch.
+    Reopen(ReopenArgs),
+    /// Set an open patch status to applied.
+    Apply(ApplyArgs),
+    /// Set an open patch status to merged.
+    Merge(MergeArgs),
 }
 
 /// Represents a git patch
@@ -64,6 +89,64 @@ pub struct GitPatch {
     pub subject: String,
     /// Detailed explanation of the patch changes
     pub body:    String,
+}
+
+#[derive(Debug)]
+pub enum PatchStatus {
+    /// The patch is currently open
+    Open,
+    /// The patch has been merged/applied
+    MergedApplied,
+    /// The patch has been closed
+    Closed,
+    /// A patch that has been drafted but not yet applied.
+    Draft,
+}
+
+impl PatchStatus {
+    /// Maps the issue status to its corresponding Nostr kind.
+    pub fn kind(&self) -> Kind {
+        match self {
+            Self::Open => Kind::GitStatusOpen,
+            Self::MergedApplied => Kind::GitStatusApplied,
+            Self::Closed => Kind::GitStatusClosed,
+            Self::Draft => Kind::GitStatusDraft,
+        }
+    }
+
+    /// Check if the patch is open.
+    pub fn is_open(&self) -> bool {
+        matches!(self, Self::Open)
+    }
+
+    /// Check if the patch is merged/applied.
+    pub fn is_merged_or_applied(&self) -> bool {
+        matches!(self, Self::MergedApplied)
+    }
+
+    /// Check if the patch is closed.
+    pub fn is_closed(&self) -> bool {
+        matches!(self, Self::Closed)
+    }
+
+    /// Check if the patch is drafted
+    pub fn is_drafted(&self) -> bool {
+        matches!(self, Self::Draft)
+    }
+}
+
+impl TryFrom<Kind> for PatchStatus {
+    type Error = N34Error;
+
+    fn try_from(kind: Kind) -> Result<Self, Self::Error> {
+        match kind {
+            Kind::GitStatusOpen => Ok(Self::Open),
+            Kind::GitStatusApplied => Ok(Self::MergedApplied),
+            Kind::GitStatusClosed => Ok(Self::Closed),
+            Kind::GitStatusDraft => Ok(Self::Draft),
+            _ => Err(N34Error::InvalidPatchStatus(kind)),
+        }
+    }
 }
 
 impl GitPatch {
@@ -90,7 +173,7 @@ impl GitPatch {
 
 impl CommandRunner for PatchSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, & Send Fetch)
+        crate::run_command!(self, options, & Send Fetch Close Reopen Draft Apply Merge)
     }
 }
 
@@ -170,7 +253,6 @@ fn patch_file_name(subject: &str) -> N34Result<String> {
         .replace("--", "-"))
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,7 +283,6 @@ index 4120f5a..e68783c 100644
         assert_eq!(patch.subject, "[PATCH] chore: a to abc");
         assert_eq!(patch.body, "Abc patch");
     }
-
 
     #[test]
     fn patch_normal_with_patch_in_content() {

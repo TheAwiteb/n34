@@ -23,7 +23,7 @@ details, see the following section.
 - [X] Patches (Send and fetch)
 - [X] Issues (Send and view)
 - [X] Replies
-- [ ] Issues and patches status
+- [X] Issues and patches status
 - [X] Gossip Model ([NIP-65])
 - [X] Proof of Work ([NIP-13])
 - [X] `nostr:` URI scheme, in the issue/reply content ([NIP-21])
