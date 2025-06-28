@@ -1144,9 +1144,9 @@ checksum = "f0efe882e02d206d8d279c20eb40e03baf7cb5136a1476dc084a324fbc3ec42d"
 
 [[package]]
 name = "nostr"
-version = "0.42.0"
+version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0453f6c77c49cef830f3acbf5c3ac29732899c1fde4ea97045fb59896e48fda"
+checksum = "d193102a62a22b61f9a61b9df54fb19ebab8c1763d088fbb9a6f0f57000fba2d"
 dependencies = [
  "base64",
  "bech32",
