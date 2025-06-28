@@ -24,7 +24,7 @@ use clap::Args;
 use nostr::{
     event::{Kind, TagKind},
     filter::Filter,
-    nips::{nip01::Coordinate, nip19::ToBech32},
+    nips::nip19::ToBech32,
 };
 
 use crate::{
@@ -98,17 +98,7 @@ impl CommandRunner for FetchArgs {
         {
             return Err(N34Error::NotRootPatch);
         }
-        let root_first_coordinate = Coordinate::parse(
-            root_patch
-                .tags
-                .find(TagKind::a())
-                .and_then(|t| t.content())
-                .ok_or(N34Error::InvalidEvent(
-                    "The patch does not contain the tag `a` coordinate of the repository"
-                        .to_owned(),
-                ))?,
-        )
-        .map_err(|err| N34Error::InvalidEvent(err.to_string()))?;
+
         let root_author = root_patch.pubkey;
         let root_patch = super::GitPatch::from_str(&root_patch.content)
             .map_err(|err| N34Error::InvalidEvent(format!("Failed to parse the patch: {err}")))?;
@@ -116,13 +106,7 @@ impl CommandRunner for FetchArgs {
         tracing::info!("Found the root patch: `{}`", root_patch.subject);
 
         let mut patches = client
-            .fetch_events(
-                Filter::new()
-                    .kind(Kind::GitPatch)
-                    .author(root_author)
-                    .event(self.patch_id.event_id)
-                    .coordinate(&root_first_coordinate),
-            )
+            .fetch_patch_series(self.patch_id.event_id, root_author)
             .await?
             .into_iter()
             .map(|p| {
