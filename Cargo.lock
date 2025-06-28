@@ -1122,6 +1122,7 @@ dependencies = [
  "convert_case",
  "dirs",
  "easy-ext",
+ "either",
  "futures",
  "nostr",
  "nostr-sdk",
