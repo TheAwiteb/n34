@@ -48,7 +48,7 @@ impl CommandRunner for ReopenArgs {
             |issue_status| {
                 if issue_status.is_open() {
                     return Err(N34Error::InvalidStatus(
-                        "You can't reopen an opened issue".to_owned(),
+                        "You can't reopen an open issue".to_owned(),
                     ));
                 }
 
