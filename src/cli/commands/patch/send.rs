@@ -16,7 +16,7 @@
 
 use std::{fs, str::FromStr};
 
-use bitcoin_hashes::sha1::Hash as HashSha1;
+use bitcoin_hashes::Sha1;
 use clap::Args;
 use futures::future;
 use nostr::{
@@ -63,7 +63,7 @@ pub struct SendArgs {
     /// Can be obtained by running `git rev-parse master` (replace 'master' with
     /// your base branch name).
     #[arg(long, value_name = "COMMIT-ID")]
-    euc:            HashSha1,
+    euc:            Sha1,
     /// Original patch ID if this is a revision of it
     #[arg(long, value_name = "EVENT-ID")]
     original_patch: Option<NostrEvent>,
@@ -156,7 +156,7 @@ async fn make_patch_series(
     original_patch: Option<EventId>,
     relay_hint: Option<RelayUrl>,
     repo_coordinates: Vec<Coordinate>,
-    euc: &HashSha1,
+    euc: &Sha1,
     author_pkey: PublicKey,
 ) -> N34Result<(Vec<UnsignedEvent>, Vec<RelayUrl>)> {
     let mut write_relays = Vec::new();
@@ -207,7 +207,7 @@ async fn make_patch(
     reply_to: Option<EventId>,
     write_relay: Option<&RelayUrl>,
     repo_coordinates: &[Coordinate],
-    euc: &HashSha1,
+    euc: &Sha1,
     author_pkey: PublicKey,
 ) -> (UnsignedEvent, Vec<RelayUrl>) {
     let content_details = client.parse_content(&patch.body).await;
