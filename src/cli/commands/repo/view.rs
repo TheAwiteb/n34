@@ -17,6 +17,7 @@
 use std::fmt;
 
 use clap::Args;
+use nostr::nips::nip19::ToBech32;
 
 use crate::{
     cli::{
@@ -78,7 +79,11 @@ impl CommandRunner for ViewArgs {
             if !repo.maintainers.is_empty() {
                 repo_details.push_str(&format!(
                     "\nMaintainers:\n{}",
-                    format_list(repo.maintainers)
+                    format_list(
+                        repo.maintainers
+                            .iter()
+                            .map(|p| p.to_bech32().expect("Infallible"))
+                    )
                 ));
             }
             repos_details.push(repo_details);
@@ -90,11 +95,12 @@ impl CommandRunner for ViewArgs {
 }
 
 /// Format a vector to print it
-fn format_list<T>(vector: Vec<T>) -> String
+fn format_list<I, T>(iterator: I) -> String
 where
+    I: IntoIterator<Item = T>,
     T: fmt::Display,
 {
-    vector
+    iterator
         .into_iter()
         .map(|t| format!(" - {t}"))
         .collect::<Vec<String>>()

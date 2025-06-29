@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `patch fetch` command to fetch patches - by Awiteb
 - New `issue {reopen,close,resolve}` commands to manage issue status - by Awiteb
 - New `patch` subcommands apply,close,draft,merge and reopen to manage the patch status - by Awiteb
+- View the repo maintainers as `npub` - by Awiteb
 
 ### Dependencies
 
