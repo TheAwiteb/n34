@@ -54,7 +54,7 @@ const MAX_DATE: i64 = 253370764800;
 )]
 pub struct ReplyArgs {
     /// The issue, patch, or comment to reply to
-    #[arg(long, value_name = "nevent1-or-note1")]
+    #[arg(value_name = "nevent1-or-note1")]
     to:       NostrEvent,
     /// Quote the replied-to event in the editor
     #[arg(long)]
