@@ -35,7 +35,7 @@ pub struct ViewArgs {
     /// (`4rs.nl/n34` or `_@4rs.nl/n34`), or a set name like `kernel`.
     ///
     /// If omitted, looks for a `nostr-address` file.
-    #[arg(value_name = "NADDR-NIP05-OR-SET", long = "repo")]
+    #[arg(value_name = "NADDR-NIP05-OR-SET")]
     naddrs: Option<Vec<NaddrOrSet>>,
 }
 
