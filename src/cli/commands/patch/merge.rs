@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use bitcoin_hashes::Sha1;
 use clap::Args;
+use nostr::hashes::sha1::Hash as Sha1Hash;
 
 use super::PatchStatus;
 use crate::{
@@ -39,7 +39,7 @@ pub struct MergeArgs {
     /// revision root
     patch_id:     NostrEvent,
     /// The merge commit id
-    merge_commit: Sha1,
+    merge_commit: Sha1Hash,
 }
 
 impl CommandRunner for MergeArgs {

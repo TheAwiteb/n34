@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `either@1.15.0` to the dependencies - by Awiteb
 - Update `nostr` to `0.42.2` - by Awiteb
+- Remove `bitcoin_hashes` and use `nostr::hashes` re-export - by Awiteb
 
 ### Fixed
 

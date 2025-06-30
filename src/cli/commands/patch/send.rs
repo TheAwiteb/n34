@@ -16,11 +16,11 @@
 
 use std::{fs, str::FromStr};
 
-use bitcoin_hashes::Sha1;
 use clap::Args;
 use futures::future;
 use nostr::{
     event::{EventBuilder, EventId, Kind, Tag, TagKind, Tags, UnsignedEvent},
+    hashes::sha1::Hash as Sha1Hash,
     key::PublicKey,
     nips::{nip01::Coordinate, nip10::Marker},
     types::RelayUrl,
@@ -156,7 +156,7 @@ async fn make_patch_series(
     original_patch: Option<EventId>,
     relay_hint: Option<RelayUrl>,
     repo_coordinates: Vec<Coordinate>,
-    euc: &Sha1,
+    euc: Option<&Sha1Hash>,
     author_pkey: PublicKey,
 ) -> N34Result<(Vec<UnsignedEvent>, Vec<RelayUrl>)> {
     let mut write_relays = Vec::new();
@@ -207,7 +207,7 @@ async fn make_patch(
     reply_to: Option<EventId>,
     write_relay: Option<&RelayUrl>,
     repo_coordinates: &[Coordinate],
-    euc: &Sha1,
+    euc: Option<&Sha1Hash>,
     author_pkey: PublicKey,
 ) -> (UnsignedEvent, Vec<RelayUrl>) {
     let content_details = client.parse_content(&patch.body).await;

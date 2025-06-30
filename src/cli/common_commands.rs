@@ -16,11 +16,11 @@
 
 use std::iter;
 
-use bitcoin_hashes::Sha1;
 use either::Either;
 use nostr::{
     event::{EventBuilder, Tag, TagKind},
     filter::Filter,
+    hashes::sha1::Hash as Sha1Hash,
     nips::nip10::Marker,
 };
 
@@ -128,7 +128,7 @@ pub async fn patch_status_command(
     patch_id: NostrEvent,
     naddrs: Option<Vec<NaddrOrSet>>,
     new_status: PatchStatus,
-    merge_or_applied_commits: Option<Either<Sha1, Vec<Sha1>>>,
+    merge_or_applied_commits: Option<Either<Sha1Hash, Vec<Sha1Hash>>>,
     check_fn: impl FnOnce(&PatchStatus) -> N34Result<()>,
 ) -> N34Result<()> {
     let user_pkey = options.pubkey().await?;
