@@ -207,7 +207,7 @@ impl Vec<Nip19Coordinate> {
 /// Utility functions for working with lists of repository announcement
 #[easy_ext::ext(ReposUtils)]
 impl Vec<GitRepositoryAnnouncement> {
-    /// Extracts all relay URLs from these reposotoies
+    /// Extracts all relay URLs from these repositories
     pub fn extract_relays(&self) -> Vec<RelayUrl> {
         self.iter().flat_map(|n| n.relays.clone()).collect()
     }

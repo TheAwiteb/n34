@@ -216,7 +216,7 @@ impl NostrClient {
             .to_vec())
     }
 
-    /// Try to fetch the reposotoies and returns them
+    /// Try to fetch the repositories and returns them
     pub async fn fetch_repos(
         &self,
         repo_naddrs: &[Coordinate],

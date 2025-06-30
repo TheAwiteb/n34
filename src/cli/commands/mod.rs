@@ -78,7 +78,7 @@ pub struct CliOptions {
 /// N34 commands
 #[derive(Parser, Debug)]
 pub enum Commands {
-    /// Manage reposotoies and relays sets
+    /// Manage repositories and relays sets
     Sets {
         #[command(subcommand)]
         subcommands: SetsSubcommands,
