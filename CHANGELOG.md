@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove the `--repo` option and make the repo an argument - by Awiteb
 - Remove the `--to` flag from `reply` command and make it an argument - by Awiteb
+- Remove `--euc` flag from `patch send` command and use the repo euc - by Awiteb
 
 ## [0.2.0] - 2025-06-01
 

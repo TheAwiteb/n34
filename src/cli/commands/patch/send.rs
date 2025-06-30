@@ -58,12 +58,6 @@ pub struct SendArgs {
     /// `nostr:npub1...`.
     #[arg(value_name = "PATCH-PATH", required = true, value_parser = parse_patch_path)]
     patches:        Vec<GitPatch>,
-    /// The earliest unique commit ID in the repository.
-    ///
-    /// Can be obtained by running `git rev-parse master` (replace 'master' with
-    /// your base branch name).
-    #[arg(long, value_name = "COMMIT-ID")]
-    euc:            Sha1,
     /// Original patch ID if this is a revision of it
     #[arg(long, value_name = "EVENT-ID")]
     original_patch: Option<NostrEvent>,
@@ -90,6 +84,7 @@ impl CommandRunner for SendArgs {
             .add_relays(&utils::add_read_relays(relays_list.as_ref()))
             .await;
         let repos = client.fetch_repos(&repo_coordinates).await?;
+        let euc = repos.extract_euc();
         let maintainers = repos.extract_maintainers();
         client.add_relays(&repos.extract_relays()).await;
 
@@ -99,7 +94,7 @@ impl CommandRunner for SendArgs {
             self.original_patch.as_ref().map(|e| e.event_id),
             repos.extract_relays().first().cloned(),
             repo_coordinates,
-            &self.euc,
+            euc,
             user_pubk,
         )
         .await?;
@@ -224,7 +219,6 @@ async fn make_patch(
     let mut safe_dedup_tags = Tags::new();
     safe_dedup_tags.push(Tag::alt(format!("{PATCH_ALT_PREFIX}{}", patch.subject)));
     safe_dedup_tags.push(Tag::description(patch.subject));
-    safe_dedup_tags.push(Tag::reference(euc.to_string()));
     safe_dedup_tags.extend(content_details.into_tags());
     safe_dedup_tags.extend(
         repo_coordinates
@@ -236,6 +230,9 @@ async fn make_patch(
             .iter()
             .map(|c| Tag::public_key(c.public_key)),
     );
+    if let Some(euc) = euc {
+        safe_dedup_tags.push(Tag::reference(euc.to_string()));
+    }
     safe_dedup_tags.dedup();
     let mut event_builder = EventBuilder::new(Kind::GitPatch, patch.inner).tags(safe_dedup_tags);
 

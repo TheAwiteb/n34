@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 use convert_case::{Case, Casing};
+use nostr::hashes::sha1::Hash as Sha1Hash;
 use nostr::{
     event::{Event, EventBuilder, EventId, Kind, Tag, TagKind, TagStandard, Tags},
     key::PublicKey,
@@ -214,6 +215,11 @@ impl Vec<GitRepositoryAnnouncement> {
     /// Extract all the maintainers from these repositories
     pub fn extract_maintainers(&self) -> Vec<PublicKey> {
         self.iter().flat_map(|r| r.maintainers.clone()).collect()
+    }
+
+    /// Gets the first EUC hash from the reposotoies if it exists.
+    pub fn extract_euc(&self) -> Option<&Sha1Hash> {
+        self.iter().find_map(|r| r.euc.as_ref())
     }
 }
 
