@@ -105,6 +105,7 @@ pub enum PatchStatus {
 
 impl PatchStatus {
     /// Maps the issue status to its corresponding Nostr kind.
+    #[inline]
     pub fn kind(&self) -> Kind {
         match self {
             Self::Open => Kind::GitStatusOpen,
@@ -115,21 +116,25 @@ impl PatchStatus {
     }
 
     /// Check if the patch is open.
+    #[inline]
     pub fn is_open(&self) -> bool {
         matches!(self, Self::Open)
     }
 
     /// Check if the patch is merged/applied.
+    #[inline]
     pub fn is_merged_or_applied(&self) -> bool {
         matches!(self, Self::MergedApplied)
     }
 
     /// Check if the patch is closed.
+    #[inline]
     pub fn is_closed(&self) -> bool {
         matches!(self, Self::Closed)
     }
 
     /// Check if the patch is drafted
+    #[inline]
     pub fn is_drafted(&self) -> bool {
         matches!(self, Self::Draft)
     }

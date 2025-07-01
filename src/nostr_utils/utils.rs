@@ -43,17 +43,20 @@ use crate::{
 };
 
 /// Returns the value of the given tag
+#[inline]
 fn tag_value(tag: &TagStandard) -> String {
     tag.clone().to_vec().remove(1)
 }
 
 /// Parses the tag value into type `T` if possible.
+#[inline]
 fn parse_value<T: FromStr>(tag: &TagStandard) -> Option<T> {
     tag_value(tag).parse().ok()
 }
 
 /// Gets all values from the tag. If any value fails to parse, returns an empty
 /// vector.
+#[inline]
 fn tag_values<T>(tag: &TagStandard) -> Vec<T>
 where
     T: FromStr + fmt::Debug,
@@ -113,6 +116,7 @@ where
 
 /// Creates a new NIP-19 nevent string from an event ID and up to 3 unique relay
 /// URLs.
+#[inline]
 pub fn new_nevent(event_id: EventId, relays: &[RelayUrl]) -> N34Result<String> {
     Nip19Event::new(event_id)
         .relays(
@@ -127,6 +131,7 @@ pub fn new_nevent(event_id: EventId, relays: &[RelayUrl]) -> N34Result<String> {
 
 /// Creates a NIP-19 naddr string for a git repository announcement and up to 3
 /// unique relay URLs.
+#[inline]
 pub fn repo_naddr(
     repo_id: impl Into<String>,
     pubk: PublicKey,
@@ -223,6 +228,7 @@ pub fn get_content(
 }
 
 /// Path to the `nostr-address` file in current directory.
+#[inline]
 pub fn nostr_address_path() -> std::io::Result<PathBuf> {
     std::env::current_dir().map(|p| p.join(NOSTR_ADDRESS_FILE))
 }
@@ -247,6 +253,7 @@ pub fn naddrs_or_file(
 
 /// Generate a reply tag for an event with the given ID, relay URL (if any), and
 /// marker.
+#[inline]
 pub fn event_reply_tag(reply_to: &EventId, relay: Option<&RelayUrl>, marker: Marker) -> Tag {
     Tag::custom(
         TagKind::e(),

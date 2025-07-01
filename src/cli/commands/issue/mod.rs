@@ -66,6 +66,7 @@ pub enum IssueStatus {
 
 impl IssueStatus {
     /// Maps the issue status to its corresponding Nostr kind.
+    #[inline]
     pub fn kind(&self) -> Kind {
         match self {
             Self::Open => Kind::GitStatusOpen,
@@ -75,16 +76,19 @@ impl IssueStatus {
     }
 
     /// Check if the issue is open.
+    #[inline]
     pub fn is_open(&self) -> bool {
         matches!(self, Self::Open)
     }
 
     /// Check if the issue is resolved.
+    #[inline]
     pub fn is_resolved(&self) -> bool {
         matches!(self, Self::Resolved)
     }
 
     /// Check if the issue is closed.
+    #[inline]
     pub fn is_closed(&self) -> bool {
         matches!(self, Self::Closed)
     }
