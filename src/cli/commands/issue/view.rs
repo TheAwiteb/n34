@@ -15,10 +15,7 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 use clap::Args;
-use nostr::{
-    event::{Kind, TagKind},
-    filter::Filter,
-};
+use nostr::{event::Kind, filter::Filter};
 
 use crate::{
     cli::{
@@ -29,7 +26,7 @@ use crate::{
     error::{N34Error, N34Result},
     nostr_utils::{
         NostrClient,
-        traits::{NaddrsUtils, ReposUtils},
+        traits::{GitIssueUtils, NaddrsUtils, ReposUtils},
         utils,
     },
 };
@@ -77,24 +74,9 @@ impl CommandRunner for ViewArgs {
             .await?
             .ok_or(N34Error::CanNotFoundIssue)?;
 
-        let issue_subject = utils::smart_wrap(
-            issue
-                .tags
-                .find(TagKind::Subject)
-                .and_then(|t| t.content())
-                .unwrap_or("N/A"),
-            70,
-        );
+        let issue_subject = utils::smart_wrap(issue.extract_issue_subject(), 70);
         let issue_author = client.get_username(issue.pubkey).await;
-        let mut issue_labels = utils::smart_wrap(
-            &issue
-                .tags
-                .filter(TagKind::t())
-                .filter_map(|t| t.content().map(|l| format!("#{l}")))
-                .collect::<Vec<_>>()
-                .join(", "),
-            70,
-        );
+        let mut issue_labels = utils::smart_wrap(&issue.extract_issue_labels(), 70);
 
         if issue_labels.is_empty() {
             issue_labels = "\n".to_owned();

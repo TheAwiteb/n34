@@ -262,3 +262,27 @@ impl Event {
             .map_err(|err| N34Error::InvalidEvent(format!("Invalid event ID in `e` tag: {err}")))
     }
 }
+
+/// Utility functions for working with issue events
+#[easy_ext::ext(GitIssueUtils)]
+impl Event {
+    /// Gets the subject line of the issue or "N/A" if none exists
+    #[inline]
+    pub fn extract_issue_subject(&self) -> &str {
+        self.tags
+            .find(TagKind::Subject)
+            .and_then(|t| t.content())
+            .unwrap_or("N/A")
+    }
+
+    /// Gets all issue labels formatted as comma-separated hashtags (e.g. "#bug,
+    /// #feature")
+    #[inline]
+    pub fn extract_issue_labels(&self) -> String {
+        self.tags
+            .filter(TagKind::t())
+            .filter_map(|t| t.content().map(|l| format!("#{l}")))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+}
