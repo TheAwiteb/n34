@@ -20,8 +20,8 @@ details, see the following section.
 
 - [X] Repository announcements
 - [ ] Repository state announcements
-- [X] Patches (Send and fetch)
-- [X] Issues (Send and view)
+- [X] Patches (Send, fetch and list)
+- [X] Issues (Send, view and list)
 - [X] Replies
 - [X] Issues and patches status
 - [X] Gossip Model ([NIP-65])

@@ -16,6 +16,8 @@
 
 /// `issue close` subcommand
 mod close;
+/// `issue list` subcommand
+mod list;
 /// `issue new` subcommand
 mod new;
 /// `issue reopen` subcommand
@@ -25,10 +27,13 @@ mod resolve;
 /// `issue view` subcommand
 mod view;
 
+use std::fmt;
+
 use clap::Subcommand;
 use nostr::event::Kind;
 
 use self::close::CloseArgs;
+use self::list::ListArgs;
 use self::new::NewArgs;
 use self::reopen::ReopenArgs;
 use self::resolve::ResolveArgs;
@@ -51,6 +56,8 @@ pub enum IssueSubcommands {
     Close(CloseArgs),
     /// Resolves an open issue.
     Resolve(ResolveArgs),
+    /// List the repositories issues.
+    List(ListArgs),
 }
 
 /// Possible states for a Git issue
@@ -75,6 +82,15 @@ impl IssueStatus {
         }
     }
 
+    /// Returns the string representation of the issue status.
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Open => "Open",
+            Self::Resolved => "Resolved",
+            Self::Closed => "Closed",
+        }
+    }
+
     /// Check if the issue is open.
     #[inline]
     pub fn is_open(&self) -> bool {
@@ -94,6 +110,18 @@ impl IssueStatus {
     }
 }
 
+impl From<&IssueStatus> for Kind {
+    fn from(status: &IssueStatus) -> Self {
+        status.kind()
+    }
+}
+
+impl fmt::Display for IssueStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 impl TryFrom<Kind> for IssueStatus {
     type Error = N34Error;
 
@@ -109,6 +137,6 @@ impl TryFrom<Kind> for IssueStatus {
 
 impl CommandRunner for IssueSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, & New View Reopen Close Resolve)
+        crate::run_command!(self, options, & New View Reopen Close Resolve List)
     }
 }

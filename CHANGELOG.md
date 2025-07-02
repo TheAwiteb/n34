@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `patch` subcommands apply,close,draft,merge and reopen to manage the patch status - by Awiteb
 - View the repo maintainers as `npub` - by Awiteb
 - New `patch list` commands to list the repo patches - by Awiteb
+- New `issue list` commands to list the repo issues - by Awiteb
 
 ### Dependencies
 
