@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `issue {reopen,close,resolve}` commands to manage issue status - by Awiteb
 - New `patch` subcommands apply,close,draft,merge and reopen to manage the patch status - by Awiteb
 - View the repo maintainers as `npub` - by Awiteb
+- New `patch list` commands to list the repo patches - by Awiteb
 
 ### Dependencies
 
@@ -29,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Not to return an error if `nostr-address` file does not exist - by Awiteb
+- Spelling in help content - by DanConwayDev
+- Fix a typo in `EmptySetRelays` error message - by Awiteb
+- Require a repo in `repo view` command - by Awiteb
 
 ### Refactor
 

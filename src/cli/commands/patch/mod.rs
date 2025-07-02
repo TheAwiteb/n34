@@ -22,6 +22,8 @@ mod close;
 mod draft;
 /// `patch fetch` subcommand
 mod fetch;
+/// `patch list` subcommand
+mod list;
 /// `patch merge` subcommand
 mod merge;
 /// `patch reopen` subcommand
@@ -30,6 +32,7 @@ mod reopen;
 mod send;
 
 use std::{
+    fmt,
     path::{Path, PathBuf},
     str::FromStr,
     sync::LazyLock,
@@ -43,6 +46,7 @@ use self::apply::ApplyArgs;
 use self::close::CloseArgs;
 use self::draft::DraftArgs;
 use self::fetch::FetchArgs;
+use self::list::ListArgs;
 use self::merge::MergeArgs;
 use self::reopen::ReopenArgs;
 use self::send::SendArgs;
@@ -78,6 +82,8 @@ pub enum PatchSubcommands {
     Apply(ApplyArgs),
     /// Set an open patch status to merged.
     Merge(MergeArgs),
+    /// List the repositories patches.
+    List(ListArgs),
 }
 
 /// Represents a git patch
@@ -115,6 +121,16 @@ impl PatchStatus {
         }
     }
 
+    /// Returns the string representation of the patch status.
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Open => "Open",
+            Self::MergedApplied => "Merged/Applied",
+            Self::Closed => "Closed",
+            Self::Draft => "Draft",
+        }
+    }
+
     /// Check if the patch is open.
     #[inline]
     pub fn is_open(&self) -> bool {
@@ -139,6 +155,19 @@ impl PatchStatus {
         matches!(self, Self::Draft)
     }
 }
+
+impl From<&PatchStatus> for Kind {
+    fn from(status: &PatchStatus) -> Self {
+        status.kind()
+    }
+}
+
+impl fmt::Display for PatchStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 
 impl TryFrom<Kind> for PatchStatus {
     type Error = N34Error;
@@ -178,7 +207,7 @@ impl GitPatch {
 
 impl CommandRunner for PatchSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, & Send Fetch Close Reopen Draft Apply Merge)
+        crate::run_command!(self, options, & Send Fetch Close Reopen Draft Apply Merge List)
     }
 }
 

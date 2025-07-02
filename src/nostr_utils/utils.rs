@@ -114,6 +114,18 @@ where
     vector
 }
 
+/// Sorts items from the iterator using the given key function.
+/// The sorting is unstable, but faster than stable sorting.
+pub fn sort_by_key<I, T, K>(iterator: I, key: impl FnMut(&T) -> K) -> impl Iterator<Item = T>
+where
+    I: IntoIterator<Item = T>,
+    K: Ord,
+{
+    let mut vector = Vec::<T>::from_iter(iterator);
+    vector.sort_unstable_by_key(key);
+    vector.into_iter()
+}
+
 /// Creates a new NIP-19 nevent string from an event ID and up to 3 unique relay
 /// URLs.
 #[inline]
