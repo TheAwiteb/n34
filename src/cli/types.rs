@@ -89,7 +89,9 @@ impl RelayOrSet {
         match self {
             Self::Relay(relay) => Ok(vec![relay]),
             Self::Set(name) => {
-                let set = sets.get_set(&name)?;
+                let set = sets
+                    .get_set(&name)
+                    .map_err(|_| N34Error::InvalidRelaysArg(name.clone()))?;
                 if set.relays.is_empty() {
                     Err(N34Error::EmptySetRelays(name))
                 } else {

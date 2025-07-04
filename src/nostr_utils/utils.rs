@@ -201,7 +201,7 @@ pub fn read_editor(file_pre_content: Option<&str>, file_suffix: &str) -> N34Resu
 
     // Disable the logs to not show up in a terminal text editor
     crate::EDITOR_OPEN.store(true, Ordering::Relaxed);
-    let exit_status = std::process::Command::new(editor)
+    let exit_status = std::process::Command::new(&editor)
         .arg(temp_path.to_str().expect("The path is valid utf8"))
         .spawn()?
         .wait()?;
@@ -209,7 +209,7 @@ pub fn read_editor(file_pre_content: Option<&str>, file_suffix: &str) -> N34Resu
 
     if !exit_status.success() {
         if let Some(code) = exit_status.code() {
-            tracing::warn!("The editor exit with `{code}` status")
+            return Err(N34Error::EditorErr(editor, code));
         }
     }
 

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - View the repo maintainers as `npub` - by Awiteb
 - New `patch list` commands to list the repo patches - by Awiteb
 - New `issue list` commands to list the repo issues - by Awiteb
+- Improve exit codes and make them more specific - by Awiteb
 
 ### Dependencies
 

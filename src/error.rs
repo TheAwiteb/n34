@@ -21,6 +21,20 @@ use nostr_sdk::client::Error as ClientError;
 
 use crate::cli::ConfigError;
 
+/// The input data was incorrect in some way. This should only be used for
+/// user’s data and not system file.
+const DATA_ERROR: u8 = 65;
+
+/// An internal software error has been detected. This should be limited to
+/// non-operating system related errors.
+const SOFTWARE_ERROR: u8 = 70;
+
+/// An error occurred while doing I/O on some file.
+const IO_ERROR: u8 = 74;
+
+/// Something was found in an unconfigured or misconfigured state.
+const CONFIG_ERROR: u8 = 78;
+
 pub type N34Result<T> = Result<T, N34Error>;
 
 /// N34 errors
@@ -34,6 +48,8 @@ pub enum N34Error {
     EditorNotFound,
     #[error("The file you edited is empty. Please save your changes before exiting the editor.")]
     EmptyEditorFile,
+    #[error("The editor `{0}` exit with unsuccessful exit code `{1}`")]
+    EditorErr(String, i32),
     #[error("Client Error: {0}")]
     Client(#[from] ClientError),
     #[error("Unable to locate the repository. The repository may not exists in the given relays")]
@@ -66,6 +82,8 @@ pub enum N34Error {
     InvalidNostrAddressFileContent(String),
     #[error("This command requires at least one relay, but none were provided")]
     EmptyRelays,
+    #[error("One naddr is required for this command")]
+    EmptyNaddrs,
     #[error(
         "This command requires a signer to sign events. Use `--secret-key` to provide a signer"
     )]
@@ -77,6 +95,11 @@ pub enum N34Error {
          '{0}' exists."
     )]
     InvalidNaddrArg(String),
+    #[error(
+        "Invalid relays. Expected a relay url or a set name that contains some relays\nError: No \
+         set named '{0}' exists."
+    )]
+    InvalidRelaysArg(String),
     #[error(
         "The set '{0}' doesn't contain any addresses. Use 'sets update' to add addresses to it."
     )]
@@ -101,14 +124,27 @@ pub enum N34Error {
     RevisionRootNotFound,
     #[error("Invalid status for the issue/patch: {0}")]
     InvalidStatus(String),
-    #[error("One naddr is required for this command")]
-    EmptyNaddrs,
 }
 
 impl N34Error {
     /// Returns the exit code associated with this error
     pub fn exit_code(&self) -> ExitCode {
-        // TODO: More specific exit code
-        ExitCode::FAILURE
+        match self {
+            Self::Io(_) | Self::CanNotReadNostrAddressFile(_) => ExitCode::from(IO_ERROR),
+            Self::Config(_) => ExitCode::from(CONFIG_ERROR),
+            Self::EditorErr(..) => ExitCode::from(SOFTWARE_ERROR),
+            Self::InvalidRepoId
+            | Self::EmptyNostrAddressFile
+            | Self::InvalidNostrAddressFileContent(_)
+            | Self::EmptyRelays
+            | Self::EmptyNaddrs
+            | Self::SignerRequired
+            | Self::InvalidNaddrArg(_)
+            | Self::InvalidRelaysArg(_)
+            | Self::EmptySetNaddrs(_)
+            | Self::EmptySetRelays(_)
+            | Self::NotRootPatch => ExitCode::from(DATA_ERROR),
+            _ => ExitCode::FAILURE,
+        }
     }
 }
