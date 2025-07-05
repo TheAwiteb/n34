@@ -89,11 +89,12 @@ impl CliConfig {
     pub fn load(file_path: PathBuf) -> N34Result<Self> {
         tracing::info!(path = %file_path.display(), "Loading configuration from file");
         // Make sure the file is exist
-        if let Some(parent) = file_path.parent() {
-            if !parent.exists() {
-                fs::create_dir_all(parent)?;
-            }
+        if let Some(parent) = file_path.parent()
+            && !parent.exists()
+        {
+            fs::create_dir_all(parent)?;
         }
+
         let _ = fs::File::create_new(&file_path);
 
         let mut config: Self =

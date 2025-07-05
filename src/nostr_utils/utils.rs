@@ -207,10 +207,10 @@ pub fn read_editor(file_pre_content: Option<&str>, file_suffix: &str) -> N34Resu
         .wait()?;
     crate::EDITOR_OPEN.store(false, Ordering::Relaxed);
 
-    if !exit_status.success() {
-        if let Some(code) = exit_status.code() {
-            return Err(N34Error::EditorErr(editor, code));
-        }
+    if !exit_status.success()
+        && let Some(code) = exit_status.code()
+    {
+        return Err(N34Error::EditorErr(editor, code));
     }
 
     let content = fs::read_to_string(&temp_path)

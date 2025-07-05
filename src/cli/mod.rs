@@ -82,10 +82,10 @@ impl Cli {
 pub fn post_cli(mut cli: Cli) -> N34Result<Cli> {
     cli.options.pow = cli.options.pow.or(cli.options.config.pow);
 
-    if cli.options.relays.is_empty() {
-        if let Some(relays) = &cli.options.config.fallback_relays {
-            cli.options.relays = relays.iter().cloned().map(RelayOrSet::Relay).collect();
-        }
+    if cli.options.relays.is_empty()
+        && let Some(relays) = &cli.options.config.fallback_relays
+    {
+        cli.options.relays = relays.iter().cloned().map(RelayOrSet::Relay).collect();
     }
 
     Ok(cli)

@@ -314,15 +314,15 @@ impl NostrClient {
             .map(|status| N34Result::Ok((PatchStatus::try_from(status.kind)?, status.tags)))
             .unwrap_or_else(|| Ok((PatchStatus::Open, Tags::new())))?;
 
-        if let Some(revision_id) = root_revision {
-            if root_status.is_merged_or_applied()
-                && !event_tags
-                    .filter(TagKind::e())
-                    .any(|t| t.is_reply() && t.content().is_some_and(|c| c == revision_id.to_hex()))
-            {
-                return Ok(PatchStatus::Closed);
-            }
+        if let Some(revision_id) = root_revision
+            && root_status.is_merged_or_applied()
+            && !event_tags
+                .filter(TagKind::e())
+                .any(|t| t.is_reply() && t.content().is_some_and(|c| c == revision_id.to_hex()))
+        {
+            return Ok(PatchStatus::Closed);
         }
+
 
         Ok(root_status)
     }
@@ -368,10 +368,10 @@ impl NostrClient {
             {
                 self.add_relay_hint(relay_hint.cloned()).await;
                 let root_event = self.fetch_event(Filter::new().id(*id)).await?;
-                if let Some(ref root_event) = root_event {
-                    if !matches!(root_event.kind, Kind::GitIssue | Kind::GitPatch) {
-                        return Err(N34Error::CanNotReplyToEvent);
-                    }
+                if let Some(ref root_event) = root_event
+                    && !matches!(root_event.kind, Kind::GitIssue | Kind::GitPatch)
+                {
+                    return Err(N34Error::CanNotReplyToEvent);
                 }
                 return Ok(root_event);
             } else if let Some(nip22::CommentTarget::Event { id, relay_hint, .. }) =
