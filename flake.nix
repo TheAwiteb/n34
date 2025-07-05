@@ -29,7 +29,7 @@
           ];
 
           nativeBuildInputs = [
-            (lib.hiPrio rust-bin.nightly."2025-04-30".rustfmt)
+            (lib.hiPrio rust-bin.nightly."2025-07-05".rustfmt)
             rust-bin.stable.latest.default
           ];
 
