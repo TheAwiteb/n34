@@ -200,7 +200,7 @@ impl GitPatch {
 
         Ok(parent
             .as_ref()
-            .join(format!("{patch_version}{:0>4}-{patch_name}", patch_number).replace("--", "-"))
+            .join(format!("{patch_version}{patch_number:0>4}-{patch_name}").replace("--", "-"))
             .with_extension("patch"))
     }
 }
