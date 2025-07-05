@@ -587,7 +587,7 @@ base-commit: f670859b92d525874fd621452080c8479964ac6a"
         assert_eq!(
             patch.filename("").unwrap(),
             PathBuf::from(
-                "v100-0032-feat-some-long-subject-some-long-subject-some-long-subject-s.patch"
+                "v100-0032-feat-some-long-subject-some-long-subject-some-long-subject.patch"
             )
         );
     }
