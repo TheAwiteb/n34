@@ -9,7 +9,7 @@ readme       = "README.md"
 repository   = "https://git.4rs.nl/awiteb/n34.git"
 keywords     = ["nostr", "NIP-34", "CLI"]
 categories   = ["command-line-utilities"]
-rust-version = "1.85.1"
+rust-version = "1.88.0"
 
 [dependencies]
 chrono = "0.4.41"
