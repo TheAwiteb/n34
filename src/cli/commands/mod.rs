@@ -20,7 +20,7 @@ pub mod config;
 pub mod issue;
 /// `patch` subcommands
 pub mod patch;
-/// 'reply` command
+/// `reply` command
 pub mod reply;
 /// `repo` subcommands
 pub mod repo;

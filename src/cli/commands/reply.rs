@@ -176,7 +176,7 @@ impl CommandRunner for ReplyArgs {
 }
 
 /// Creates a quoted reply string in the format "On yyyy-mm-dd at hh:mm UTC,
-/// <author> wrote:" followed by the event content. Uses display name if
+/// {author} wrote:" followed by the event content. Uses display name if
 /// available, otherwise falls back to a shortened npub string. Dates are
 /// formatted in UTC.
 async fn quote_reply_to_content(client: &NostrClient, quoted_event: &Event) -> String {

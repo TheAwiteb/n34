@@ -177,7 +177,7 @@ impl FromStr for NostrEvent {
 #[easy_ext::ext(NaddrOrSetVecExt)]
 impl Vec<NaddrOrSet> {
     /// Converts this vector of [`NaddrOrSet`] into a flat vector of
-    /// [`Nip19Coordinates`] using the given sets.
+    /// [`Nip19Coordinate`] using the given sets.
     pub fn flat_naddrs(self, sets: &[RepoRelaySet]) -> N34Result<Vec<Nip19Coordinate>> {
         self.into_iter()
             .map(|n| n.get_naddrs(sets))
@@ -206,7 +206,7 @@ impl Vec<RelayOrSet> {
 #[easy_ext::ext(OptionNaddrOrSetVecExt)]
 impl Option<Vec<NaddrOrSet>> {
     /// Converts this vector of [`NaddrOrSet`] into a flat vector of
-    /// [`Nip19Coordinates`] using the given sets.
+    /// [`Nip19Coordinate`] using the given sets.
     pub fn flat_naddrs(&self, sets: &[RepoRelaySet]) -> N34Result<Option<Vec<Nip19Coordinate>>> {
         // Clones self here to simplify command code
         self.clone()
