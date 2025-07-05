@@ -13,7 +13,6 @@ set script-interpreter := ["/usr/bin/env", "bash"]
 JUST_EXECUTABLE := "just -u -f " + justfile()
 header := "Available tasks:\n"
 # Get the MSRV from the Cargo.toml
-msrv := `cat Cargo.toml | grep "rust-version" | sed 's/.*"\(.*\)".*/\1/'`
 tag_change_body := '''{% for group, commits in commits | group_by(attribute="group") %}
 
 {{ group | upper_first }}
@@ -33,16 +32,16 @@ ci: && msrv _done_ci
     cargo build -q
     echo "🔍 Checking code formatting..."
     cargo fmt -q -- --check
-    taplo fmt --check --config ./.taplo.toml
+    RUST_LOG=none taplo fmt --check --config ./.taplo.toml || (echo "❌Toml files is not properly formatted" && exit 1)
     echo "🧹 Running linter checks..."
     cargo clippy -q -- -D warnings
     echo "🧪 Running tests..."
-    cargo test
+    cargo test -q
 
 # Check that the current MSRV is correct
 msrv:
-    echo "🔧 Verifying MSRV ({{msrv}})..."
-    rustup -q run --install {{msrv}} cargo check -q
+    echo "🔧 Verifying MSRV..."
+    cargo-msrv verify
     echo "✅ MSRV verification passed"
 
 _done_ci:
