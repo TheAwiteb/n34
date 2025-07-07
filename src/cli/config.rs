@@ -17,10 +17,9 @@
 use std::{collections::HashSet, fs, path::PathBuf};
 
 use nostr::{
-    nips::nip19::{FromBech32, Nip19Coordinate, ToBech32},
+    nips::nip19::Nip19Coordinate,
     types::RelayUrl,
 };
-use serde::{Deserialize, Serialize, Serializer};
 
 use crate::error::{N34Error, N34Result};
 
@@ -74,8 +73,8 @@ pub struct RepoRelaySet {
     #[serde(
         default,
         skip_serializing_if = "HashSet::is_empty",
-        serialize_with = "ser_naddrs",
-        deserialize_with = "de_naddrs"
+        serialize_with = "super::parsers::ser_naddrs",
+        deserialize_with = "super::parsers::de_naddrs"
     )]
     pub naddrs: HashSet<Nip19Coordinate>,
     /// Relay URLs in this group.
@@ -287,28 +286,4 @@ impl &[RepoRelaySet] {
 /// Helper function that checks for duplicates in a sorted slice
 fn duplicate_in_sorted<T: PartialEq + Clone>(items: &[T]) -> Option<&T> {
     items.windows(2).find(|w| w[0] == w[1]).map(|w| &w[0])
-}
-
-fn ser_naddrs<S>(naddr: &HashSet<Nip19Coordinate>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let str_naddrs = naddr
-        .iter()
-        .map(|n| n.to_bech32().map_err(|err| err.to_string()))
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(serde::ser::Error::custom)?;
-
-    str_naddrs.serialize(serializer)
-}
-
-fn de_naddrs<'de, D>(deserializer: D) -> Result<HashSet<Nip19Coordinate>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    Vec::<String>::deserialize(deserializer)?
-        .into_iter()
-        .map(|naddr| Nip19Coordinate::from_bech32(&naddr))
-        .collect::<Result<HashSet<_>, _>>()
-        .map_err(serde::de::Error::custom)
 }

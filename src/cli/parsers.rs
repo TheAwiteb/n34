@@ -15,14 +15,16 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 use std::{
+    collections::HashSet,
     fs,
     path::{Path, PathBuf},
 };
 
 use nostr::{
     Kind,
-    nips::nip19::{FromBech32, Nip19Coordinate},
+    nips::nip19::{FromBech32, Nip19Coordinate, ToBech32},
 };
+use serde::{Deserialize, Serialize, Serializer};
 
 use super::CliConfig;
 use crate::{
@@ -68,4 +70,30 @@ pub fn parse_config_path(config_path: &str) -> N34Result<CliConfig> {
     };
 
     CliConfig::load(path)
+}
+
+/// Serializes a set of NIP-19 coordinates as a list of bech32 strings.
+pub fn ser_naddrs<S>(naddr: &HashSet<Nip19Coordinate>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let str_naddrs = naddr
+        .iter()
+        .map(|n| n.to_bech32().map_err(|err| err.to_string()))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(serde::ser::Error::custom)?;
+
+    str_naddrs.serialize(serializer)
+}
+
+/// Deserializes a list of bech32 strings into a set of NIP-19 coordinates.
+pub fn de_naddrs<'de, D>(deserializer: D) -> Result<HashSet<Nip19Coordinate>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Vec::<String>::deserialize(deserializer)?
+        .into_iter()
+        .map(|naddr| Nip19Coordinate::from_bech32(&naddr))
+        .collect::<Result<HashSet<_>, _>>()
+        .map_err(serde::de::Error::custom)
 }
