@@ -23,8 +23,10 @@
         devShells.default = mkShell {
           packages = [
             cargo-msrv
+            dbus
             git-cliff
             just
+            pkg-config
             taplo
           ];
 
