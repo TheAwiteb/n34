@@ -55,6 +55,34 @@ into a future-proof foundation for decentralized collaboration.
 - <https://nostr.org>
 - <https://nostr.how/en/what-is-nostr>
 
+## Installation
+
+You can install n34 either by cloning the repository and building it with Cargo,
+or by using `cargo install`.
+
+### Building from source
+
+- Clone the repository:
+```sh
+git clone git://git.4rs.nl/awiteb/n34.git
+cd n34
+```
+
+- Build the release version:
+```sh
+cargo build --release
+```
+The binary will be available at `target/release/n34`.
+
+### Using cargo install
+
+```sh
+cargo install n34
+```
+The binary will be installed to your Cargo binary directory (typically `~/.cargo/bin/n34`).
+
+Make sure `~/.cargo/bin` is in your `PATH` environment variable to run the binary from anywhere.
+
 ## Contributing
 
 Contributions to `n34` are welcome! You can help by opening issues (such as bug
