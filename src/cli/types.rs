@@ -24,8 +24,11 @@ use nostr::{
         nip19::{self, FromBech32, Nip19Coordinate},
     },
     types::RelayUrl,
+    util::BoxedFuture,
 };
+use nostr_connect::client::AuthUrlHandler;
 use tokio::runtime::Handle;
+use url::Url;
 
 use super::{RepoRelaySetsExt, parsers};
 use crate::{
@@ -59,6 +62,18 @@ pub struct NostrEvent {
     /// List of relay URLs associated with the event. Empty if parsing a
     /// `note1`.
     pub relays:   Vec<RelayUrl>,
+}
+
+#[derive(Debug)]
+pub struct EchoAuthUrl;
+
+impl AuthUrlHandler for EchoAuthUrl {
+    fn on_auth_url(&self, auth_url: Url) -> BoxedFuture<Result<(), Box<dyn std::error::Error>>> {
+        Box::pin(async move {
+            println!("The bunker requires authentication. Please open this URL: {auth_url}");
+            Ok(())
+        })
+    }
 }
 
 impl NaddrOrSet {

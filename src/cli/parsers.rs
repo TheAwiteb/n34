@@ -22,7 +22,10 @@ use std::{
 
 use nostr::{
     Kind,
-    nips::nip19::{FromBech32, Nip19Coordinate, ToBech32},
+    nips::{
+        nip19::{FromBech32, Nip19Coordinate, ToBech32},
+        nip46::NostrConnectURI,
+    },
 };
 use serde::{Deserialize, Serialize, Serializer};
 
@@ -72,6 +75,15 @@ pub fn parse_config_path(config_path: &str) -> N34Result<CliConfig> {
     CliConfig::load(path)
 }
 
+// Parses a bunker URL and checks if it's a valid Nostr Connect URI.
+// Returns an error if the URL is not a valid bunker URL.
+pub fn parse_bunker_url(bunker_url: &str) -> N34Result<NostrConnectURI> {
+    match NostrConnectURI::parse(bunker_url) {
+        Ok(url) if url.is_bunker() => Ok(url),
+        _ => Err(N34Error::NotBunkerUrl),
+    }
+}
+
 /// Serializes a set of NIP-19 coordinates as a list of bech32 strings.
 pub fn ser_naddrs<S>(naddr: &HashSet<Nip19Coordinate>, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -95,5 +107,28 @@ where
         .into_iter()
         .map(|naddr| Nip19Coordinate::from_bech32(&naddr))
         .collect::<Result<HashSet<_>, _>>()
+        .map_err(serde::de::Error::custom)
+}
+
+pub fn ser_bunker_url<S>(
+    bunker_url: &Option<NostrConnectURI>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    bunker_url
+        .as_ref()
+        .map(|u| u.to_string())
+        .serialize(serializer)
+}
+
+pub fn de_bunker_url<'de, D>(deserializer: D) -> Result<Option<NostrConnectURI>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer)?
+        .map(|u| parse_bunker_url(&u))
+        .transpose()
         .map_err(serde::de::Error::custom)
 }

@@ -27,6 +27,7 @@ details, see the following section.
 - [X] Gossip Model ([NIP-65])
 - [X] Proof of Work ([NIP-13])
 - [X] `nostr:` URI scheme, in the issue/reply content ([NIP-21])
+- [X] Signing using bunker ([NIP-46])
 - [ ] Code Snippets ([NIP-C0])
 - [X] In device relays and repos bookmark (`sets` command)
 
@@ -77,3 +78,4 @@ refer to the [LICENSE](LICENSE) file for more details.
 [NIP-13]: https://github.com/nostr-protocol/nips/blob/master/13.md
 [NIP-21]: https://github.com/nostr-protocol/nips/blob/master/21.md
 [NIP-C0]: https://github.com/nostr-protocol/nips/blob/master/C0.md
+[NIP-46]: https://github.com/nostr-protocol/nips/blob/master/46.md

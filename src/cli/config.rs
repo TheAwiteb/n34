@@ -17,7 +17,7 @@
 use std::{collections::HashSet, fs, path::PathBuf};
 
 use nostr::{
-    nips::nip19::Nip19Coordinate,
+    nips::{nip19::Nip19Coordinate, nip46::NostrConnectURI},
     types::RelayUrl,
 };
 
@@ -62,6 +62,14 @@ pub struct CliConfig {
     /// List of fallback relays used if no fallback relays was provided.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fallback_relays: Option<Vec<RelayUrl>>,
+    /// Default Nostr bunker URL used for signing events.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::parsers::de_bunker_url",
+        serialize_with = "super::parsers::ser_bunker_url"
+    )]
+    pub bunker_url:      Option<NostrConnectURI>,
 }
 
 /// A named group of repositories and relays.

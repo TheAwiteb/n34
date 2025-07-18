@@ -16,7 +16,10 @@
 
 use std::process::ExitCode;
 
-use nostr::event::{Kind, builder::Error as EventBuilderError};
+use nostr::{
+    event::{Kind, builder::Error as EventBuilderError},
+    signer::SignerError,
+};
 use nostr_sdk::client::Error as ClientError;
 
 use crate::cli::ConfigError;
@@ -42,6 +45,10 @@ pub type N34Result<T> = Result<T, N34Error>;
 pub enum N34Error {
     #[error("IO: {0}")]
     Io(#[from] std::io::Error),
+    #[error("Signer Error: {0}")]
+    SignerError(#[from] SignerError),
+    #[error("Keyring error: {0}")]
+    Keyring(#[from] nostr_keyring::Error),
     #[error("{0}")]
     Config(#[from] ConfigError),
     #[error("No editor specified in the `EDITOR` environment variable")]
@@ -85,7 +92,8 @@ pub enum N34Error {
     #[error("One naddr is required for this command")]
     EmptyNaddrs,
     #[error(
-        "This command requires a signer to sign events. Use `--secret-key` to provide a signer"
+        "This command requires a signer to sign events. Use `--secret-key` or `--bunker-url` to \
+         provide a signer"
     )]
     SignerRequired,
     #[error(
@@ -124,6 +132,8 @@ pub enum N34Error {
     RevisionRootNotFound,
     #[error("Invalid status for the issue/patch: {0}")]
     InvalidStatus(String),
+    #[error("Not valid bunker URL")]
+    NotBunkerUrl,
 }
 
 impl N34Error {

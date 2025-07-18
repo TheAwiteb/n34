@@ -28,9 +28,14 @@ pub mod repo;
 pub mod sets;
 
 use std::fmt;
+use std::sync::Arc;
+use std::time::Duration;
 
 use clap::{ArgGroup, Args, Parser};
 use nostr::key::{Keys, PublicKey, SecretKey};
+use nostr::nips::nip46::NostrConnectURI;
+use nostr::signer::{IntoNostrSigner, NostrSigner};
+use nostr_connect::client::NostrConnect;
 
 use self::config::ConfigSubcommands;
 use self::issue::IssueSubcommands;
@@ -41,6 +46,8 @@ use self::sets::SetsSubcommands;
 use super::CliConfig;
 use super::types::RelayOrSet;
 use super::{parsers, traits::CommandRunner};
+use crate::cli::Cli;
+use crate::cli::types::EchoAuthUrl;
 use crate::error::{N34Error, N34Result};
 
 /// Default path used when no path is provided via command line arguments.
@@ -48,12 +55,15 @@ use crate::error::{N34Error, N34Result};
 /// This is a workaround since Clap doesn't support lazy evaluation of defaults.
 pub const DEFAULT_FALLBACK_PATH: &str = "I_DO_NOT_KNOW_WHY_CLAP_DO_NOT_SUPPORT_LAZY_DEFAULT";
 
+/// How long to wait for bunker response (3 minutes).
+const BUNKER_TIMEOUT: Duration = Duration::from_secs(60 * 3);
+
 /// The command-line interface options
 #[derive(Args, Clone)]
 #[clap(
     group(
         ArgGroup::new("signer")
-            .args(&["secret_key"])
+            .args(&["secret_key", "bunker_url"])
             .required(false)
     )
 )]
@@ -61,6 +71,9 @@ pub struct CliOptions {
     /// Your Nostr secret key
     #[arg(short, long)]
     pub secret_key: Option<SecretKey>,
+    /// NIP-46 bunker url used for signing events
+    #[arg(short, long, value_parser=parsers::parse_bunker_url)]
+    pub bunker_url: Option<NostrConnectURI>,
     /// Fallbacks relay to write and read from it. Multiple relays can be
     /// passed.
     #[arg(short, long)]
@@ -111,22 +124,35 @@ pub enum Commands {
 impl CliOptions {
     /// Gets the public key of the user.
     pub async fn pubkey(&self) -> N34Result<PublicKey> {
-        if let Some(sk) = &self.secret_key {
-            return Ok(Keys::new(sk.clone()).public_key());
-        }
-        unreachable!(
-            "This method should only be called when a signer is required. If this panic occurs, \
-             it indicates a bug where the command failed to properly require a signer (which is \
-             the default behavior)"
-        )
+        let Some(signer) = self.signer()? else {
+            unreachable!(
+                "This method should only be called when a signer is required. If this panic \
+                 occurs, it indicates a bug where the command failed to properly require a signer \
+                 (which is the default behavior)"
+            )
+        };
+
+        signer.get_public_key().await.map_err(N34Error::SignerError)
     }
 
     /// Returns the signer
-    pub fn signer(&self) -> Option<impl nostr::signer::IntoNostrSigner> {
+    pub fn signer(&self) -> N34Result<Option<Arc<dyn NostrSigner + 'static>>> {
         if let Some(sk) = &self.secret_key {
-            return Some(Keys::new(sk.clone()));
+            return Ok(Some(Keys::new(sk.clone()).into_nostr_signer()));
         }
-        None
+        if let Some(ref bunker_url) = self.bunker_url {
+            let mut nostrconnect = NostrConnect::new(
+                bunker_url.clone(),
+                Cli::n34_keypair()?,
+                BUNKER_TIMEOUT,
+                None,
+            )
+            .expect("It's a bunker url and not a client");
+
+            nostrconnect.auth_url_handler(EchoAuthUrl);
+            return Ok(Some(nostrconnect.into_nostr_signer()));
+        }
+        Ok(None)
     }
 
     /// Returns an error if there are no relays.
@@ -139,11 +165,10 @@ impl CliOptions {
 
     /// Returns an error if there are no signers
     pub fn ensure_signer(&self) -> N34Result<()> {
-        if self.secret_key.is_none() {
-            Err(N34Error::SignerRequired)
-        } else {
-            Ok(())
+        if self.secret_key.is_none() && self.bunker_url.is_none() {
+            return Err(N34Error::SignerRequired);
         }
+        Ok(())
     }
 }
 
@@ -151,6 +176,7 @@ impl fmt::Debug for CliOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CliOptions")
             .field("secret_key", &self.secret_key.as_ref().map(|_| "*******"))
+            .field("bunker_url", &self.bunker_url.as_ref().map(|_| "*******"))
             .field("relays", &self.relays)
             .field("pow", &self.pow)
             .field("config", &self.config)

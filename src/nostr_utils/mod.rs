@@ -64,7 +64,7 @@ pub struct ContentDetails {
 /// A client for interacting with the Nostr relays
 pub struct NostrClient {
     /// The underlying Nostr client implementation
-    client: Client,
+    pub client: Client,
 }
 
 impl ContentDetails {
@@ -112,7 +112,7 @@ impl NostrClient {
     pub async fn init(options: &CliOptions, relays: &[RelayUrl]) -> Self {
         let mut client_builder = Client::builder();
 
-        if let Some(signer) = options.signer() {
+        if let Ok(Some(signer)) = options.signer() {
             client_builder = client_builder.signer(signer);
         }
 

@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+/// `config bunker` subcommand
+mod bunker;
 /// `config pow` subcommand
 mod pow;
 /// `config relays` subcommand
@@ -21,6 +23,7 @@ mod relays;
 
 use clap::Subcommand;
 
+use self::bunker::BunkerArgs;
 use self::pow::PowArgs;
 use self::relays::RelaysArgs;
 use super::CliOptions;
@@ -34,10 +37,12 @@ pub enum ConfigSubcommands {
     /// Sets the default fallback relays if none provided. Use this relays for
     /// read and write.
     Relays(RelaysArgs),
+    /// Sets a URL of NIP-46 bunker server used for signing events.
+    Bunker(BunkerArgs),
 }
 
 impl CommandRunner for ConfigSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, & Pow Relays)
+        crate::run_command!(self, options, & Pow Relays Bunker)
     }
 }
