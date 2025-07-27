@@ -137,9 +137,16 @@ impl CliOptions {
 
     /// Returns the signer
     pub fn signer(&self) -> N34Result<Option<Arc<dyn NostrSigner + 'static>>> {
+        if self.config.keyring_secret_key {
+            return Ok(Some(
+                Cli::user_keypair(self.secret_key.clone())?.into_nostr_signer(),
+            ));
+        }
+
         if let Some(sk) = &self.secret_key {
             return Ok(Some(Keys::new(sk.clone()).into_nostr_signer()));
         }
+
         if let Some(ref bunker_url) = self.bunker_url {
             let mut nostrconnect = NostrConnect::new(
                 bunker_url.clone(),
@@ -165,7 +172,8 @@ impl CliOptions {
 
     /// Returns an error if there are no signers
     pub fn ensure_signer(&self) -> N34Result<()> {
-        if self.secret_key.is_none() && self.bunker_url.is_none() {
+        if !self.config.keyring_secret_key && self.secret_key.is_none() && self.bunker_url.is_none()
+        {
             return Err(N34Error::SignerRequired);
         }
         Ok(())

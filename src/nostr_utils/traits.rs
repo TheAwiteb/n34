@@ -300,3 +300,12 @@ impl Event {
             .join(", ")
     }
 }
+
+#[easy_ext::ext(NostrKeyringErrorUtils)]
+impl nostr_keyring::Error {
+    /// Checks if the error indicates a missing keyring entry.
+    #[inline]
+    pub fn is_keyring_no_entry(&self) -> bool {
+        matches!(self, nostr_keyring::Error::Keyring(keyring::Error::NoEntry))
+    }
+}

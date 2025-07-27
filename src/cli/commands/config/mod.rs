@@ -16,6 +16,8 @@
 
 /// `config bunker` subcommand
 mod bunker;
+/// `config keyring` subcommand
+mod keyring;
 /// `config pow` subcommand
 mod pow;
 /// `config relays` subcommand
@@ -24,6 +26,7 @@ mod relays;
 use clap::Subcommand;
 
 use self::bunker::BunkerArgs;
+use self::keyring::KeyringArgs;
 use self::pow::PowArgs;
 use self::relays::RelaysArgs;
 use super::CliOptions;
@@ -39,10 +42,13 @@ pub enum ConfigSubcommands {
     Relays(RelaysArgs),
     /// Sets a URL of NIP-46 bunker server used for signing events.
     Bunker(BunkerArgs),
+    /// Managing the secret key keyring, including enabling, disabling, or
+    /// resetting it.
+    Keyring(KeyringArgs),
 }
 
 impl CommandRunner for ConfigSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, & Pow Relays Bunker)
+        crate::run_command!(self, options, & Pow Relays Bunker Keyring)
     }
 }

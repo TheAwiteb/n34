@@ -134,6 +134,11 @@ pub enum N34Error {
     InvalidStatus(String),
     #[error("Not valid bunker URL")]
     NotBunkerUrl,
+    #[error(
+        "No secret key found in the keyring. Please use the secret key at least once while \
+         keyring is enabled to store it"
+    )]
+    SecretKeyKeyringWithoutEntry,
 }
 
 impl N34Error {

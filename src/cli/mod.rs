@@ -34,6 +34,7 @@ pub mod types;
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
 use nostr::key::Keys;
+use nostr::key::SecretKey;
 use nostr_keyring::NostrKeyring;
 use types::RelayOrSet;
 
@@ -42,6 +43,7 @@ pub use self::config::*;
 use self::traits::CommandRunner;
 use crate::error::N34Error;
 use crate::error::N34Result;
+use crate::nostr_utils::traits::NostrKeyringErrorUtils;
 
 /// Header message, used in the help message
 const HEADER: &str = r#"Copyright (C) 2025 Awiteb <a@4rs.nl>
@@ -54,11 +56,6 @@ Git repository: https://git.4rs.nl/awiteb/n34.git"#;
 /// Footer message, used in the help message
 const FOOTER: &str = r#"Please report bugs to <naddr1qqpkuve5qgsqqqqqq9g9uljgjfcyd6dm4fegk8em2yfz0c3qp3tc6mntkrrhawgrqsqqqauesksc39>."#;
 
-/// Keyring service name of n34
-const N34_KEYRING_SERVICE_NAME: &str = "n34";
-
-/// Keyring entry name for the n34 keypair
-const N34_KEY_PAIR_ENTRY: &str = "n34_keypair";
 
 /// Name of the file storing the repository address
 pub const NOSTR_ADDRESS_FILE: &str = "nostr-address";
@@ -80,6 +77,13 @@ pub struct Cli {
 
 
 impl Cli {
+    /// Keyring service name of n34
+    pub const N34_KEYRING_SERVICE_NAME: &str = "n34";
+    /// Keyring entry name of the n34 keypair
+    pub const N34_KEY_PAIR_ENTRY: &str = "n34_keypair";
+    /// Keyring entry name of the user secret key
+    pub const USER_KEY_PAIR_ENTRY: &str = "user_keypair";
+
     /// Executes the command
     pub async fn run(self) -> N34Result<()> {
         self.command.run(self.options).await
@@ -88,17 +92,42 @@ impl Cli {
     /// Gets the n34 keypair from the keyring or generates and stores a new one
     /// if none exists.
     pub fn n34_keypair() -> N34Result<Keys> {
-        let keyring = NostrKeyring::new(N34_KEYRING_SERVICE_NAME);
+        let keyring = NostrKeyring::new(Self::N34_KEYRING_SERVICE_NAME);
 
-        match keyring.get(N34_KEY_PAIR_ENTRY) {
+        match keyring.get(Self::N34_KEY_PAIR_ENTRY) {
             Ok(keys) => Ok(keys),
             Err(nostr_keyring::Error::Keyring(keyring::Error::NoEntry)) => {
                 let new_keys = Keys::generate();
-                keyring.set(N34_KEY_PAIR_ENTRY, &new_keys)?;
+                keyring.set(Self::N34_KEY_PAIR_ENTRY, &new_keys)?;
                 Ok(new_keys)
             }
             Err(err) => Err(N34Error::Keyring(err)),
         }
+    }
+
+    /// Retrieves the user's keypair from the keyring. If no key exists and one
+    /// is provided, stores and returns it. If no key exists and none is
+    /// provided, returns an error.
+    pub fn user_keypair(secret_key: Option<SecretKey>) -> N34Result<Keys> {
+        let keyring = NostrKeyring::new(Self::N34_KEYRING_SERVICE_NAME);
+        let keyring_key = keyring.get(Self::USER_KEY_PAIR_ENTRY);
+
+        if let Err(ref err) = keyring_key
+            && err.is_keyring_no_entry()
+            && let Some(secret_key) = secret_key
+        {
+            let keypair = Keys::new(secret_key);
+            keyring.set(Self::USER_KEY_PAIR_ENTRY, &keypair)?;
+            return Ok(keypair);
+        }
+
+        keyring_key.map_err(|err| {
+            if err.is_keyring_no_entry() {
+                N34Error::SecretKeyKeyringWithoutEntry
+            } else {
+                N34Error::Keyring(err)
+            }
+        })
     }
 }
 

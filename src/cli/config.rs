@@ -52,16 +52,16 @@ pub enum ConfigError {
 pub struct CliConfig {
     /// Path to the configuration file (not serialized)
     #[serde(skip)]
-    path:                PathBuf,
+    path:                   PathBuf,
     /// Groups of repositories and relays.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sets:            Vec<RepoRelaySet>,
+    pub sets:               Vec<RepoRelaySet>,
     /// The default PoW difficulty
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pow:             Option<u8>,
+    pub pow:                Option<u8>,
     /// List of fallback relays used if no fallback relays was provided.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub fallback_relays: Option<Vec<RelayUrl>>,
+    pub fallback_relays:    Option<Vec<RelayUrl>>,
     /// Default Nostr bunker URL used for signing events.
     #[serde(
         default,
@@ -69,7 +69,10 @@ pub struct CliConfig {
         deserialize_with = "super::parsers::de_bunker_url",
         serialize_with = "super::parsers::ser_bunker_url"
     )]
-    pub bunker_url:      Option<NostrConnectURI>,
+    pub bunker_url:         Option<NostrConnectURI>,
+    /// Whether to use the system keyring to store the secret key.
+    #[serde(default)]
+    pub keyring_secret_key: bool,
 }
 
 /// A named group of repositories and relays.

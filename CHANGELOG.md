@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support signing using NIP-46 bunker - by Awiteb
+- Keyring the secret key `n34 config keyring --enable` - by Awiteb
 
 ### Dependencies
 
