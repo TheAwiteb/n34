@@ -12,7 +12,7 @@ set script-interpreter := ["/usr/bin/env", "bash"]
 
 JUST_EXECUTABLE := "just -u -f " + justfile()
 header := "Available tasks:\n"
-# Get the MSRV from the Cargo.toml
+BOOK_DEST_DIR := "dest"
 tag_change_body := '''{% for group, commits in commits | group_by(attribute="group") %}
 
 {{ group | upper_first }}
@@ -75,3 +75,21 @@ release version:
     git tag -s -m "$TAG_MSG" "v{{ version }}"
     git push origin master --tags
     cargo publish
+
+# Deploy the book to Github Pages
+[script]
+deploy:
+    mdbook build --dest-dir {{ BOOK_DEST_DIR }}
+    cd {{ BOOK_DEST_DIR }}
+    git init .
+    git checkout -B gh-pages
+    touch .nojekyll
+    echo "n34.dev" > CNAME
+
+    git add .
+    git commit -m "Deploy the book to github pages"
+    git remote add origin "git@github.com:TheAwiteb/n34-book"
+    git push origin gh-pages -f
+    cd ..
+    rm -fr {{ BOOK_DEST_DIR }}
+

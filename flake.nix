@@ -26,6 +26,7 @@
             dbus
             git-cliff
             just
+            mdbook
             pkg-config
             taplo
           ];
