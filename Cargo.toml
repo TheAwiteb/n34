@@ -1,6 +1,6 @@
 [package]
 name         = "n34"
-description  = "A CLI to interact with NIP-34 and other stuff related to codes in nostr"
+description  = "A CLI to interact with NIP-34 and other stuff related to code in Nostr"
 version      = "0.3.0"
 edition      = "2024"
 license      = "GPL-3.0-or-later"

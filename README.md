@@ -1,9 +1,6 @@
-!!! warning "Work In Progress"
-    This project is still work in progress and not completed yet.
-
 # n34
 
-A CLI to interact with NIP-34 and other stuff related to codes in nostr
+A CLI to interact with NIP-34 and other stuff related to code in Nostr
 
 ## About
 
@@ -24,10 +21,12 @@ details, see the following section.
 - [X] Issues (Send, view and list)
 - [X] Replies
 - [X] Issues and patches status
+- [ ] Pull requests ([nostr-protocol/nips#1966])
 - [X] Gossip Model ([NIP-65])
 - [X] Proof of Work ([NIP-13])
 - [X] `nostr:` URI scheme, in the issue/reply content ([NIP-21])
 - [X] Signing using bunker ([NIP-46])
+- [ ] Signing using [NIP-07] proxy ([nostr-browser-signer-proxy])
 - [ ] Code Snippets ([NIP-C0])
 - [X] In device relays and repos bookmark (`sets` command)
 
@@ -107,3 +106,6 @@ refer to the [LICENSE](LICENSE) file for more details.
 [NIP-21]: https://github.com/nostr-protocol/nips/blob/master/21.md
 [NIP-C0]: https://github.com/nostr-protocol/nips/blob/master/C0.md
 [NIP-46]: https://github.com/nostr-protocol/nips/blob/master/46.md
+[NIP-07]: https://github.com/nostr-protocol/nips/blob/master/07.md
+[nostr-protocol/nips#1966]: https://github.com/nostr-protocol/nips/pull/1966
+[nostr-browser-signer-proxy]: https://crates.io/crates/nostr-browser-signer-proxy
