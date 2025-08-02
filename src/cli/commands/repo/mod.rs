@@ -30,9 +30,7 @@ use crate::error::N34Result;
 pub enum RepoSubcommands {
     /// View details of a nostr git repository
     View(ViewArgs),
-    /// Publish information about a git repository to Nostr for collaboration
-    /// and feedback. Can also be used to update an existing repository's
-    /// details.
+    /// Broadcast and update a git repository
     Announce(AnnounceArgs),
 }
 

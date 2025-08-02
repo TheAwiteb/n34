@@ -34,7 +34,7 @@ pub struct ResolveArgs {
     /// If omitted, looks for a `nostr-address` file.
     #[arg(value_name = "NADDR-NIP05-OR-SET", long = "repo")]
     naddrs:   Option<Vec<NaddrOrSet>>,
-    /// The open issue id to resolve it
+    /// The issue id to resolve it
     issue_id: NostrEvent,
 }
 

@@ -74,7 +74,7 @@ pub enum PatchSubcommands {
     Fetch(FetchArgs),
     /// Closes an open or drafted patch.
     Close(CloseArgs),
-    /// Converts the closed or open patch to draft state.
+    /// Converts an open patch to draft state.
     Draft(DraftArgs),
     /// Reopens a closed or drafted patch.
     Reopen(ReopenArgs),

@@ -54,7 +54,7 @@ pub enum IssueSubcommands {
     Reopen(ReopenArgs),
     /// Closes an open issue.
     Close(CloseArgs),
-    /// Resolves an open issue.
+    /// Resolves an issue.
     Resolve(ResolveArgs),
     /// List the repositories issues.
     List(ListArgs),

@@ -4,7 +4,7 @@
 
 **Usage:**
 ```
-Publish information about a git repository to Nostr for collaboration and feedback. Can also be used to update an existing repository's details
+Broadcast and update a git repository
 
 Usage: n34 repo announce [OPTIONS] --id <REPO_ID>
 
