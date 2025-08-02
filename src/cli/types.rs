@@ -28,7 +28,6 @@ use nostr::{
 };
 use nostr_connect::client::AuthUrlHandler;
 use tokio::runtime::Handle;
-use url::Url;
 
 use super::{RepoRelaySetsExt, parsers};
 use crate::{
@@ -68,7 +67,10 @@ pub struct NostrEvent {
 pub struct EchoAuthUrl;
 
 impl AuthUrlHandler for EchoAuthUrl {
-    fn on_auth_url(&self, auth_url: Url) -> BoxedFuture<Result<(), Box<dyn std::error::Error>>> {
+    fn on_auth_url(
+        &self,
+        auth_url: nostr::Url,
+    ) -> BoxedFuture<Result<(), Box<dyn std::error::Error>>> {
         Box::pin(async move {
             println!("The bunker requires authentication. Please open this URL: {auth_url}");
             Ok(())
