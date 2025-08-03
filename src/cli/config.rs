@@ -21,7 +21,10 @@ use nostr::{
     types::RelayUrl,
 };
 
-use crate::error::{N34Error, N34Result};
+use crate::{
+    cli::traits::{MutRepoRelaySetsExt, RepoRelaySetsExt},
+    error::N34Result,
+};
 
 /// Errors that can occur when working with configuration files.
 #[derive(thiserror::Error, Debug)]
@@ -161,140 +164,4 @@ impl RepoRelaySet {
         let mut seen = HashSet::new();
         self.naddrs.retain(|n| seen.insert(n.coordinate.clone()));
     }
-}
-
-#[easy_ext::ext(MutRepoRelaySetsExt)]
-impl Vec<RepoRelaySet> {
-    /// Removes duplicate repository addresses from each set.
-    ///
-    /// Relays are automatically deduplicated by the HashSet, but
-    /// repository addresses may appear duplicated if relays are sorted
-    /// differently or when relay counts vary. This compares addresses by
-    /// their coordinates, ignoring any embedded relay details.
-    pub fn dedup_naddrs(&mut self) {
-        self.iter_mut().for_each(RepoRelaySet::dedup_naddrs);
-    }
-
-    /// Finds and returns a mutable reference a set with the given name. Returns
-    /// an error if no set with this name exists.
-    pub fn get_mut_set(&mut self, name: impl AsRef<str>) -> N34Result<&mut RepoRelaySet> {
-        let name = name.as_ref();
-        let set = self
-            .iter_mut()
-            .find(|set| set.name == name)
-            .ok_or_else(|| N34Error::from(ConfigError::SetNotFound(name.to_owned())))?;
-
-        tracing::trace!(
-            name = %name, set = ?set,
-            "Successfully located a set with the giving name"
-        );
-
-        Ok(set)
-    }
-
-    /// Creates and pushes a new set with the given name.
-    ///
-    /// Returns an error if a set with the same name already exists.
-    pub fn push_set(
-        &mut self,
-        name: impl Into<String>,
-        repos: impl IntoIterator<Item = Nip19Coordinate>,
-        relays: impl IntoIterator<Item = RelayUrl>,
-    ) -> N34Result<()> {
-        let set_name: String = name.into();
-        tracing::trace!(sets = ?self, "Pushing set '{set_name}' to sets collection");
-
-        if self.as_slice().exists(&set_name) {
-            return Err(ConfigError::SetDuplicateName(set_name).into());
-        }
-
-        self.push(RepoRelaySet::new(set_name, repos, relays));
-
-        Ok(())
-    }
-
-    /// Removes the set with the given name if it exists. Returns an error if
-    /// the set is not found.
-    pub fn remove_set(&mut self, name: impl Into<String>) -> N34Result<()> {
-        let set_name: String = name.into();
-        tracing::trace!(set_name, sets = ?self, "Removing set '{set_name}' from sets collection");
-
-        if !self.as_slice().exists(&set_name) {
-            return Err(ConfigError::SetNotFound(set_name).into());
-        }
-
-        self.retain(|s| s.name != set_name);
-
-        Ok(())
-    }
-
-    /// Removes the given relays from the specified set.
-    pub fn remove_relays(
-        &mut self,
-        name: impl Into<String>,
-        relays: impl Iterator<Item = RelayUrl>,
-    ) -> N34Result<()> {
-        let relays = Vec::from_iter(relays);
-        let set = self.get_mut_set(name.into())?;
-
-        set.relays.retain(|r| !relays.contains(r));
-
-        Ok(())
-    }
-
-    /// Removes the given naddrs from the specified set.
-    pub fn remove_naddrs(
-        &mut self,
-        name: impl Into<String>,
-        naddrs: impl Iterator<Item = Nip19Coordinate>,
-    ) -> N34Result<()> {
-        let coordinates = Vec::from_iter(naddrs.map(|n| n.coordinate));
-        let set = self.get_mut_set(name.into())?;
-
-        set.naddrs.retain(|n| !coordinates.contains(&n.coordinate));
-
-        Ok(())
-    }
-}
-
-#[easy_ext::ext(RepoRelaySetsExt)]
-impl &[RepoRelaySet] {
-    /// Checks for duplicate set names. Returns an error if any duplicates are
-    /// found.
-    pub fn ensure_names(&self) -> N34Result<()> {
-        let mut names = Vec::with_capacity(self.len());
-        names.extend(self.iter().map(|s| s.name.to_owned()));
-
-        names.sort_unstable();
-
-        if let Some(duplicate) = duplicate_in_sorted(&names) {
-            return Err(ConfigError::SetDuplicateName(duplicate.clone()).into());
-        }
-        Ok(())
-    }
-
-    /// Check if a set with the given name exists.
-    pub fn exists(&self, set_name: &str) -> bool {
-        self.iter().any(|set| set.name == set_name)
-    }
-
-    /// Finds and returns a reference a set with the given name. Returns an
-    /// error if no set with this name exists.
-    pub fn get_set(&self, name: impl AsRef<str>) -> N34Result<&RepoRelaySet> {
-        let name = name.as_ref();
-        let set = self
-            .iter()
-            .find(|set| set.name == name)
-            .ok_or_else(|| N34Error::from(ConfigError::SetNotFound(name.to_owned())))?;
-        tracing::trace!(
-            name = %name, set = ?set,
-            "Successfully located a set with the giving name"
-        );
-        Ok(set)
-    }
-}
-
-/// Helper function that checks for duplicates in a sorted slice
-fn duplicate_in_sorted<T: PartialEq + Clone>(items: &[T]) -> Option<&T> {
-    items.windows(2).find(|w| w[0] == w[1]).map(|w| &w[0])
 }

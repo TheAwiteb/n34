@@ -21,7 +21,7 @@ use futures::future;
 use nostr::{event::EventBuilder, key::PublicKey, types::Url};
 
 use crate::{
-    cli::{CliOptions, CommandRunner, NOSTR_ADDRESS_FILE, types::RelayOrSetVecExt},
+    cli::{CliOptions, CommandRunner, NOSTR_ADDRESS_FILE, traits::RelayOrSetVecExt},
     error::N34Result,
     nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement, utils},
 };

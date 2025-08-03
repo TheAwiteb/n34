@@ -29,9 +29,9 @@ use nostr::{
 use nostr_connect::client::AuthUrlHandler;
 use tokio::runtime::Handle;
 
-use super::{RepoRelaySetsExt, parsers};
+use super::parsers;
 use crate::{
-    cli::RepoRelaySet,
+    cli::{RepoRelaySet, traits::RepoRelaySetsExt},
     error::{N34Error, N34Result},
 };
 
@@ -188,47 +188,6 @@ impl FromStr for NostrEvent {
         } else {
             Err("Invalid event id, must starts with `note1` or `nevent1`".to_owned())
         }
-    }
-}
-
-#[easy_ext::ext(NaddrOrSetVecExt)]
-impl Vec<NaddrOrSet> {
-    /// Converts this vector of [`NaddrOrSet`] into a flat vector of
-    /// [`Nip19Coordinate`] using the given sets.
-    pub fn flat_naddrs(self, sets: &[RepoRelaySet]) -> N34Result<Vec<Nip19Coordinate>> {
-        self.into_iter()
-            .map(|n| n.get_naddrs(sets))
-            .try_fold(Vec::new(), |mut acc, item| {
-                acc.extend(item?);
-                Ok(acc)
-            })
-    }
-}
-
-#[easy_ext::ext(RelayOrSetVecExt)]
-impl Vec<RelayOrSet> {
-    /// Converts this vector of [`RelayOrSet`] into a flat vector of
-    /// [`RelayUrl`] using the given sets.
-    pub fn flat_relays(self, sets: &[RepoRelaySet]) -> N34Result<Vec<RelayUrl>> {
-        self.into_iter()
-            .map(|n| n.get_relays(sets))
-            .try_fold(Vec::new(), |mut acc, item| {
-                acc.extend(item?);
-                Ok(acc)
-            })
-    }
-}
-
-
-#[easy_ext::ext(OptionNaddrOrSetVecExt)]
-impl Option<Vec<NaddrOrSet>> {
-    /// Converts this vector of [`NaddrOrSet`] into a flat vector of
-    /// [`Nip19Coordinate`] using the given sets.
-    pub fn flat_naddrs(&self, sets: &[RepoRelaySet]) -> N34Result<Option<Vec<Nip19Coordinate>>> {
-        // Clones self here to simplify command code
-        self.clone()
-            .map(|naddrs| naddrs.flat_naddrs(sets))
-            .transpose()
     }
 }
 

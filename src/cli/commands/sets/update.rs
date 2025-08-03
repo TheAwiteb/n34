@@ -21,9 +21,8 @@ use clap::Args;
 use crate::{
     cli::{
         CliOptions,
-        MutRepoRelaySetsExt,
-        traits::CommandRunner,
-        types::{NaddrOrSet, NaddrOrSetVecExt, RelayOrSet, RelayOrSetVecExt},
+        traits::{CommandRunner, MutRepoRelaySetsExt, NaddrOrSetVecExt, RelayOrSetVecExt},
+        types::{NaddrOrSet, RelayOrSet},
     },
     error::N34Result,
 };

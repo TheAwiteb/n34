@@ -32,7 +32,7 @@ use super::{
     types::{NaddrOrSet, NostrEvent},
 };
 use crate::{
-    cli::types::{OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+    cli::traits::{OptionNaddrOrSetVecExt, RelayOrSetVecExt},
     nostr_utils::{NostrClient, traits::NaddrsUtils, utils},
 };
 use crate::{

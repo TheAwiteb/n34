@@ -22,7 +22,8 @@ use crate::{
     cli::{
         CliOptions,
         CommandRunner,
-        types::{NaddrOrSet, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+        traits::{OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+        types::NaddrOrSet,
     },
     error::N34Result,
     nostr_utils::{

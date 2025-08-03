@@ -27,7 +27,10 @@ use nostr::{
 
 use super::{CliOptions, CommandRunner};
 use crate::{
-    cli::types::{NaddrOrSet, NostrEvent, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+    cli::{
+        traits::{OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+        types::{NaddrOrSet, NostrEvent},
+    },
     error::{N34Error, N34Result},
     nostr_utils::{
         NostrClient,

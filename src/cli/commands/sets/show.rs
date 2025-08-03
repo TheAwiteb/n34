@@ -18,7 +18,11 @@ use clap::Args;
 use nostr::nips::nip19::ToBech32;
 
 use crate::{
-    cli::{CliOptions, RepoRelaySet, RepoRelaySetsExt, traits::CommandRunner},
+    cli::{
+        CliOptions,
+        RepoRelaySet,
+        traits::{CommandRunner, RepoRelaySetsExt},
+    },
     error::N34Result,
 };
 

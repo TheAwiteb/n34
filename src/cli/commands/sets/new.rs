@@ -20,9 +20,8 @@ use crate::{
     cli::{
         CliOptions,
         ConfigError,
-        MutRepoRelaySetsExt,
-        traits::CommandRunner,
-        types::{NaddrOrSet, NaddrOrSetVecExt, RelayOrSet, RelayOrSetVecExt},
+        traits::{CommandRunner, MutRepoRelaySetsExt, NaddrOrSetVecExt, RelayOrSetVecExt},
+        types::{NaddrOrSet, RelayOrSet},
     },
     error::N34Result,
 };

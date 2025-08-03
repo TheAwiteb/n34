@@ -30,8 +30,8 @@ use super::GitPatch;
 use crate::{
     cli::{
         CliOptions,
-        traits::CommandRunner,
-        types::{NaddrOrSet, NostrEvent, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+        traits::{CommandRunner, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+        types::{NaddrOrSet, NostrEvent},
     },
     error::N34Result,
     nostr_utils::{
