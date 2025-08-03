@@ -46,6 +46,7 @@ impl CommandRunner for CloseArgs {
             self.naddrs,
             PatchStatus::Closed,
             None,
+            Vec::new(),
             |patch_status| {
                 if patch_status.is_closed() {
                     return Err(N34Error::InvalidStatus(

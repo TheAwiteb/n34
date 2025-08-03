@@ -21,7 +21,7 @@ use super::PatchStatus;
 use crate::{
     cli::{
         CliOptions,
-        traits::CommandRunner,
+        traits::{CommandRunner, VecNostrEventExt},
         types::{NaddrOrSet, NostrEvent},
     },
     error::{N34Error, N34Result},
@@ -38,6 +38,10 @@ pub struct ApplyArgs {
     /// The open patch id to apply it. Must be orignal root patch or
     /// revision root
     patch_id:        NostrEvent,
+    /// Patches that have been applied. Use this when only some patches have
+    /// been applied, not all.
+    #[arg(long = "patches", value_name = "PATCH-EVENT-ID")]
+    applied_patches: Vec<NostrEvent>,
     /// The applied commits
     #[arg(num_args = 1..)]
     applied_commits: Vec<Sha1Hash>,
@@ -51,6 +55,7 @@ impl CommandRunner for ApplyArgs {
             self.naddrs,
             PatchStatus::MergedApplied,
             Some(either::Either::Right(self.applied_commits)),
+            self.applied_patches.into_event_ids(),
             |patch_status| {
                 if patch_status.is_merged_or_applied() {
                     return Err(N34Error::InvalidStatus(

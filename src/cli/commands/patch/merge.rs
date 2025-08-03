@@ -21,7 +21,7 @@ use super::PatchStatus;
 use crate::{
     cli::{
         CliOptions,
-        traits::CommandRunner,
+        traits::{CommandRunner, VecNostrEventExt},
         types::{NaddrOrSet, NostrEvent},
     },
     error::{N34Error, N34Result},
@@ -34,12 +34,16 @@ pub struct MergeArgs {
     ///
     /// If omitted, looks for a `nostr-address` file.
     #[arg(value_name = "NADDR-NIP05-OR-SET", long = "repo")]
-    naddrs:       Option<Vec<NaddrOrSet>>,
+    naddrs:         Option<Vec<NaddrOrSet>>,
     /// The open patch id to merge it. Must be orignal root patch or
     /// revision root
-    patch_id:     NostrEvent,
+    patch_id:       NostrEvent,
+    /// Patches that have been merged. Use this when only some patches have been
+    /// merged, not all.
+    #[arg(long = "patches", value_name = "PATCH-EVENT-ID")]
+    merged_patches: Vec<NostrEvent>,
     /// The merge commit id
-    merge_commit: Sha1Hash,
+    merge_commit:   Sha1Hash,
 }
 
 impl CommandRunner for MergeArgs {
@@ -50,6 +54,7 @@ impl CommandRunner for MergeArgs {
             self.naddrs,
             PatchStatus::MergedApplied,
             Some(either::Either::Left(self.merge_commit)),
+            self.merged_patches.into_event_ids(),
             |patch_status| {
                 if patch_status.is_merged_or_applied() {
                     return Err(N34Error::InvalidStatus(

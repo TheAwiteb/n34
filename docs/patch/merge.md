@@ -14,6 +14,7 @@ Arguments:
 
 Options:
       --repo <NADDR-NIP05-OR-SET>  Repository address in `naddr` format (`naddr1...`), NIP-05 format (`4rs.nl/n34` or `_@4rs.nl/n34`), or a set name like `kernel`
+      --patches <PATCH-EVENT-ID>   Patches that have been merged. Use this when only some patches have been merged, not all
 ```
 
 Creates a kind `1631` event (Applied/Merged status) for the specified patch. The

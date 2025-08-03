@@ -62,6 +62,7 @@ pub struct ContentDetails {
 }
 
 /// A client for interacting with the Nostr relays
+#[derive(Clone)]
 pub struct NostrClient {
     /// The underlying Nostr client implementation
     pub client: Client,
@@ -322,7 +323,6 @@ impl NostrClient {
         {
             return Ok(PatchStatus::Closed);
         }
-
 
         Ok(root_status)
     }

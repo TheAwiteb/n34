@@ -46,6 +46,7 @@ impl CommandRunner for DraftArgs {
             self.naddrs,
             PatchStatus::Draft,
             None,
+            Vec::new(),
             |patch_status| {
                 if patch_status.is_drafted() {
                     return Err(N34Error::InvalidStatus(

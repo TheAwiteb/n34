@@ -23,6 +23,7 @@ use nostr::{
     filter::Filter,
     hashes::sha1::Hash as Sha1Hash,
     nips::{nip10::Marker, nip19::ToBech32},
+    types::RelayUrl,
 };
 
 use super::{
@@ -130,6 +131,7 @@ pub async fn patch_status_command(
     naddrs: Option<Vec<NaddrOrSet>>,
     new_status: PatchStatus,
     merge_or_applied_commits: Option<Either<Sha1Hash, Vec<Sha1Hash>>>,
+    merge_or_applied_patches: Vec<EventId>,
     check_fn: impl FnOnce(&PatchStatus) -> N34Result<()>,
 ) -> N34Result<()> {
     let user_pkey = options.pubkey().await?;
@@ -209,22 +211,20 @@ pub async fn patch_status_command(
                 .tags(commits.into_iter().map(Tag::reference));
         };
 
-        let root = if let Some(root_revision) = root_revision {
+        if let Some(root_revision) = root_revision {
             status_builder = status_builder.tag(utils::event_reply_tag(
                 &root_revision,
                 relay_hint.as_ref(),
                 Marker::Reply,
             ));
-            root_revision
-        } else {
-            root_patch
-        };
-        let patches = client.fetch_patch_series(root, patch_event.pubkey).await?;
-        status_builder = status_builder.tags(
-            patches
-                .into_iter()
-                .map(|p| utils::event_reply_tag(&p.id, relay_hint.as_ref(), Marker::Mention)),
-        );
+        }
+
+        if !merge_or_applied_patches.is_empty() {
+            status_builder = status_builder.tags(
+                build_patches_quote(client.clone(), relay_hint.clone(), merge_or_applied_patches)
+                    .await,
+            );
+        }
     }
 
     let status_event = status_builder.dedup_tags().build(user_pkey);
@@ -278,7 +278,6 @@ pub async fn list_patches_and_issues(
     client
         .add_relays(&client.read_relays_from_users(&authorized_pubkeys).await)
         .await;
-
 
     let kind = if list_patches {
         Kind::GitPatch
@@ -352,7 +351,6 @@ pub async fn list_patches_and_issues(
     Ok(())
 }
 
-
 /// Returns a tuple of (root_id, patch_id) if this is a valid root or revision
 /// patch.
 fn get_patch_root_revision(patch_event: &Event) -> N34Result<(EventId, Option<EventId>)> {
@@ -400,4 +398,41 @@ fn format_patch_and_issue(event: &Event, status: Either<PatchStatus, IssueStatus
         utils::smart_wrap(&subject, 85),
         event.id.to_bech32().expect("Infallible")
     )
+}
+
+/// Generates a list of tags for quoting patches in merge/applied status events.
+async fn build_patches_quote(
+    client: NostrClient,
+    relay_hint: Option<RelayUrl>,
+    patches: Vec<EventId>,
+) -> Vec<Tag> {
+    let client = Arc::new(client);
+    let relay_hint = Arc::new(relay_hint);
+
+    future::join_all(patches.into_iter().map(|eid| {
+        let task_relay = Arc::clone(&relay_hint);
+        let task_client = Arc::clone(&client);
+
+        async move {
+            Tag::custom(
+                TagKind::q(),
+                [
+                    eid.to_hex(),
+                    task_relay
+                        .as_ref()
+                        .as_ref()
+                        .map(|r| r.to_string())
+                        .unwrap_or_default(),
+                    task_client
+                        .event_author(eid)
+                        .await
+                        .ok()
+                        .flatten()
+                        .map(|p| p.to_hex())
+                        .unwrap_or_default(),
+                ],
+            )
+        }
+    }))
+    .await
 }

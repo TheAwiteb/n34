@@ -11,10 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support signing using NIP-46 bunker - by Awiteb
 - Keyring the secret key `n34 config keyring --enable` - by Awiteb
+- New flag to `patch apply and merge` to mention patches - by Awiteb
 
 ### Dependencies
 
 - Add `keyring`, `nostr-connect`, `nostr-keyring` and `url` to the dependencies - by Awiteb
+- Remove `url` from `n34` dependencies - by Awiteb
+
+### Documentation
+
+- N34 book - by Awiteb
+- Fix status command docs - by Awiteb
 
 ## [0.3.0] - 2025-07-05
 

@@ -46,6 +46,7 @@ impl CommandRunner for ReopenArgs {
             self.naddrs,
             PatchStatus::Open,
             None,
+            Vec::new(),
             |patch_status| {
                 if patch_status.is_open() {
                     return Err(N34Error::InvalidStatus(

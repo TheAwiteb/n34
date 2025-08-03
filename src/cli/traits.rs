@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+use nostr::event::EventId;
+
 use super::CliOptions;
-use crate::error::N34Result;
+use crate::{cli::types::NostrEvent, error::N34Result};
 
 /// A trait defining the interface for command runners in the CLI.
 pub trait CommandRunner {
@@ -28,4 +30,13 @@ pub trait CommandRunner {
 
     /// Executes the command and returns a Result indicating success or failure.
     fn run(self, options: CliOptions) -> impl Future<Output = N34Result<()>> + Send;
+}
+
+#[easy_ext::ext(VecNostrEventExt)]
+impl Vec<NostrEvent> {
+    /// Extracts `EventId` from each `NostrEvent` and collects them into a
+    /// `Vec<EventId>`.
+    pub fn into_event_ids(self) -> Vec<EventId> {
+        self.into_iter().map(|e| e.event_id).collect()
+    }
 }
