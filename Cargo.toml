@@ -12,28 +12,34 @@ categories   = ["command-line-utilities"]
 rust-version = "1.88.0"
 
 [dependencies]
-chrono = "0.4.41"
-clap = { version = "4.5.37", features = ["derive"] }
-clap-verbosity-flag = { version = "3.0.2", default-features = false, features = [
+clap-verbosity-flag = { version = "3.0.3", default-features = false, features = [
   "tracing",
 ] }
-convert_case = "0.8.0"
-dirs = "6.0.0"
-easy-ext = "1.0.2"
-either = "1.15.0"
-futures = "0.3.31"
-keyring = "3"
-nostr = { version = "0.42.2", features = ["parser", "nip05"] }
-nostr-connect = "0.42.0"
-nostr-keyring = "0.42.1"
-nostr-sdk = "0.42.0"
-regex = "1.11.1"
-serde = { version = "1.0.219", features = ["derive"] }
-tempfile = "3.19.1"
-thiserror = "2.0.12"
-tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
-toml = "0.8.22"
-tracing = "0.1.41"
+reqwest = { version = "0.12.22", default-features = false, features = [
+  "http2",
+  "json",
+  "rustls-tls",
+] }
+
+clap          = { version = "4.5.42", features = ["derive"] }
+nostr         = { version = "0.43.0", default-features = false, features = ["std"] }
+nostr-connect = { version = "0.43.0", default-features = false }
+nostr-keyring = { version = "0.43.0", default-features = false }
+nostr-sdk     = { version = "0.43.0", default-features = false }
+serde         = { version = "1.0.219", features = ["derive"] }
+tokio         = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
+
+chrono             = "0.4.41"
+convert_case       = "0.8.0"
+dirs               = "6.0.0"
+easy-ext           = "1.0.2"
+either             = "1.15.0"
+futures            = "0.3.31"
+regex              = "1.11.1"
+tempfile           = "3.20.0"
+thiserror          = "2.0.12"
+toml               = "0.9.4"
+tracing            = "0.1.41"
 tracing-subscriber = "0.3.19"
 
 [profile.release]

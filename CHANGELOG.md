@@ -17,11 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `keyring`, `nostr-connect`, `nostr-keyring` and `url` to the dependencies - by Awiteb
 - Remove `url` from `n34` dependencies - by Awiteb
+- Upgrade to `nostr@0.43.0` - by Awiteb
 
 ### Documentation
 
 - N34 book - by Awiteb
 - Fix status command docs - by Awiteb
+
+### Refactor
+
+- Move the trait extensions to `traits.rs` - by Awiteb
+- Move `root` and `root-revision` to constants - by Awiteb
 
 ## [0.3.0] - 2025-07-05
 

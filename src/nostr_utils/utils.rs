@@ -151,9 +151,8 @@ pub fn repo_naddr(
 ) -> N34Result<String> {
     Nip19Coordinate::new(
         Coordinate::new(Kind::GitRepoAnnouncement, pubk).identifier(repo_id),
-        dedup(relays.iter().cloned()).iter().take(3),
+        dedup(relays.iter().cloned()).into_iter().take(3),
     )
-    .expect("Valid relays")
     .to_bech32()
     .map_err(N34Error::from)
 }

@@ -35,6 +35,7 @@ use clap::Parser;
 use clap_verbosity_flag::Verbosity;
 use nostr::key::Keys;
 use nostr::key::SecretKey;
+use nostr_keyring::KeyringError;
 use nostr_keyring::NostrKeyring;
 use types::RelayOrSet;
 
@@ -96,7 +97,7 @@ impl Cli {
 
         match keyring.get(Self::N34_KEY_PAIR_ENTRY) {
             Ok(keys) => Ok(keys),
-            Err(nostr_keyring::Error::Keyring(keyring::Error::NoEntry)) => {
+            Err(nostr_keyring::Error::Keyring(KeyringError::NoEntry)) => {
                 let new_keys = Keys::generate();
                 keyring.set(Self::N34_KEY_PAIR_ENTRY, &new_keys)?;
                 Ok(new_keys)

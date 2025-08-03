@@ -19,8 +19,8 @@ use std::str::FromStr;
 use nostr::{
     event::{EventId, Kind},
     nips::{
-        self,
         nip01::Coordinate,
+        nip05::{Nip05Address, Nip05Profile},
         nip19::{self, FromBech32, Nip19Coordinate},
     },
     types::RelayUrl,
@@ -194,19 +194,25 @@ impl FromStr for NostrEvent {
 fn parse_nip5_repo(nip5: &str, repo_id: &str) -> Result<NaddrOrSet, String> {
     let (username, domain) = nip5.split_once("@").unwrap_or(("_", nip5));
 
-    let nip5_profile = tokio::task::block_in_place(|| {
+    let nip5_address =
+        Nip05Address::parse(&format!("{username}@{domain}")).map_err(|err| err.to_string())?;
+
+    let nip5_json = tokio::task::block_in_place(|| {
         Handle::current().block_on(async {
-            nips::nip05::profile(format!("{username}@{domain}"), None)
+            reqwest::get(nip5_address.url().as_str())
+                .await
+                .map_err(|err| err.to_string())?
+                .text()
                 .await
                 .map_err(|err| err.to_string())
         })
     })?;
 
-    Ok(NaddrOrSet::Naddr(
-        Nip19Coordinate::new(
-            Coordinate::new(Kind::GitRepoAnnouncement, nip5_profile.public_key).identifier(repo_id),
-            nip5_profile.relays,
-        )
-        .expect("The relays is `RelayUrl`"),
-    ))
+    let nip5_profile =
+        Nip05Profile::from_raw_json(&nip5_address, &nip5_json).map_err(|err| err.to_string())?;
+
+    Ok(NaddrOrSet::Naddr(Nip19Coordinate::new(
+        Coordinate::new(Kind::GitRepoAnnouncement, nip5_profile.public_key).identifier(repo_id),
+        nip5_profile.relays,
+    )))
 }
