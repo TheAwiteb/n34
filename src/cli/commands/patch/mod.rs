@@ -68,6 +68,11 @@ static PATCH_VERSION_NUMBER_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\[PATCH\s+(?:v(?<version>\d+)\s*)?(?<number>\d+)/(?:\d+)").unwrap()
 });
 
+/// Content of the hashtag representing the root patch.
+pub const ROOT_HASHTAG_CONTENT: &str = "root";
+/// Content of the hashtag representing the root revision patch.
+pub const REVISION_ROOT_HASHTAG_CONTENT: &str = "root-revision";
+
 #[derive(Subcommand, Debug)]
 pub enum PatchSubcommands {
     /// Send one or more patches to a repository.

@@ -30,6 +30,7 @@ use super::GitPatch;
 use crate::{
     cli::{
         CliOptions,
+        patch::{REVISION_ROOT_HASHTAG_CONTENT, ROOT_HASHTAG_CONTENT},
         traits::{CommandRunner, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
         types::{NaddrOrSet, NostrEvent},
     },
@@ -241,14 +242,17 @@ async fn make_patch(
         event_builder =
             event_builder.tag(utils::event_reply_tag(&root_id, write_relay, Marker::Root));
     } else {
-        event_builder = event_builder.tag(Tag::hashtag("root"));
+        event_builder = event_builder.tag(Tag::hashtag(ROOT_HASHTAG_CONTENT));
     }
 
+    // Handles the case where there is a patch to reply to but no root. This
+    // indicates we are processing a revision, as the root revision should reply
+    // directly to the original patch.
     if let Some(reply_to_id) = reply_to {
         if root.is_none() {
             event_builder = event_builder.tags([
                 utils::event_reply_tag(&reply_to_id, write_relay, Marker::Reply),
-                Tag::hashtag("root-revision"),
+                Tag::hashtag(REVISION_ROOT_HASHTAG_CONTENT),
             ]);
         } else {
             event_builder = event_builder.tag(utils::event_reply_tag(

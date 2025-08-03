@@ -30,6 +30,7 @@ use nostr::{
 };
 
 use crate::cli::issue::ISSUE_ALT_PREFIX;
+use crate::cli::patch::{REVISION_ROOT_HASHTAG_CONTENT, ROOT_HASHTAG_CONTENT};
 use crate::error::{N34Error, N34Result};
 
 
@@ -245,7 +246,7 @@ impl Event {
             && self
                 .tags
                 .filter(TagKind::t())
-                .any(|t| t.content() == Some("root"))
+                .any(|t| t.content() == Some(ROOT_HASHTAG_CONTENT))
     }
 
     /// Returns whether the patch is patch-revision or not
@@ -255,7 +256,7 @@ impl Event {
             && self
                 .tags
                 .filter(TagKind::t())
-                .any(|t| t.content() == Some("root-revision"))
+                .any(|t| t.content() == Some(REVISION_ROOT_HASHTAG_CONTENT))
     }
 
     /// Gets the root patch ID from a patch-revision event by finding the `e`
