@@ -35,7 +35,7 @@ use nostr::{
     parser::NostrParser,
     types::RelayUrl,
 };
-use nostr_sdk::Client;
+use nostr_sdk::{Client, ClientOptions};
 use traits::TokenUtils;
 
 use crate::{
@@ -111,7 +111,8 @@ impl NostrClient {
     /// Initializes a new [`NostrClient`] instance and connects to the specified
     /// relays.
     pub async fn init(options: &CliOptions, relays: &[RelayUrl]) -> Self {
-        let mut client_builder = Client::builder();
+        let mut client_builder =
+            Client::builder().opts(ClientOptions::new().verify_subscriptions(true));
 
         if let Ok(Some(signer)) = options.signer() {
             client_builder = client_builder.signer(signer);
