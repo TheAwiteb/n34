@@ -72,6 +72,10 @@ static PATCH_VERSION_NUMBER_RE: LazyLock<Regex> = LazyLock::new(|| {
 pub const ROOT_HASHTAG_CONTENT: &str = "root";
 /// Content of the hashtag representing the root revision patch.
 pub const REVISION_ROOT_HASHTAG_CONTENT: &str = "root-revision";
+/// The content of the hashtag used by `ngit-cli` to represent a root revision
+/// patch before the commit 6ae42e67d9da36f6c2e1356acba30a3a62112bc7. This was a
+/// typo.
+pub const LEGACY_NGIT_REVISION_ROOT_HASHTAG_CONTENT: &str = "revision-root";
 
 #[derive(Subcommand, Debug)]
 pub enum PatchSubcommands {

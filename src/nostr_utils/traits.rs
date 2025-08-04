@@ -31,7 +31,11 @@ use nostr::{
 use nostr_keyring::KeyringError;
 
 use crate::cli::issue::ISSUE_ALT_PREFIX;
-use crate::cli::patch::{REVISION_ROOT_HASHTAG_CONTENT, ROOT_HASHTAG_CONTENT};
+use crate::cli::patch::{
+    LEGACY_NGIT_REVISION_ROOT_HASHTAG_CONTENT,
+    REVISION_ROOT_HASHTAG_CONTENT,
+    ROOT_HASHTAG_CONTENT,
+};
 use crate::error::{N34Error, N34Result};
 
 
@@ -254,10 +258,13 @@ impl Event {
     #[inline]
     pub fn is_revision_patch(&self) -> bool {
         self.kind == Kind::GitPatch
-            && self
-                .tags
-                .filter(TagKind::t())
-                .any(|t| t.content() == Some(REVISION_ROOT_HASHTAG_CONTENT))
+            && self.tags.filter(TagKind::t()).any(|t| {
+                [
+                    Some(REVISION_ROOT_HASHTAG_CONTENT),
+                    Some(LEGACY_NGIT_REVISION_ROOT_HASHTAG_CONTENT),
+                ]
+                .contains(&t.content())
+            })
     }
 
     /// Gets the root patch ID from a patch-revision event by finding the `e`
