@@ -9,6 +9,7 @@
   - [Manage Configuration](config/README.md)
     - [Default PoW Difficulty](config/pow.md)
     - [Fallback Relays](config/relays.md)
+    - [NIP-07 Browser Signer Proxy](config/nip07.md)
     - [NIP-46 Bunker](config/bunker.md)
     - [Secret Key Keyring](config/keyring.md)
   - [Manage Repositories](repo/README.md)

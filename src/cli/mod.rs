@@ -24,6 +24,8 @@ pub mod config;
 pub mod defaults;
 /// Macros for CLI application.
 pub mod macros;
+/// Represents the state used for CLI options.
+pub mod options_state;
 /// CLI arguments parsers
 pub mod parsers;
 /// CLI traits
@@ -31,10 +33,13 @@ pub mod traits;
 /// Common helper types used throughout the CLI.
 pub mod types;
 
+
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
 use nostr::key::Keys;
 use nostr::key::SecretKey;
+use nostr_browser_signer_proxy::BrowserSignerProxy;
+use nostr_browser_signer_proxy::BrowserSignerProxyOptions;
 use nostr_keyring::KeyringError;
 use nostr_keyring::NostrKeyring;
 use types::RelayOrSet;
@@ -42,6 +47,7 @@ use types::RelayOrSet;
 pub use self::commands::*;
 pub use self::config::*;
 use self::traits::CommandRunner;
+use crate::cli::options_state::BROWSER_SIGNER_PROXY_TIMEOUT;
 use crate::error::N34Error;
 use crate::error::N34Result;
 use crate::nostr_utils::traits::NostrKeyringErrorUtils;
@@ -143,10 +149,29 @@ pub fn post_cli(mut cli: Cli) -> N34Result<Cli> {
         cli.options.relays = relays.iter().cloned().map(RelayOrSet::Relay).collect();
     }
 
-    if cli.options.bunker_url.is_none()
-        && let Some(bunker_url) = &cli.options.config.bunker_url
+    // Automatically sets the signer based on the configuration if no signer
+    // is provided.
+    if !cli.options.nip07
+        && cli.options.bunker_url.is_none()
+        && (cli.options.secret_key.is_none() || cli.options.config.keyring_secret_key)
     {
-        cli.options.bunker_url = Some(bunker_url.clone());
+        if let Some(addr) = cli.options.config.nip07 {
+            cli.options.nip07 = true;
+            cli.options.state.browser_signer_proxy = BrowserSignerProxy::new(
+                BrowserSignerProxyOptions::default()
+                    .timeout(BROWSER_SIGNER_PROXY_TIMEOUT)
+                    .ip_addr(addr.ip())
+                    .port(addr.port()),
+            );
+        } else if let Some(bunker_url) = &cli.options.config.bunker_url {
+            cli.options.bunker_url = Some(bunker_url.clone());
+        } else if cli.options.config.keyring_secret_key {
+            cli.options.secret_key = Some(
+                Cli::user_keypair(cli.options.secret_key)?
+                    .secret_key()
+                    .clone(),
+            );
+        }
     }
 
     Ok(cli)

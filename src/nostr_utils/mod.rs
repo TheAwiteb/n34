@@ -114,7 +114,7 @@ impl NostrClient {
         let mut client_builder =
             Client::builder().opts(ClientOptions::new().verify_subscriptions(true));
 
-        if let Ok(Some(signer)) = options.signer() {
+        if let Ok(Some(signer)) = options.signer().await {
             client_builder = client_builder.signer(signer);
         }
 

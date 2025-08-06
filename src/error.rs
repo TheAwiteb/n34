@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::process::ExitCode;
+use std::{net::AddrParseError, process::ExitCode};
 
 use nostr::{
     event::{Kind, builder::Error as EventBuilderError},
@@ -47,6 +47,10 @@ pub enum N34Error {
     Io(#[from] std::io::Error),
     #[error("Signer Error: {0}")]
     SignerError(#[from] SignerError),
+    #[error("Invalid Browser Signer Proxy Address: {0}")]
+    Addr(#[from] AddrParseError),
+    #[error("Browser Signer Proxy Error: {0}")]
+    BrowserSignerProxy(#[from] nostr_browser_signer_proxy::Error),
     #[error("Keyring error: {0}")]
     Keyring(#[from] nostr_keyring::Error),
     #[error("{0}")]
@@ -92,8 +96,8 @@ pub enum N34Error {
     #[error("One naddr is required for this command")]
     EmptyNaddrs,
     #[error(
-        "This command requires a signer to sign events. Use `--secret-key` or `--bunker-url` to \
-         provide a signer"
+        "This command requires a signer to sign events. Use `--secret-key`, `--nip07` or \
+         `--bunker-url` to provide a signer"
     )]
     SignerRequired,
     #[error(

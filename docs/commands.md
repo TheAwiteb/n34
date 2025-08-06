@@ -8,6 +8,9 @@ The `n34` command-line tool accepts the following options:
   signing events.
 -   `-b`, `--bunker-url`: The URL of a NIP-46 bunker service used for remote
   signing of events.
+-   `-7`, `--nip07`: Enables signing events using the browser's NIP-07
+  extension. Listens on `127.0.0.1:51034`. You can configure the address with `n34
+  config nip07`
 -   `-r`, `--relays`: A relay to read from and write to. This option can be
   specified multiple times to connect to several relays.
 -   `--pow`: Sets the Proof of Work difficulty required when creating events.

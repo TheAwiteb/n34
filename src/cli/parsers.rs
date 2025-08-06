@@ -75,8 +75,8 @@ pub fn parse_config_path(config_path: &str) -> N34Result<CliConfig> {
     CliConfig::load(path)
 }
 
-// Parses a bunker URL and checks if it's a valid Nostr Connect URI.
-// Returns an error if the URL is not a valid bunker URL.
+/// Parses a bunker URL and checks if it's a valid Nostr Connect URI.
+/// Returns an error if the URL is not a valid bunker URL.
 pub fn parse_bunker_url(bunker_url: &str) -> N34Result<NostrConnectURI> {
     match NostrConnectURI::parse(bunker_url) {
         Ok(url) if url.is_bunker() => Ok(url),

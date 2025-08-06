@@ -31,7 +31,7 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
 
-use clap::{ArgGroup, Args, Parser};
+use clap::{Args, Parser};
 use nostr::key::{Keys, PublicKey, SecretKey};
 use nostr::nips::nip46::NostrConnectURI;
 use nostr::signer::{IntoNostrSigner, NostrSigner};
@@ -44,6 +44,7 @@ use self::reply::ReplyArgs;
 use self::repo::RepoSubcommands;
 use self::sets::SetsSubcommands;
 use super::CliConfig;
+use super::options_state::OptionsState;
 use super::types::RelayOrSet;
 use super::{parsers, traits::CommandRunner};
 use crate::cli::Cli;
@@ -59,21 +60,18 @@ pub const DEFAULT_FALLBACK_PATH: &str = "I_DO_NOT_KNOW_WHY_CLAP_DO_NOT_SUPPORT_L
 const BUNKER_TIMEOUT: Duration = Duration::from_secs(60 * 3);
 
 /// The command-line interface options
-#[derive(Args, Clone)]
-#[clap(
-    group(
-        ArgGroup::new("signer")
-            .args(&["secret_key", "bunker_url"])
-            .required(false)
-    )
-)]
+#[derive(Args)]
 pub struct CliOptions {
     /// Your Nostr secret key
-    #[arg(short, long)]
+    #[arg(short, long, group = "signer")]
     pub secret_key: Option<SecretKey>,
     /// NIP-46 bunker url used for signing events
-    #[arg(short, long, value_parser=parsers::parse_bunker_url)]
+    #[arg(short, long, group = "signer", value_parser = parsers::parse_bunker_url)]
     pub bunker_url: Option<NostrConnectURI>,
+    /// Enables signing events using the browser's NIP-07 extension. Listens on
+    /// `127.0.0.1:51034`.
+    #[arg(short = '7', long, group = "signer")]
+    pub nip07:      bool,
     /// Fallbacks relay to write and read from it. Multiple relays can be
     /// passed.
     #[arg(short, long)]
@@ -86,6 +84,10 @@ pub struct CliOptions {
          hide_default_value = true, value_parser = parsers::parse_config_path
      )]
     pub config:     CliConfig,
+    /// The state of options. Some values that are used by them but should not
+    /// be entered via the CLI
+    #[arg(skip)]
+    pub state:      OptionsState,
 }
 
 /// N34 commands
@@ -124,7 +126,7 @@ pub enum Commands {
 impl CliOptions {
     /// Gets the public key of the user.
     pub async fn pubkey(&self) -> N34Result<PublicKey> {
-        let Some(signer) = self.signer()? else {
+        let Some(signer) = self.signer().await? else {
             unreachable!(
                 "This method should only be called when a signer is required. If this panic \
                  occurs, it indicates a bug where the command failed to properly require a signer \
@@ -136,10 +138,21 @@ impl CliOptions {
     }
 
     /// Returns the signer
-    pub fn signer(&self) -> N34Result<Option<Arc<dyn NostrSigner + 'static>>> {
-        if self.config.keyring_secret_key {
+    pub async fn signer(&self) -> N34Result<Option<Arc<dyn NostrSigner + 'static>>> {
+        if self.nip07 {
+            self.state.browser_signer_proxy.start().await?;
+
+            println!(
+                "Browser signer proxy started at: {}",
+                self.state.browser_signer_proxy.url()
+            );
+
+            // FIXME: Use `BrowserSignerProxy::is_session_active` after it release
+            // nostr@0.44.0
+            tokio::time::sleep(Duration::from_secs(10)).await;
+
             return Ok(Some(
-                Cli::user_keypair(self.secret_key.clone())?.into_nostr_signer(),
+                self.state.browser_signer_proxy.clone().into_nostr_signer(),
             ));
         }
 

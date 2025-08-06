@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::{collections::HashSet, fs, path::PathBuf};
+use std::{collections::HashSet, fs, net::SocketAddr, path::PathBuf};
 
 use nostr::{
     nips::{nip19::Nip19Coordinate, nip46::NostrConnectURI},
@@ -76,6 +76,9 @@ pub struct CliConfig {
     /// Whether to use the system keyring to store the secret key.
     #[serde(default)]
     pub keyring_secret_key: bool,
+    /// Signs events using the browser's NIP-07 extension.
+    #[serde(default)]
+    pub nip07:              Option<SocketAddr>,
 }
 
 /// A named group of repositories and relays.

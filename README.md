@@ -26,7 +26,7 @@ details, see the following section.
 - [X] Proof of Work ([NIP-13])
 - [X] `nostr:` URI scheme, in the issue/reply content ([NIP-21])
 - [X] Signing using bunker ([NIP-46])
-- [ ] Signing using [NIP-07] proxy ([nostr-browser-signer-proxy])
+- [X] Signing using [NIP-07] proxy ([nostr-browser-signer-proxy])
 - [ ] Code Snippets ([NIP-C0])
 - [X] In device relays and repos bookmark (`sets` command)
 

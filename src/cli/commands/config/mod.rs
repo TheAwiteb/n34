@@ -18,6 +18,8 @@
 mod bunker;
 /// `config keyring` subcommand
 mod keyring;
+/// `config nip07` subcommand
+mod nip07;
 /// `config pow` subcommand
 mod pow;
 /// `config relays` subcommand
@@ -27,6 +29,7 @@ use clap::Subcommand;
 
 use self::bunker::BunkerArgs;
 use self::keyring::KeyringArgs;
+use self::nip07::Nip07Args;
 use self::pow::PowArgs;
 use self::relays::RelaysArgs;
 use super::CliOptions;
@@ -45,10 +48,13 @@ pub enum ConfigSubcommands {
     /// Managing the secret key keyring, including enabling, disabling, or
     /// resetting it.
     Keyring(KeyringArgs),
+    /// Controls the NIP-07 browser signer proxy, turning it on or off, and
+    /// configures the `ip:port` address.
+    Nip07(Nip07Args),
 }
 
 impl CommandRunner for ConfigSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, & Pow Relays Bunker Keyring)
+        crate::run_command!(self, options, & Pow Relays Bunker Keyring Nip07)
     }
 }
