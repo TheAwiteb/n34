@@ -81,8 +81,7 @@ impl CommandRunner for ReplyArgs {
         let nostr_address_path = utils::nostr_address_path()?;
         let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
-        let user_pubk = options.pubkey().await?;
-
+        let user_pubk = client.pubkey().await?;
         let repo_naddrs = if let Some(naddrs) = self.naddrs.flat_naddrs(&options.config.sets)? {
             client.add_relays(&naddrs.extract_relays()).await;
             Some(naddrs)

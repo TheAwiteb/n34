@@ -124,6 +124,16 @@ impl NostrClient {
         client
     }
 
+    //// Returns the users public key
+    pub async fn pubkey(&self) -> N34Result<PublicKey> {
+        self.client
+            .signer()
+            .await?
+            .get_public_key()
+            .await
+            .map_err(N34Error::SignerError)
+    }
+
     /// Add relays and connect to them
     pub async fn add_relays(&self, relays: &[RelayUrl]) {
         if relays.is_empty() {

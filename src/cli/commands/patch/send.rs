@@ -73,8 +73,8 @@ impl CommandRunner for SendArgs {
 
         let repo_coordinates = naddrs.clone().into_coordinates();
         let relays = options.relays.clone().flat_relays(&options.config.sets)?;
-        let user_pubk = options.pubkey().await?;
         let client = NostrClient::init(&options, &relays).await;
+        let user_pubk = client.pubkey().await?;
 
         client.add_relays(&naddrs.extract_relays()).await;
         if let Some(original_patch) = &self.original_patch {

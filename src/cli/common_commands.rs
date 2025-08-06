@@ -50,13 +50,13 @@ pub async fn issue_status_command(
     new_status: IssueStatus,
     check_fn: impl FnOnce(&IssueStatus) -> N34Result<()>,
 ) -> N34Result<()> {
-    let user_pkey = options.pubkey().await?;
     let naddrs = utils::naddrs_or_file(
         naddrs.flat_naddrs(&options.config.sets)?,
         &utils::nostr_address_path()?,
     )?;
     let relays = options.relays.clone().flat_relays(&options.config.sets)?;
     let client = NostrClient::init(&options, &relays).await;
+    let user_pubk = client.pubkey().await?;
     client
         .add_relays(&[naddrs.extract_relays(), issue_id.relays].concat())
         .await;
@@ -98,10 +98,10 @@ pub async fn issue_status_command(
                 .map(|c| Tag::coordinate(c, relay_hint.clone())),
         )
         .dedup_tags()
-        .build(user_pkey);
+        .build(user_pubk);
 
     let event_id = status_event.id.expect("There is an id");
-    let user_relays_list = client.user_relays_list(user_pkey).await?;
+    let user_relays_list = client.user_relays_list(user_pubk).await?;
     let write_relays = [
         relays,
         naddrs.extract_relays(),
@@ -134,13 +134,13 @@ pub async fn patch_status_command(
     merge_or_applied_patches: Vec<EventId>,
     check_fn: impl FnOnce(&PatchStatus) -> N34Result<()>,
 ) -> N34Result<()> {
-    let user_pkey = options.pubkey().await?;
     let naddrs = utils::naddrs_or_file(
         naddrs.flat_naddrs(&options.config.sets)?,
         &utils::nostr_address_path()?,
     )?;
     let relays = options.relays.clone().flat_relays(&options.config.sets)?;
     let client = NostrClient::init(&options, &relays).await;
+    let user_pubk = client.pubkey().await?;
     client
         .add_relays(&[naddrs.extract_relays(), patch_id.relays].concat())
         .await;
@@ -227,10 +227,10 @@ pub async fn patch_status_command(
         }
     }
 
-    let status_event = status_builder.dedup_tags().build(user_pkey);
+    let status_event = status_builder.dedup_tags().build(user_pubk);
 
     let event_id = status_event.id.expect("There is an id");
-    let user_relays_list = client.user_relays_list(user_pkey).await?;
+    let user_relays_list = client.user_relays_list(user_pubk).await?;
     let write_relays = [
         relays,
         naddrs.extract_relays(),

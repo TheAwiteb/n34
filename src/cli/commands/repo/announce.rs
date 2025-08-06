@@ -83,7 +83,7 @@ impl CommandRunner for AnnounceArgs {
     async fn run(mut self, options: CliOptions) -> N34Result<()> {
         let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
-        let user_pubk = options.pubkey().await?;
+        let user_pubk = client.pubkey().await?;
         let relays_list = client.user_relays_list(user_pubk).await?;
         client
             .add_relays(&utils::add_read_relays(relays_list.as_ref()))

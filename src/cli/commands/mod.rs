@@ -32,7 +32,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use clap::{Args, Parser};
-use nostr::key::{Keys, PublicKey, SecretKey};
+use nostr::key::{Keys, SecretKey};
 use nostr::nips::nip46::NostrConnectURI;
 use nostr::signer::{IntoNostrSigner, NostrSigner};
 use nostr_connect::client::NostrConnect;
@@ -124,19 +124,6 @@ pub enum Commands {
 
 
 impl CliOptions {
-    /// Gets the public key of the user.
-    pub async fn pubkey(&self) -> N34Result<PublicKey> {
-        let Some(signer) = self.signer().await? else {
-            unreachable!(
-                "This method should only be called when a signer is required. If this panic \
-                 occurs, it indicates a bug where the command failed to properly require a signer \
-                 (which is the default behavior)"
-            )
-        };
-
-        signer.get_public_key().await.map_err(N34Error::SignerError)
-    }
-
     /// Returns the signer
     pub async fn signer(&self) -> N34Result<Option<Arc<dyn NostrSigner + 'static>>> {
         if self.nip07 {

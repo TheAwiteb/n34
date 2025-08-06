@@ -102,7 +102,7 @@ impl CommandRunner for NewArgs {
         )?)?;
         let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
-        let user_pubk = options.pubkey().await?;
+        let user_pubk = client.pubkey().await?;
         let coordinates = naddrs.clone().into_coordinates();
         client.add_relays(&naddrs.extract_relays()).await;
         let repos = client.fetch_repos(coordinates.as_slice()).await?;
