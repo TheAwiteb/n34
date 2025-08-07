@@ -211,17 +211,26 @@
         border-radius: 8px;
         font-family: "Courier New", monospace;
         font-size: 1rem;
-        color: #00ff00;
         border: 1px solid #333;
         overflow-x: auto;
         margin: 15px 0;
       }
       .code-block p {
-        color: #777;
+        color: #00ff00;
       }
-      .code-block::before {
+      .code-block p::before {
         content: "$ ";
         color: #888;
+      }
+      .code-block span::before {
+        content: "$ ";
+        color: #888;
+      }
+      .code-block span {
+        color: #777;
+      }
+      .code-block pre {
+        color: #00ff00;
       }
       .links {
         margin-top: 30px;
@@ -412,12 +421,36 @@
       <div class="install-section">
         <h2>Quick Start</h2>
         <p style="text-align: center; margin-bottom: 20px; color: #cccccc;">Get started with n34 in seconds</p>
-        <div class="code-block">cargo install n34</div>
+        <div class="code-block">
+          <p>cargo install n34</p>
+          <span># The execautable will be in ~/.cargo/bin/n34</span>
+        </div>
         <p style="text-align: center; margin: 20px 0; color: #888;">or</p>
         <div class="code-block">
-        git clone https://git.4rs.nl/awiteb/n34.git && cd n34 && cargo build --release
+          <p>git clone https://git.4rs.nl/awiteb/n34.git</p>
+          <p>cd n34 && cargo build --release</p>
+          <span># The execautable will be in target/release/n34</span>
+        </div>
+        <p style="text-align: center; margin: 20px 0; color: #888;">NixOS (Version 0.4.0 or later)</p>
+        <div class="code-block">
+          <p>git clone https://git.4rs.nl/awiteb/n34.git</p>
+          <p>cd n34 && nix build</p>
+          <span># The execautable will be in result/bin/n34</span>
+        </div>
+        <p style="text-align: center; margin: 20px 0; color: #888;">home-manager</p>
+        <p style="text-align: center; margin-bottom: 20px; color: #cccccc;">Add this to your <code>flake.nix</code> inputs
         <br>
-        <p># The execautable will be in target/release/n34<p>
+Specify the version you want to install, or remove <code>?ref</code> for the unreleased version. You can also use any mirror; it doesn't have to be <code>git.4rs.nl</code>
+        </p>
+        <div class="code-block">
+          <pre>
+inputs = {
+  n34.url = "git+https://git.4rs.nl/awiteb/n34.git?ref=refs/tags/vx.y.x";
+};</pre>
+        </div>
+        <p style="text-align: center; margin-bottom: 20px; color: #cccccc;">And this in your home packages</p>
+        <div class="code-block">
+          <pre>packages = [ inputs.n34.packages."${pkgs.system}".default ];</pre>
         </div>
         <p style="text-align: center; margin-top: 20px; color: #cccccc;">Once installed, run <code style="background: #333; padding: 2px 6px; border-radius: 4px;">n34 --help</code> to see available commands.</p>
       </div>

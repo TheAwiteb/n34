@@ -13,6 +13,10 @@ The primary goal of `n34` is to implement [NIP-34] (`git` stuff), but its
 flexible design allows for additional use cases beyond Git workflows. For more
 details, see the following section.
 
+## Documentation
+
+Check the documentation at [n34.dev]
+
 ## Features
 
 - [X] Repository announcements
@@ -57,7 +61,7 @@ into a future-proof foundation for decentralized collaboration.
 ## Installation
 
 You can install n34 either by cloning the repository and building it with Cargo,
-or by using `cargo install`.
+or by using `cargo install` or Nix.
 
 ### Building from source
 
@@ -81,6 +85,31 @@ cargo install n34
 The binary will be installed to your Cargo binary directory (typically `~/.cargo/bin/n34`).
 
 Make sure `~/.cargo/bin` is in your `PATH` environment variable to run the binary from anywhere.
+
+### Using `nix build` (+v0.4)
+
+- Clone the repository.
+- Run the `nix build` command.
+
+The binary will be available at `result/bin/n34`.
+
+### Adding it to your [home-manager] (+v0.4)
+
+- Add it as an input to your `flake.nix`:
+
+```nix
+inputs = {
+  # Specify the version you want to install, or remove `?ref` for the unreleased
+  # version. You can also use any mirror; it doesn't have to be `git.4rs.nl`.
+  n34.url = "git+https://git.4rs.nl/awiteb/n34.git?ref=refs/tags/vx.y.x";
+};
+```
+
+- Add it to your packages (ensure your home-manager `extraSpecialArgs` includes the `inputs`):
+
+```nix
+packages = [ inputs.n34.packages."${pkgs.system}".default ];
+```
 
 ## Contributing
 
@@ -109,3 +138,5 @@ refer to the [LICENSE](LICENSE) file for more details.
 [NIP-07]: https://github.com/nostr-protocol/nips/blob/master/07.md
 [nostr-protocol/nips#1966]: https://github.com/nostr-protocol/nips/pull/1966
 [nostr-browser-signer-proxy]: https://crates.io/crates/nostr-browser-signer-proxy
+[home-manager]: https://github.com/nix-community/home-manager
+[n34.dev]: https://n34.dev
