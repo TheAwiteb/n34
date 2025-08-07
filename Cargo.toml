@@ -1,15 +1,17 @@
 [package]
-name         = "n34"
-description  = "A CLI to interact with NIP-34 and other stuff related to code in Nostr"
-version      = "0.3.0"
-edition      = "2024"
-license      = "GPL-3.0-or-later"
-authors      = ["Awiteb <a@4rs.nl>"]
-readme       = "README.md"
-repository   = "https://git.4rs.nl/awiteb/n34.git"
-keywords     = ["nostr", "NIP-34", "CLI"]
-categories   = ["command-line-utilities"]
-rust-version = "1.88.0"
+name          = "n34"
+description   = "A CLI to interact with NIP-34 and other stuff related to code in Nostr"
+version       = "0.3.0"
+edition       = "2024"
+license       = "GPL-3.0-or-later"
+authors       = ["Awiteb <a@4rs.nl>"]
+readme        = "README.md"
+documentation = "https://n34.dev/commands.html"
+homepage      = "https://n34.dev"
+repository    = "https://git.4rs.nl/awiteb/n34.git"
+keywords      = ["nostr", "NIP-34", "CLI"]
+categories    = ["command-line-utilities"]
+rust-version  = "1.88.0"
 
 [dependencies]
 clap-verbosity-flag = { version = "3.0.3", default-features = false, features = [
