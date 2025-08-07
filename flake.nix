@@ -32,13 +32,36 @@
           ];
 
           nativeBuildInputs = [
-            (lib.hiPrio rust-bin.nightly."2025-07-05".rustfmt)
+            (lib.hiPrio rust-bin.nightly."2025-08-07".rustfmt)
             rust-bin.stable.latest.default
             rust-analyzer
           ];
-
-          buildInputs = [ ];
         };
+
+        packages.default =
+          let
+            manifest = (pkgs.lib.importTOML ./Cargo.toml).package;
+          in
+          with pkgs;
+          rustPlatform.buildRustPackage {
+            pname = manifest.name;
+            version = manifest.version;
+            cargoLock.lockFile = ./Cargo.lock;
+            src = lib.cleanSource ./.;
+
+            nativeBuildInputs = [
+              pkg-config
+            ];
+
+            buildInputs = [
+              dbus
+            ];
+
+            meta = {
+              inherit (manifest) description homepage;
+              license = lib.licenses.gpl3Plus;
+            };
+          };
       }
     );
 }
