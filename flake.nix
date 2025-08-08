@@ -27,6 +27,7 @@
             git-cliff
             just
             mdbook
+            nushell
             pkg-config
             taplo
           ];
