@@ -70,7 +70,7 @@ impl AuthUrlHandler for EchoAuthUrl {
     fn on_auth_url(
         &self,
         auth_url: nostr::Url,
-    ) -> BoxedFuture<Result<(), Box<dyn std::error::Error>>> {
+    ) -> BoxedFuture<'_, Result<(), Box<dyn std::error::Error>>> {
         Box::pin(async move {
             println!("The bunker requires authentication. Please open this URL: {auth_url}");
             Ok(())
