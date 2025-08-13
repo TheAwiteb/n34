@@ -87,13 +87,14 @@ release version:
     cargo publish
 
 # Deploy the book to Github Pages
+[script]
 deploy:
     mdbook build --dest-dir {{ BOOK_DEST_DIR }}
     cd {{ BOOK_DEST_DIR }}
     git init .
     git checkout -B gh-pages
     touch ".nojekyll"
-    echo "n34.dev" > "CNAME"
+    echo "n34.dev" out> "CNAME"
 
     git add .
     git commit -m "Deploy the book to github pages"
