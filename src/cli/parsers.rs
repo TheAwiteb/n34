@@ -22,6 +22,7 @@ use std::{
 
 use nostr::{
     Kind,
+    hashes::sha1::Hash as Sha1Hash,
     nips::{
         nip19::{FromBech32, Nip19Coordinate, ToBech32},
         nip46::NostrConnectURI,
@@ -82,6 +83,25 @@ pub fn parse_bunker_url(bunker_url: &str) -> N34Result<NostrConnectURI> {
         Ok(url) if url.is_bunker() => Ok(url),
         _ => Err(N34Error::NotBunkerUrl),
     }
+}
+
+/// Parses a string in the format `string=sha1` into a name and SHA1 hash.
+/// The input must contain exactly one `=` character. If the format is invalid
+/// or the SHA1 hash is incorrect, an error is returned.
+pub fn name_and_sha1(value: &str) -> Result<(String, Sha1Hash), String> {
+    if value.chars().filter(|c| *c == '=').count() != 1 {
+        return Err("the syntax is `string=SHA1-commit-id`".to_owned());
+    }
+
+    let (name, sha1_hash) = value.split_once('=').expect("There is one `=`");
+
+    Ok((
+        name.trim_matches(['"', '\'']).to_owned(),
+        sha1_hash
+            .trim_matches(['"', '\''])
+            .parse()
+            .map_err(|_| "Invalid SHA1 commit id".to_owned())?,
+    ))
 }
 
 /// Serializes a set of NIP-19 coordinates as a list of bech32 strings.

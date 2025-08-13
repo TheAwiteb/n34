@@ -16,12 +16,15 @@
 
 /// `repo announce` subcommand
 mod announce;
+/// `repo state` subcommand
+mod state;
 /// `repo view` subcommand
 mod view;
 
 use clap::Subcommand;
 
 use self::announce::AnnounceArgs;
+use self::state::StateArgs;
 use self::view::ViewArgs;
 use super::{CliOptions, CommandRunner};
 use crate::error::N34Result;
@@ -32,10 +35,12 @@ pub enum RepoSubcommands {
     View(ViewArgs),
     /// Broadcast and update a git repository
     Announce(AnnounceArgs),
+    /// Repository state announcements
+    State(StateArgs),
 }
 
 impl CommandRunner for RepoSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, & View Announce)
+        crate::run_command!(self, options, & View Announce State)
     }
 }

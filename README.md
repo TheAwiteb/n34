@@ -20,7 +20,7 @@ Check the documentation at [n34.dev]
 ## Features
 
 - [X] Repository announcements
-- [ ] Repository state announcements
+- [X] Repository state announcements
 - [X] Patches (Send, fetch and list)
 - [X] Issues (Send, view and list)
 - [X] Replies

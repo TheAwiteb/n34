@@ -15,6 +15,7 @@
   - [Manage Repositories](repo/README.md)
     - [Broadcast and Update a Git Repository](repo/announce.md)
     - [View Git Repository Details](repo/view.md)
+    - [Repository State Announcements](repo/state.md)
   - [Issue Management](issue/README.md)
     - [Create an Issue](issue/new.md)
     - [View an Issue By ID](issue/view.md)
