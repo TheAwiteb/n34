@@ -172,8 +172,7 @@ impl CliOptions {
 
     /// Returns an error if there are no signers
     pub fn ensure_signer(&self) -> N34Result<()> {
-        if !self.config.keyring_secret_key && self.secret_key.is_none() && self.bunker_url.is_none()
-        {
+        if self.secret_key.is_none() && self.bunker_url.is_none() && !self.nip07 {
             return Err(N34Error::SignerRequired);
         }
         Ok(())
@@ -185,6 +184,7 @@ impl fmt::Debug for CliOptions {
         f.debug_struct("CliOptions")
             .field("secret_key", &self.secret_key.as_ref().map(|_| "*******"))
             .field("bunker_url", &self.bunker_url.as_ref().map(|_| "*******"))
+            .field("nip07", &self.nip07)
             .field("relays", &self.relays)
             .field("pow", &self.pow)
             .field("config", &self.config)
