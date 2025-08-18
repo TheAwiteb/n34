@@ -309,3 +309,32 @@ pub fn check_empty_naddrs(naddrs: Vec<Nip19Coordinate>) -> N34Result<Vec<Nip19Co
 
     Ok(naddrs)
 }
+
+
+/// Extracts the subject and body from the provided inputs or an editor.
+///
+/// If no subject is provided, it opens an editor where the first line is used
+/// as the subject and the remaining lines as the body. If the editor output
+/// contains only one line, it is used as the subject.
+pub fn subject_and_body(
+    subject: Option<String>,
+    body: Option<String>,
+    file_suffix: &str,
+) -> N34Result<(String, Option<String>)> {
+    if let Some(subject) = subject {
+        return Ok((subject, body));
+    }
+
+    // There is no subject, so we need to get it from the editor
+    let file_content = read_editor(None, file_suffix)?;
+    // if there is a subject and body
+    if file_content.contains('\n') {
+        Ok(file_content
+            .split_once("\n")
+            .map(|(subject, body)| (subject.trim().to_owned(), Some(body.trim().to_owned())))
+            .expect("There is a newline"))
+    } else {
+        tracing::info!("File content contains only the subject");
+        Ok((file_content.trim().to_owned(), None))
+    }
+}

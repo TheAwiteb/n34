@@ -38,13 +38,8 @@ use crate::{
 #[derive(Args, Debug)]
 #[clap(
     group(
-        ArgGroup::new("issue-content")
-            .args(["content", "editor"])
-            .required(true)
-    ),
-    group(
         ArgGroup::new("issue-subject")
-            .args(["editor", "subject"])
+            .required(true)
     )
 )]
 pub struct NewArgs {
@@ -56,42 +51,19 @@ pub struct NewArgs {
     naddrs:  Option<Vec<NaddrOrSet>>,
     /// Markdown content for the issue. Cannot be used together with the
     /// `--editor` flag.
-    #[arg(short, long)]
+    #[arg(short, long, group = "issue-content")]
     content: Option<String>,
     /// Opens the user's default editor to write issue content. The first line
     /// will be used as the issue subject.
-    #[arg(short, long)]
+    #[arg(short, long, group = "issue-subject", group = "issue-content")]
     editor:  bool,
     /// The issue subject. Cannot be used together with the `--editor` flag.
-    #[arg(long)]
+    #[arg(long, group = "issue-subject")]
     subject: Option<String>,
     /// Labels for the issue. Can be specified as arguments (-l bug) or hashtags
     /// in content (#bug).
     #[arg(short, long)]
     label:   Vec<String>,
-}
-
-impl NewArgs {
-    /// Returns the subject and the content of the issue. (subject, content)
-    pub fn issue_content(&self) -> N34Result<(Option<String>, String)> {
-        if let Some(content) = self.content.as_ref() {
-            if let Some(subject) = self.subject.as_ref() {
-                return Ok((Some(subject.trim().to_owned()), content.trim().to_owned()));
-            }
-            return Ok((None, content.trim().to_owned()));
-        }
-        // If the `self.content` is `None` then the `self.editor` is `true`
-        let file_content = utils::read_editor(None, ".md")?;
-        if file_content.contains('\n') {
-            Ok(file_content
-                .split_once('\n')
-                .map(|(s, c)| (Some(s.trim().to_owned()), c.trim().to_owned()))
-                .expect("There is a new line"))
-        } else {
-            tracing::info!("File content contains only issue body without a subject line");
-            Ok((None, file_content))
-        }
-    }
 }
 
 impl CommandRunner for NewArgs {
@@ -113,16 +85,30 @@ impl CommandRunner for NewArgs {
             .add_relays(&utils::add_read_relays(relays_list.as_ref()))
             .await;
 
-        let (subject, content) = self.issue_content()?;
-        let content_details = client.parse_content(&content).await;
+        let (subject, content) = utils::subject_and_body(self.subject, self.content, ".md")?;
 
-        let event =
-            EventBuilder::new_git_issue(coordinates.as_slice(), content, subject, self.label)?
-                .dedup_tags()
-                .pow(options.pow.unwrap_or_default())
-                .tags(maintainers.iter().map(|p| Tag::public_key(*p)))
-                .tags(content_details.clone().into_tags())
-                .build(user_pubk);
+        let content_details = if let Some(content) = &content {
+            Some(client.parse_content(content).await)
+        } else {
+            None
+        };
+
+        let event = EventBuilder::new_git_issue(
+            coordinates.as_slice(),
+            content.unwrap_or_default(),
+            Some(subject),
+            self.label,
+        )?
+        .dedup_tags()
+        .pow(options.pow.unwrap_or_default())
+        .tags(maintainers.iter().map(|p| Tag::public_key(*p)))
+        .tags(
+            content_details
+                .clone()
+                .map(|c| c.into_tags())
+                .unwrap_or_default(),
+        )
+        .build(user_pubk);
         let event_id = event.id.expect("There is an id");
 
         let write_relays = [
@@ -135,7 +121,9 @@ impl CommandRunner for NewArgs {
                 .extract_relays(),
             // Include read relays for each maintainer (if found)
             client.read_relays_from_users(&maintainers).await,
-            content_details.write_relays.clone().into_iter().collect(),
+            content_details
+                .map(|c| c.write_relays.into_iter().collect())
+                .unwrap_or_default(),
         ]
         .concat();
 
