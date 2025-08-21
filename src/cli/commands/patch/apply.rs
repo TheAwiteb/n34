@@ -42,8 +42,8 @@ pub struct ApplyArgs {
     /// been applied, not all.
     #[arg(long = "patches", value_name = "PATCH-EVENT-ID")]
     applied_patches: Vec<NostrEvent>,
-    /// The applied commits
-    #[arg(num_args = 1..)]
+    /// The applied commits.
+    #[arg(required = true)]
     applied_commits: Vec<Sha1Hash>,
 }
 
