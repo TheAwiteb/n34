@@ -73,8 +73,8 @@ pub struct CliOptions {
     #[arg(short = '7', long, group = "signer")]
     pub nip07:      bool,
     /// Fallbacks relay to write and read from it. Multiple relays can be
-    /// passed.
-    #[arg(short, long)]
+    /// passed, separated by commas.
+    #[arg(short, long, value_delimiter = ',')]
     pub relays:     Vec<RelayOrSet>,
     /// Proof of Work difficulty when creatring events
     #[arg(long, value_name = "DIFFICULTY")]

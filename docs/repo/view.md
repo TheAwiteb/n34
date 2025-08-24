@@ -9,7 +9,7 @@ View details of a nostr git repository
 Usage: n34 repo view [NADDR-NIP05-OR-SET]...
 
 Arguments:
-  [NADDR-NIP05-OR-SET]...  Repository address in `naddr` format (`naddr1...`), NIP-05 format (`4rs.nl/n34` or `_@4rs.nl/n34`), or a set name like `kernel`
+  [NADDR-NIP05-OR-SET]...  Repository addresses
 ```
 
 This command prints repository details to standard output. If no arguments

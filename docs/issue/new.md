@@ -9,7 +9,7 @@ Create a new repository issue
 Usage: n34 issue new [OPTIONS] <--content <CONTENT>|--editor>
 
 Options:
-      --repo <NADDR-NIP05-OR-SET>  Repository address in `naddr` format (`naddr1...`), NIP-05 format (`4rs.nl/n34` or `_@4rs.nl/n34`), or a set name like `kernel`
+      --repo <NADDR-NIP05-OR-SET>  Repository addresses
   -c, --content <CONTENT>          Markdown content for the issue. Cannot be used together with the `--editor` flag
   -e, --editor                     Opens the user's default editor to write issue content. The first line will be used as the issue subject
       --subject <SUBJECT>          The issue subject. Cannot be used together with the `--editor` flag

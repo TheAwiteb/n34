@@ -30,13 +30,19 @@ pub struct RemoveArgs {
     /// Set name to delete
     name:   String,
     /// Specific relay to remove it from the set, either as URL or set name to
-    /// extract its relays. [aliases: `--sr`]
-    #[arg(long = "set-relay", alias("sr"))]
+    /// extract its relays, separated by commas. [aliases: `--sr`]
+    #[arg(long = "set-relay", alias("sr"), value_delimiter = ',')]
     relays: Vec<RelayOrSet>,
 
-    /// Repository address in `naddr` format (`naddr1...`), NIP-05 format
-    /// (`4rs.nl/n34` or `_@4rs.nl/n34`), or a set name like `kernel`.
-    #[arg(value_name = "NADDR-NIP05-OR-SET", long = "repo")]
+    /// Repository addresses
+    ///
+    /// In `naddr` format (`naddr1...`), NIP-05 format (`4rs.nl/n34` or
+    /// `_@4rs.nl/n34`), or a set name like `kernel`, separated by commas.
+    #[arg(
+        value_name = "NADDR-NIP05-OR-SET",
+        long = "repo",
+        value_delimiter = ','
+    )]
     naddrs: Vec<NaddrOrSet>,
 }
 

@@ -15,9 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Make subject mandatory and optional content - by Awiteb
 
+### Documentation
+
+- Update commands help messages - by Awiteb
+
 ### Fixed
 
 - Check the nip07 signer in `CliOptions::ensure_signer` - by Awiteb
+- Required the `applied_commits` - by Awiteb
 
 ## [0.4.0] - 2025-08-08
 

@@ -47,11 +47,17 @@ const PATCH_ALT_PREFIX: &str = "git patch: ";
 
 #[derive(Args, Debug)]
 pub struct SendArgs {
-    /// Repository address in `naddr` format (`naddr1...`), NIP-05 format
-    /// (`4rs.nl/n34` or `_@4rs.nl/n34`), or a set name like `kernel`.
+    /// Repository addresses
+    ///
+    /// In `naddr` format (`naddr1...`), NIP-05 format (`4rs.nl/n34` or
+    /// `_@4rs.nl/n34`), or a set name like `kernel`, separated by commas.
     ///
     /// If omitted, looks for a `nostr-address` file.
-    #[arg(value_name = "NADDR-NIP05-OR-SET", long = "repo")]
+    #[arg(
+        value_name = "NADDR-NIP05-OR-SET",
+        long = "repo",
+        value_delimiter = ','
+    )]
     naddrs:         Option<Vec<NaddrOrSet>>,
     /// List of patch files to send (space separated).
     ///

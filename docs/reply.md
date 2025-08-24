@@ -13,7 +13,7 @@ Arguments:
 
 Options:
       --quote-to                   Quote the replied-to event in the editor
-      --repo <NADDR-NIP05-OR-SET>  Repository address in `naddr` format (`naddr1...`), NIP-05 format (`4rs.nl/n34` or `_@4rs.nl/n34`), or a set name like `kernel`
+      --repo <NADDR-NIP05-OR-SET>  Repository addresses
   -c, --comment <COMMENT>          The comment (cannot be used with --editor)
   -e, --editor                     Open editor to write comment (cannot be used with --content)
 ```
