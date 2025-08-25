@@ -15,20 +15,14 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 use clap::Args;
-use nostr::{event::Kind, filter::Filter};
 
 use crate::{
     cli::{
         CliOptions,
-        traits::{CommandRunner, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+        traits::CommandRunner,
         types::{NaddrOrSet, NostrEvent},
     },
-    error::{N34Error, N34Result},
-    nostr_utils::{
-        NostrClient,
-        traits::{GitIssuePrMetadata, NaddrsUtils, ReposUtils},
-        utils,
-    },
+    error::N34Result,
 };
 
 #[derive(Debug, Args)]
@@ -53,47 +47,7 @@ impl CommandRunner for ViewArgs {
     const NEED_SIGNER: bool = false;
 
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        let naddrs = utils::naddrs_or_file(
-            self.naddrs.flat_naddrs(&options.config.sets)?,
-            &utils::nostr_address_path()?,
-        )?;
-        let relays = options.relays.clone().flat_relays(&options.config.sets)?;
-        let client = NostrClient::init(&options, &relays).await;
-
-        client.add_relays(&naddrs.extract_relays()).await;
-        client.add_relays(&self.issue_id.relays).await;
-        client
-            .add_relays(
-                &client
-                    .fetch_repos(&naddrs.into_coordinates())
-                    .await?
-                    .extract_relays(),
-            )
-            .await;
-
-        let issue = client
-            .fetch_event(
-                Filter::new()
-                    .id(self.issue_id.event_id)
-                    .kind(Kind::GitIssue),
-            )
-            .await?
-            .ok_or(N34Error::CanNotFoundIssue)?;
-
-        let issue_subject = utils::smart_wrap(issue.extract_event_subject(), 70);
-        let issue_author = client.get_username(issue.pubkey).await;
-        let mut issue_labels = utils::smart_wrap(&issue.extract_event_labels(), 70);
-
-        if issue_labels.is_empty() {
-            issue_labels = "\n".to_owned();
-        } else {
-            issue_labels = format!("{issue_labels}\n\n")
-        }
-
-        println!(
-            "{issue_subject} - [by {issue_author}]\n{issue_labels}{}",
-            utils::smart_wrap(&issue.content, 80)
-        );
-        Ok(())
+        crate::cli::common_commands::view_pr_issue::<false>(options, self.naddrs, self.issue_id)
+            .await
     }
 }

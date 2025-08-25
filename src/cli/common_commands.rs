@@ -20,7 +20,7 @@ use either::Either;
 use futures::future;
 use nostr::{
     event::{Event, EventBuilder, EventId, Kind, Tag, TagKind},
-    filter::Filter,
+    filter::{Alphabet, Filter, SingleLetterTag},
     hashes::sha1::Hash as Sha1Hash,
     nips::{nip10::Marker, nip19::ToBech32},
     types::RelayUrl,
@@ -33,7 +33,11 @@ use super::{
 };
 use crate::{
     cli::traits::{OptionNaddrOrSetVecExt, RelayOrSetVecExt},
-    nostr_utils::{NostrClient, traits::NaddrsUtils, utils},
+    nostr_utils::{
+        NostrClient,
+        traits::{NaddrsUtils, TagsExt},
+        utils,
+    },
 };
 use crate::{
     cli::{CliOptions, patch::GitPatch},
@@ -435,4 +439,102 @@ async fn build_patches_quote(
         }
     }))
     .await
+}
+
+pub async fn view_pr_issue<const IS_PR: bool>(
+    options: CliOptions,
+    naddrs: Option<Vec<NaddrOrSet>>,
+    event_id: NostrEvent,
+) -> N34Result<()> {
+    let naddrs = utils::naddrs_or_file(
+        naddrs.flat_naddrs(&options.config.sets)?,
+        &utils::nostr_address_path()?,
+    )?;
+    let relays = options.relays.clone().flat_relays(&options.config.sets)?;
+    let client = NostrClient::init(&options, &relays).await;
+
+    client.add_relays(&naddrs.extract_relays()).await;
+    client.add_relays(&event_id.relays).await;
+    client
+        .add_relays(
+            &client
+                .fetch_repos(&naddrs.into_coordinates())
+                .await?
+                .extract_relays(),
+        )
+        .await;
+
+    let event = client
+        .fetch_event(Filter::new().id(event_id.event_id).kind(
+            const {
+                if IS_PR {
+                    crate::cli::pr::PR_KIND
+                } else {
+                    Kind::GitIssue
+                }
+            },
+        ))
+        .await?
+        .ok_or(N34Error::CanNotFoundIssue)?;
+
+    let event_subject = utils::smart_wrap(event.extract_event_subject(), 70);
+    let event_author = client.get_username(event.pubkey).await;
+    let mut event_labels = utils::smart_wrap(&event.extract_event_labels(), 70);
+
+    if event_labels.is_empty() {
+        event_labels = "\n".to_owned();
+    } else {
+        event_labels = format!("{event_labels}\n\n")
+    }
+
+    let pr_data = if IS_PR {
+        // Check if there is an update
+        let pr_update = client
+            .fetch_events(
+                Filter::new()
+                    .kind(crate::cli::pr::PR_UPDATE_KIND)
+                    .custom_tag(SingleLetterTag::uppercase(Alphabet::E), event.id)
+                    .author(event.pubkey),
+            )
+            .await?
+            .into_iter()
+            .max_by_key(|e| e.created_at.as_u64());
+
+        let commit = pr_update
+            .as_ref()
+            .unwrap_or(&event)
+            .tags
+            .find(TagKind::single_letter(Alphabet::C, false))
+            .and_then(|t| t.content())
+            .unwrap_or("N/A");
+        let branch = event
+            .tags
+            .find(TagKind::custom("branch-name"))
+            .and_then(|t| t.content())
+            .unwrap_or("N/A");
+        let clones = pr_update
+            .as_ref()
+            .unwrap_or(&event)
+            .tags
+            .map_tag(TagKind::Clone, |t| {
+                match t {
+                    nostr::event::TagStandard::GitClone(urls) => urls.clone(),
+                    _ => unreachable!(),
+                }
+            })
+            .unwrap_or_default();
+
+        format!(
+            "\nCommit: {commit}\nBranch: {branch}\nClone:\n{}",
+            utils::format_iter(clones)
+        )
+    } else {
+        String::new()
+    };
+
+    println!(
+        "{event_subject} - [by {event_author}]\n{event_labels}{}{pr_data}",
+        utils::smart_wrap(&event.content, 80)
+    );
+    Ok(())
 }
