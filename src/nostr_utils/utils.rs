@@ -338,3 +338,16 @@ pub fn subject_and_body(
         Ok((file_content.trim().to_owned(), None))
     }
 }
+
+/// Format an iterator to print it
+pub fn format_iter<I, T>(iterator: I) -> String
+where
+    I: IntoIterator<Item = T>,
+    T: fmt::Display,
+{
+    iterator
+        .into_iter()
+        .map(|t| format!(" - {t}"))
+        .collect::<Vec<String>>()
+        .join("\n")
+}

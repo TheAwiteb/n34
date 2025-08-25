@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::fmt;
-
 use clap::Args;
 use nostr::nips::nip19::ToBech32;
 
@@ -68,13 +66,16 @@ impl CommandRunner for ViewArgs {
                 repo_details.push_str(&format!("\nDescription: {desc}"));
             }
             if !repo.web.is_empty() {
-                repo_details.push_str(&format!("\nWebpages:\n{}", format_list(repo.web)));
+                repo_details.push_str(&format!("\nWebpages:\n{}", utils::format_iter(repo.web)));
             }
             if !repo.clone.is_empty() {
-                repo_details.push_str(&format!("\nClone urls:\n{}", format_list(repo.clone)));
+                repo_details.push_str(&format!(
+                    "\nClone urls:\n{}",
+                    utils::format_iter(repo.clone)
+                ));
             }
             if !repo.relays.is_empty() {
-                repo_details.push_str(&format!("\nRelays:\n{}", format_list(repo.relays)));
+                repo_details.push_str(&format!("\nRelays:\n{}", utils::format_iter(repo.relays)));
             }
             if let Some(euc) = repo.euc {
                 repo_details.push_str(&format!("\nEarliest unique commit: {euc}"));
@@ -82,7 +83,7 @@ impl CommandRunner for ViewArgs {
             if !repo.maintainers.is_empty() {
                 repo_details.push_str(&format!(
                     "\nMaintainers:\n{}",
-                    format_list(
+                    utils::format_iter(
                         repo.maintainers
                             .iter()
                             .map(|p| p.to_bech32().expect("Infallible"))
@@ -95,17 +96,4 @@ impl CommandRunner for ViewArgs {
         println!("{}", repos_details.join("\n----------\n"));
         Ok(())
     }
-}
-
-/// Format a vector to print it
-fn format_list<I, T>(iterator: I) -> String
-where
-    I: IntoIterator<Item = T>,
-    T: fmt::Display,
-{
-    iterator
-        .into_iter()
-        .map(|t| format!(" - {t}"))
-        .collect::<Vec<String>>()
-        .join("\n")
 }
