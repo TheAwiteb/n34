@@ -26,7 +26,7 @@ use crate::{
     error::{N34Error, N34Result},
     nostr_utils::{
         NostrClient,
-        traits::{GitIssueUtils, NaddrsUtils, ReposUtils},
+        traits::{GitIssuePrMetadata, NaddrsUtils, ReposUtils},
         utils,
     },
 };
@@ -80,9 +80,9 @@ impl CommandRunner for ViewArgs {
             .await?
             .ok_or(N34Error::CanNotFoundIssue)?;
 
-        let issue_subject = utils::smart_wrap(issue.extract_issue_subject(), 70);
+        let issue_subject = utils::smart_wrap(issue.extract_event_subject(), 70);
         let issue_author = client.get_username(issue.pubkey).await;
-        let mut issue_labels = utils::smart_wrap(&issue.extract_issue_labels(), 70);
+        let mut issue_labels = utils::smart_wrap(&issue.extract_event_labels(), 70);
 
         if issue_labels.is_empty() {
             issue_labels = "\n".to_owned();

@@ -286,22 +286,22 @@ impl Event {
     }
 }
 
-/// Utility functions for working with issue events
-#[easy_ext::ext(GitIssueUtils)]
+/// Utility functions for working with issue and PR metadata
+#[easy_ext::ext(GitIssuePrMetadata)]
 impl Event {
-    /// Gets the subject line of the issue or "N/A" if none exists
+    /// Gets the subject line of the issue/pr or "N/A" if none exists
     #[inline]
-    pub fn extract_issue_subject(&self) -> &str {
+    pub fn extract_event_subject(&self) -> &str {
         self.tags
             .find(TagKind::Subject)
             .and_then(|t| t.content())
             .unwrap_or("N/A")
     }
 
-    /// Gets all issue labels formatted as comma-separated hashtags (e.g. "#bug,
-    /// #feature")
+    /// Gets all issue/pr labels formatted as comma-separated hashtags (e.g.
+    /// "#bug, #feature")
     #[inline]
-    pub fn extract_issue_labels(&self) -> String {
+    pub fn extract_event_labels(&self) -> String {
         self.tags
             .filter(TagKind::t())
             .filter_map(|t| t.content().map(|l| format!("#{l}")))

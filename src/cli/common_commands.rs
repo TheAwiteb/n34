@@ -38,7 +38,7 @@ use crate::{
 use crate::{
     cli::{CliOptions, patch::GitPatch},
     error::{N34Error, N34Result},
-    nostr_utils::traits::{GitIssueUtils, GitPatchUtils, ReposUtils},
+    nostr_utils::traits::{GitIssuePrMetadata, GitPatchUtils, ReposUtils},
 };
 
 /// Updates the issue's status to `new_status` after validating it with
@@ -384,8 +384,8 @@ fn format_patch_and_issue(event: &Event, status: Either<PatchStatus, IssueStatus
                     .to_owned()
             })
     } else {
-        let labels = event.extract_issue_labels();
-        let subject = event.extract_issue_subject();
+        let labels = event.extract_event_labels();
+        let subject = event.extract_event_subject();
 
         if labels.is_empty() {
             subject.to_owned()
