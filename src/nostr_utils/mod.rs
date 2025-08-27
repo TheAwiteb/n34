@@ -39,7 +39,7 @@ use nostr_sdk::{Client, ClientOptions};
 use traits::TokenUtils;
 
 use crate::{
-    cli::{CliOptions, issue::IssueStatus, patch::PatchStatus},
+    cli::{CliOptions, issue::IssueStatus, patch::PatchPrStatus},
     error::{N34Error, N34Result},
 };
 
@@ -307,24 +307,19 @@ impl NostrClient {
         root_patch: EventId,
         root_revision: Option<EventId>,
         authorized_pubkeys: Vec<PublicKey>,
-    ) -> N34Result<PatchStatus> {
+    ) -> N34Result<PatchPrStatus> {
         let (root_status, event_tags) = self
             .fetch_events(
                 Filter::new()
                     .event(root_patch)
-                    .kinds([
-                        Kind::GitStatusOpen,
-                        Kind::GitStatusApplied,
-                        Kind::GitStatusClosed,
-                        Kind::GitStatusDraft,
-                    ])
+                    .kinds(PatchPrStatus::all_kinds())
                     .authors(utils::dedup(authorized_pubkeys.into_iter())),
             )
             .await?
             .into_iter()
             .max_by_key(|e| e.created_at)
-            .map(|status| N34Result::Ok((PatchStatus::try_from(status.kind)?, status.tags)))
-            .unwrap_or_else(|| Ok((PatchStatus::Open, Tags::new())))?;
+            .map(|status| N34Result::Ok((PatchPrStatus::try_from(status.kind)?, status.tags)))
+            .unwrap_or_else(|| Ok((PatchPrStatus::Open, Tags::new())))?;
 
         if let Some(revision_id) = root_revision
             && root_status.is_merged_or_applied()
@@ -332,7 +327,7 @@ impl NostrClient {
                 .filter(TagKind::e())
                 .any(|t| t.is_reply() && t.content().is_some_and(|c| c == revision_id.to_hex()))
         {
-            return Ok(PatchStatus::Closed);
+            return Ok(PatchPrStatus::Closed);
         }
 
         Ok(root_status)

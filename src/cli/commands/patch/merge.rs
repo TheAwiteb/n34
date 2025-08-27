@@ -17,7 +17,7 @@
 use clap::Args;
 use nostr::hashes::sha1::Hash as Sha1Hash;
 
-use super::PatchStatus;
+use super::PatchPrStatus;
 use crate::{
     cli::{
         CliOptions,
@@ -58,7 +58,7 @@ impl CommandRunner for MergeArgs {
             options,
             self.patch_id,
             self.naddrs,
-            PatchStatus::MergedApplied,
+            PatchPrStatus::MergedApplied,
             Some(either::Either::Left(self.merge_commit)),
             self.merged_patches.into_event_ids(),
             |patch_status| {

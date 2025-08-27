@@ -16,7 +16,7 @@
 
 use clap::Args;
 
-use super::PatchStatus;
+use super::PatchPrStatus;
 use crate::{
     cli::{
         CliOptions,
@@ -50,7 +50,7 @@ impl CommandRunner for ReopenArgs {
             options,
             self.patch_id,
             self.naddrs,
-            PatchStatus::Open,
+            PatchPrStatus::Open,
             None,
             Vec::new(),
             |patch_status| {

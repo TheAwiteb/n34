@@ -28,7 +28,7 @@ use nostr::{
 
 use super::{
     issue::IssueStatus,
-    patch::PatchStatus,
+    patch::PatchPrStatus,
     types::{NaddrOrSet, NostrEvent},
 };
 use crate::{
@@ -133,10 +133,10 @@ pub async fn patch_status_command(
     options: CliOptions,
     patch_id: NostrEvent,
     naddrs: Option<Vec<NaddrOrSet>>,
-    new_status: PatchStatus,
+    new_status: PatchPrStatus,
     merge_or_applied_commits: Option<Either<Sha1Hash, Vec<Sha1Hash>>>,
     merge_or_applied_patches: Vec<EventId>,
-    check_fn: impl FnOnce(&PatchStatus) -> N34Result<()>,
+    check_fn: impl FnOnce(&PatchPrStatus) -> N34Result<()>,
 ) -> N34Result<()> {
     let naddrs = utils::naddrs_or_file(
         naddrs.flat_naddrs(&options.config.sets)?,

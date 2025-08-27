@@ -109,19 +109,30 @@ pub struct GitPatch {
 }
 
 #[derive(Debug)]
-pub enum PatchStatus {
-    /// The patch is currently open
+pub enum PatchPrStatus {
+    /// The patch/pr is currently open
     Open,
-    /// The patch has been merged/applied
+    /// The patch/pr has been merged/applied
     MergedApplied,
-    /// The patch has been closed
+    /// The patch/pr has been closed
     Closed,
-    /// A patch that has been drafted but not yet applied.
+    /// A patch/pr that has been drafted but not yet applied.
     Draft,
 }
 
-impl PatchStatus {
-    /// Maps the issue status to its corresponding Nostr kind.
+impl PatchPrStatus {
+    /// Returns all status kinds
+    #[inline]
+    pub const fn all_kinds() -> [Kind; 4] {
+        [
+            Kind::GitStatusOpen,
+            Kind::GitStatusApplied,
+            Kind::GitStatusClosed,
+            Kind::GitStatusDraft,
+        ]
+    }
+
+    /// Maps the patch/pr status to its corresponding Nostr kind.
     #[inline]
     pub fn kind(&self) -> Kind {
         match self {
@@ -132,7 +143,7 @@ impl PatchStatus {
         }
     }
 
-    /// Returns the string representation of the patch status.
+    /// Returns the string representation of the patch/pr status.
     pub const fn as_str(&self) -> &'static str {
         match self {
             Self::Open => "Open",
@@ -142,45 +153,45 @@ impl PatchStatus {
         }
     }
 
-    /// Check if the patch is open.
+    /// Check if the status is open.
     #[inline]
     pub fn is_open(&self) -> bool {
         matches!(self, Self::Open)
     }
 
-    /// Check if the patch is merged/applied.
+    /// Check if the status is merged/applied.
     #[inline]
     pub fn is_merged_or_applied(&self) -> bool {
         matches!(self, Self::MergedApplied)
     }
 
-    /// Check if the patch is closed.
+    /// Check if the status is closed.
     #[inline]
     pub fn is_closed(&self) -> bool {
         matches!(self, Self::Closed)
     }
 
-    /// Check if the patch is drafted
+    /// Check if the status is draft
     #[inline]
     pub fn is_drafted(&self) -> bool {
         matches!(self, Self::Draft)
     }
 }
 
-impl From<&PatchStatus> for Kind {
-    fn from(status: &PatchStatus) -> Self {
+impl From<&PatchPrStatus> for Kind {
+    fn from(status: &PatchPrStatus) -> Self {
         status.kind()
     }
 }
 
-impl fmt::Display for PatchStatus {
+impl fmt::Display for PatchPrStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
     }
 }
 
 
-impl TryFrom<Kind> for PatchStatus {
+impl TryFrom<Kind> for PatchPrStatus {
     type Error = N34Error;
 
     fn try_from(kind: Kind) -> Result<Self, Self::Error> {

@@ -16,7 +16,7 @@
 
 use clap::Args;
 
-use super::PatchStatus;
+use super::PatchPrStatus;
 use crate::{
     cli::{
         CliOptions,
@@ -50,7 +50,7 @@ impl CommandRunner for DraftArgs {
             options,
             self.patch_id,
             self.naddrs,
-            PatchStatus::Draft,
+            PatchPrStatus::Draft,
             None,
             Vec::new(),
             |patch_status| {
