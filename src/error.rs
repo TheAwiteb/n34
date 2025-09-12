@@ -123,9 +123,14 @@ pub enum N34Error {
     )]
     CanNotFoundIssue,
     #[error(
-        "Patch not found, make sure it is in the relays and make sure that the ID is an patch ID"
+        "Patch not found, make sure it is in the relays and make sure that the ID is a patch ID"
     )]
     CanNotFoundPatch,
+    #[error(
+        "Pull request not found, make sure it is in the relays and make sure that the ID is an \
+         pull request ID"
+    )]
+    CanNotFoundPr,
     #[error(r#"The given patch id is not a root patch. It must contains `["t", "root"]` tag"#)]
     NotRootPatch,
     #[error("This status kind can't be set for an issue: {0}")]
@@ -134,7 +139,7 @@ pub enum N34Error {
     InvalidPatchStatus(Kind),
     #[error("Can't find the root patch of the given patch-revision")]
     RevisionRootNotFound,
-    #[error("Invalid status for the issue/patch: {0}")]
+    #[error("Invalid status: {0}")]
     InvalidStatus(String),
     #[error("Not valid bunker URL")]
     NotBunkerUrl,
@@ -143,6 +148,13 @@ pub enum N34Error {
          keyring is enabled to store it"
     )]
     SecretKeyKeyringWithoutEntry,
+    #[error(
+        "Your push was not accepted by any GRASP server. Try creating a personal fork, pushing to \
+         your own GRASP servers, and then make a pull request with your GRASP repos as a clone"
+    )]
+    PushRejectedByGraspServers,
+    #[error("The repository doesn't contains any GRASP servers")]
+    NoGraspServer,
 }
 
 impl N34Error {

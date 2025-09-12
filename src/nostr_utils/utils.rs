@@ -17,13 +17,14 @@
 use std::{
     fmt,
     fs,
+    iter,
     path::{Path, PathBuf},
     str::FromStr,
     sync::atomic::Ordering,
 };
 
 use nostr::{
-    event::{Event, EventId, Kind, Tag, TagKind, TagStandard},
+    event::{Event, EventBuilder, EventId, Kind, Tag, TagKind, TagStandard, UnsignedEvent},
     filter::Alphabet,
     key::PublicKey,
     nips::{
@@ -38,8 +39,9 @@ use nostr::{
 
 use super::traits::TagsExt;
 use crate::{
-    cli::{NOSTR_ADDRESS_FILE, parsers},
+    cli::{NOSTR_ADDRESS_FILE, parsers, utils as cli_utils},
     error::{N34Error, N34Result},
+    nostr_utils::traits::ReposUtils,
 };
 
 /// Returns the value of the given tag
@@ -350,4 +352,49 @@ where
         .map(|t| format!(" - {t}"))
         .collect::<Vec<String>>()
         .join("\n")
+}
+
+/// Creates a grasp event by extracting grasp servers from the provided
+/// repositories. If no grasp servers are found, an error is returned. If one or
+/// more are found, the user is prompted to push to each server until one is
+/// successful. The successful event is returned, or an error if no push
+/// succeeds.
+pub fn build_grasp_event(
+    repos: &Vec<GitRepositoryAnnouncement>,
+    author_pubkey: PublicKey,
+    event_builder: EventBuilder,
+) -> N34Result<UnsignedEvent> {
+    let mut event = None;
+    let grasp_repos = repos.extract_grasp_servers();
+    tracing::debug!("GRASP repos: {grasp_repos:?}");
+
+    if grasp_repos.is_empty() {
+        tracing::trace!(
+            "Repository clones: {:?}",
+            dedup(repos.extract_clones().iter())
+        );
+        return Err(N34Error::NoGraspServer);
+    }
+
+    for grasp_repo in grasp_repos {
+        let mut grasp_event = event_builder
+            .clone()
+            .tag(Tag::custom(
+                TagKind::custom("clone"),
+                iter::once(grasp_repo.to_string()),
+            ))
+            .build(author_pubkey);
+
+        println!(
+            "Attempt to push your changes to `refs/nostr/{}` in the repository: {}",
+            grasp_event.id(),
+            grasp_repo
+        );
+
+        if cli_utils::prompt_bool("Was the push successful? (yes/no)")? {
+            event = Some(grasp_event);
+            break;
+        }
+    }
+    event.ok_or(N34Error::PushRejectedByGraspServers)
 }

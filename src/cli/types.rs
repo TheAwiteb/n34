@@ -53,6 +53,18 @@ pub enum RelayOrSet {
     Set(String),
 }
 
+/// Enum representing the type of entity to handle in common commands.
+#[derive(Debug, Copy, Clone)]
+#[repr(u8)]
+pub enum EntityType {
+    /// Pull Request
+    PullRequest,
+    /// Patch
+    Patch,
+    /// Issue
+    Issue,
+}
+
 /// Parses and represents a Nostr `nevent1` or `note1`.
 #[derive(Debug, Clone)]
 pub struct NostrEvent {
@@ -75,6 +87,62 @@ impl AuthUrlHandler for EchoAuthUrl {
             println!("The bunker requires authentication. Please open this URL: {auth_url}");
             Ok(())
         })
+    }
+}
+
+impl EntityType {
+    /// Returns true if the entity is a pull request.
+    #[inline]
+    pub const fn is_pr(&self) -> bool {
+        matches!(self, Self::PullRequest)
+    }
+
+    /// Returns true if the entity is a patch.
+    #[inline]
+    pub const fn is_patch(&self) -> bool {
+        matches!(self, Self::Patch)
+    }
+
+    /// Returns true if the entity is an issue.
+    #[inline]
+    pub const fn is_issue(&self) -> bool {
+        matches!(self, Self::Issue)
+    }
+
+    /// Returns the kind of the entity
+    #[inline]
+    pub const fn kind(&self) -> Kind {
+        match self {
+            Self::PullRequest => crate::cli::pr::PR_KIND,
+            Self::Patch => Kind::GitPatch,
+            Self::Issue => Kind::GitIssue,
+        }
+    }
+
+    /// Converts a [`u8`] value to the corresponding enum variant.
+    #[inline]
+    pub const fn from_u8<const NUM: u8>() -> Self {
+        const {
+            match NUM {
+                val if val == Self::PullRequest as u8 => Self::PullRequest,
+                val if val == Self::Patch as u8 => Self::Patch,
+                val if val == Self::Issue as u8 => Self::Issue,
+                _ => {
+                    panic!("No enum with the given numeric value")
+                }
+            }
+        }
+    }
+
+    /// Ensures the entity is either a pull request or a patch. Compilation
+    /// will fail if the entity is neither.
+    pub const fn is_pr_or_patch<const ENTITY_TYPE: u8>() {
+        const {
+            let entity = EntityType::from_u8::<ENTITY_TYPE>();
+            if !entity.is_pr() && !entity.is_patch() {
+                panic!("The entity should be a pull request or a patch")
+            }
+        }
     }
 }
 

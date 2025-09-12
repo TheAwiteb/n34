@@ -17,11 +17,11 @@
 use clap::Args;
 use nostr::hashes::sha1::Hash as Sha1Hash;
 
-use super::PatchPrStatus;
 use crate::{
     cli::{
         CliOptions,
-        traits::{CommandRunner, VecNostrEventExt},
+        patch::PatchPrStatus,
+        traits::CommandRunner,
         types::{EntityType, NaddrOrSet, NostrEvent},
     },
     error::{N34Error, N34Result},
@@ -40,43 +40,38 @@ pub struct MergeArgs {
         long = "repo",
         value_delimiter = ','
     )]
-    naddrs:         Option<Vec<NaddrOrSet>>,
-    /// The open patch id to merge it. Must be orignal root patch or
-    /// revision root
-    patch_id:       NostrEvent,
-    /// Patches that have been merged. Use this when only some patches have been
-    /// merged, not all.
-    #[arg(long = "patches", value_name = "PATCH-EVENT-ID")]
-    merged_patches: Vec<NostrEvent>,
+    naddrs:       Option<Vec<NaddrOrSet>>,
+    /// The open PR id to merge it.
+    pr_id:        NostrEvent,
     /// The merge commit id
-    merge_commit:   Sha1Hash,
+    merge_commit: Sha1Hash,
 }
 
 impl CommandRunner for MergeArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::cli::common_commands::patch_pr_status_command::<{ EntityType::Patch as u8 }>(
+        crate::cli::common_commands::patch_pr_status_command::<{ EntityType::PullRequest as u8 }>(
             options,
-            self.patch_id,
+            self.pr_id,
             self.naddrs,
             PatchPrStatus::MergedApplied,
             Some(either::Either::Left(self.merge_commit)),
-            self.merged_patches.into_event_ids(),
-            |patch_status| {
-                if patch_status.is_merged_or_applied() {
+            Vec::new(),
+            |pr_status| {
+                if pr_status.is_merged_or_applied() {
                     return Err(N34Error::InvalidStatus(
-                        "You can't merge an already merged/applied patch".to_owned(),
+                        "You can't merge an already merged/applied pull request".to_owned(),
                     ));
                 }
 
-                if patch_status.is_closed() {
+                if pr_status.is_closed() {
                     return Err(N34Error::InvalidStatus(
-                        "You can't merge a closed patch".to_owned(),
+                        "You can't merge a closed pull request".to_owned(),
                     ));
                 }
 
-                if patch_status.is_drafted() {
+                if pr_status.is_drafted() {
                     return Err(N34Error::InvalidStatus(
-                        "You can't merge a draft patch".to_owned(),
+                        "You can't merge a draft pull request".to_owned(),
                     ));
                 }
 

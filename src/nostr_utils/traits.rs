@@ -14,8 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+use std::ops::Deref;
+
 use convert_case::{Case, Casing};
 use nostr::hashes::sha1::Hash as Sha1Hash;
+use nostr::nips::nip19::FromBech32;
 use nostr::{
     event::{Event, EventBuilder, EventId, Kind, Tag, TagKind, TagStandard, Tags},
     key::PublicKey,
@@ -228,6 +231,20 @@ impl Vec<GitRepositoryAnnouncement> {
         self.iter().flat_map(|n| n.relays.clone()).collect()
     }
 
+    /// Extract the grasp servers.
+    #[inline]
+    pub fn extract_grasp_servers(&self) -> Vec<&Url> {
+        self.iter()
+            .flat_map(RepoUtils::extract_grasp_servers)
+            .collect()
+    }
+
+    /// Extract all clones
+    #[inline]
+    pub fn extract_clones(&self) -> Vec<&Url> {
+        self.iter().flat_map(|r| r.clone.deref()).collect()
+    }
+
     /// Extract all the maintainers from these repositories
     #[inline]
     pub fn extract_maintainers(&self) -> Vec<PublicKey> {
@@ -238,6 +255,57 @@ impl Vec<GitRepositoryAnnouncement> {
     #[inline]
     pub fn extract_euc(&self) -> Option<&Sha1Hash> {
         self.iter().find_map(|r| r.euc.as_ref())
+    }
+}
+
+#[easy_ext::ext(RepoUtils)]
+impl GitRepositoryAnnouncement {
+    /// Retrieves the GRASP servers from the list of clones based on the relay's
+    /// GRASP check.
+    pub fn extract_grasp_servers(&self) -> Vec<&Url> {
+        self.clone
+            .iter()
+            .filter(|clone| self.relays.is_grasp(clone))
+            .collect()
+    }
+}
+
+#[easy_ext::ext(RelayUrlsUtils)]
+impl Vec<RelayUrl> {
+    /// Checks if the provided clone URL is a GRASP clone URL and is present in
+    /// the relays.
+    pub fn is_grasp(&self, clone_url: &Url) -> bool {
+        clone_url.is_grasp_clone()
+            && self.iter().any(|relay| {
+                clone_url
+                    .as_str()
+                    .trim_start_matches("https://")
+                    .trim_start_matches("http://")
+                    .starts_with(
+                        relay
+                            .as_str_without_trailing_slash()
+                            .trim_start_matches("wss://")
+                            .trim_start_matches("ws://"),
+                    )
+            })
+    }
+}
+
+#[easy_ext::ext(IsGraspClone)]
+impl Url {
+    /// Checks if the URL is a GRASP clone URL. A GRASP clone URL is identified
+    /// by having a `<string>.git` suffix in the last part and a valid public
+    /// key in the second last part.
+    pub fn is_grasp_clone(&self) -> bool {
+        let mut parts = self.as_str().split('/').rev().take(2);
+        parts
+            .next()
+            .and_then(|r| (r.len() > 4 && r.ends_with(".git")).then_some(r))
+            .is_some()
+            && parts
+                .next()
+                .and_then(|p| PublicKey::from_bech32(p).ok())
+                .is_some()
     }
 }
 
@@ -316,5 +384,26 @@ impl nostr_keyring::Error {
     #[inline]
     pub fn is_keyring_no_entry(&self) -> bool {
         matches!(self, nostr_keyring::Error::Keyring(KeyringError::NoEntry))
+    }
+}
+
+#[easy_ext::ext(KindExt)]
+impl Kind {
+    /// Checks if the kind is a root kind, such as GitIssue, GitPatch, GitPr or
+    /// GitPrUpdate.
+    pub fn is_root_kind(&self) -> bool {
+        match self {
+            val if val == &crate::cli::pr::PR_KIND || val == &crate::cli::pr::PR_UPDATE_KIND => {
+                true
+            }
+            Kind::GitIssue | Kind::GitPatch => true,
+            _ => false,
+        }
+    }
+
+    /// Returns true if this kind supports replies, such as Comment, GitIssue,
+    /// GitPatch, GitPr, or GitPrUpdate.
+    pub fn can_reply_to(&self) -> bool {
+        self == &Kind::Comment || self.is_root_kind()
     }
 }

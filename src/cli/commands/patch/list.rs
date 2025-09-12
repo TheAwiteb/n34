@@ -19,7 +19,12 @@ use std::num::NonZeroUsize;
 use clap::Args;
 
 use crate::{
-    cli::{CliOptions, common_commands, traits::CommandRunner, types::NaddrOrSet},
+    cli::{
+        CliOptions,
+        common_commands,
+        traits::CommandRunner,
+        types::{EntityType, NaddrOrSet},
+    },
     error::N34Result,
 };
 
@@ -42,7 +47,11 @@ impl CommandRunner for ListArgs {
     const NEED_SIGNER: bool = false;
 
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        common_commands::list_patches_and_issues(options, self.naddrs, true, self.limit.into())
-            .await
+        common_commands::list_pr_patches_and_issues::<{ EntityType::Patch as u8 }>(
+            options,
+            self.naddrs,
+            self.limit.into(),
+        )
+        .await
     }
 }

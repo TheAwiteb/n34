@@ -10,7 +10,7 @@ Usage: n34 patch apply [OPTIONS] <PATCH_ID> [APPLIED_COMMITS]...
 
 Arguments:
   <PATCH_ID>            The open patch id to apply it. Must be orignal root patch or revision root
-  [APPLIED_COMMITS]...  The applied commits
+  <APPLIED_COMMITS>...  The applied commits
 
 Options:
       --repo <NADDR-NIP05-OR-SET>  Repository addresses

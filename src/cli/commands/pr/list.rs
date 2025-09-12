@@ -28,7 +28,8 @@ use crate::{
     error::N34Result,
 };
 
-#[derive(Debug, Args)]
+
+#[derive(Args, Debug)]
 pub struct ListArgs {
     /// Repository addresses
     ///
@@ -38,7 +39,7 @@ pub struct ListArgs {
     /// If omitted, looks for a `nostr-address` file.
     #[arg(value_name = "NADDR-NIP05-OR-SET", value_delimiter = ',')]
     naddrs: Option<Vec<NaddrOrSet>>,
-    /// Maximum number of issues to list
+    /// Maximum number of patches to list
     #[arg(long, default_value = "15")]
     limit:  NonZeroUsize,
 }
@@ -47,7 +48,7 @@ impl CommandRunner for ListArgs {
     const NEED_SIGNER: bool = false;
 
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        common_commands::list_pr_patches_and_issues::<{ EntityType::Issue as u8 }>(
+        common_commands::list_pr_patches_and_issues::<{ EntityType::PullRequest as u8 }>(
             options,
             self.naddrs,
             self.limit.into(),

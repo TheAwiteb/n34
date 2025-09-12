@@ -25,7 +25,7 @@ Check the documentation at [n34.dev]
 - [X] Issues (Send, view and list)
 - [X] Replies
 - [X] Issues and patches status
-- [ ] Pull requests ([nostr-protocol/nips#1966])
+- [X] Pull requests ([nostr-protocol/nips#1966])
 - [X] Gossip Model ([NIP-65])
 - [X] Proof of Work ([NIP-13])
 - [X] `nostr:` URI scheme, in the issue/reply content ([NIP-21])

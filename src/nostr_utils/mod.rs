@@ -41,6 +41,7 @@ use traits::TokenUtils;
 use crate::{
     cli::{CliOptions, issue::IssueStatus, patch::PatchPrStatus},
     error::{N34Error, N34Result},
+    nostr_utils::traits::KindExt,
 };
 
 /// Timeout duration for the client.
@@ -258,6 +259,13 @@ impl NostrClient {
             .ok_or(N34Error::CanNotFoundPatch)
     }
 
+    /// Fetch the pull request by the given id. None if not found
+    pub async fn fetch_pr(&self, pr_id: EventId) -> N34Result<Event> {
+        self.fetch_event(Filter::new().id(pr_id).kind(crate::cli::pr::PR_KIND))
+            .await?
+            .ok_or(N34Error::CanNotFoundPr)
+    }
+
     /// Returns the username for a given public key. If no username is found,
     /// falls back to a shortened version of the public key.
     pub async fn get_username(&self, user: PublicKey) -> String {
@@ -296,6 +304,27 @@ impl NostrClient {
         .max_by_key(|e| e.created_at)
         .map(|status| IssueStatus::try_from(status.kind))
         .unwrap_or_else(|| Ok(IssueStatus::Open))
+    }
+
+    /// Get the latest status of PR by its ID, only considering status
+    /// events from authorized_pubkeys. If no valid status event is found,
+    /// defaults to Open.
+    pub async fn fetch_pr_status(
+        &self,
+        pr_id: EventId,
+        authorized_pubkeys: Vec<PublicKey>,
+    ) -> N34Result<PatchPrStatus> {
+        self.fetch_events(
+            Filter::new()
+                .event(pr_id)
+                .kinds(PatchPrStatus::all_kinds())
+                .authors(utils::dedup(authorized_pubkeys.into_iter())),
+        )
+        .await?
+        .into_iter()
+        .max_by_key(|e| e.created_at)
+        .map(|status| PatchPrStatus::try_from(status.kind))
+        .unwrap_or_else(|| Ok(PatchPrStatus::Open))
     }
 
     /// Gets the status of a patch. If it's a revision patch, checks if it's
@@ -355,17 +384,17 @@ impl NostrClient {
             .collect())
     }
 
-    /// Finds the root issue or patch for a given event. If the event is already
-    /// a root (issue/patch), returns it directly. For comments, follows
-    /// parent/root references until finding the root or failing. Returns
-    /// None if no root can be found.
+    /// Finds the root issue, PR or patch for a given event. If the event is
+    /// already a root (issue/patch/PR), returns it directly. For comments,
+    /// follows parent/root references until finding the root or failing.
+    /// Returns None if no root can be found.
     pub async fn find_root(&self, mut event: Event) -> N34Result<Option<Event>> {
-        if !matches!(event.kind, Kind::GitIssue | Kind::GitPatch | Kind::Comment) {
+        if !event.kind.can_reply_to() {
             return Err(N34Error::CanNotReplyToEvent);
         }
 
         loop {
-            if matches!(event.kind, Kind::GitIssue | Kind::GitPatch) {
+            if event.kind.is_root_kind() {
                 return Ok(Some(event));
             }
 
@@ -375,7 +404,7 @@ impl NostrClient {
                 self.add_relay_hint(relay_hint.cloned()).await;
                 let root_event = self.fetch_event(Filter::new().id(*id)).await?;
                 if let Some(ref root_event) = root_event
-                    && !matches!(root_event.kind, Kind::GitIssue | Kind::GitPatch)
+                    && !root_event.kind.is_root_kind()
                 {
                     return Err(N34Error::CanNotReplyToEvent);
                 }
@@ -390,7 +419,7 @@ impl NostrClient {
                 }
             }
 
-            // Break if: no root/parent tags found, parent/root event fetch failed
+            // Break if: no root/parent tags found
             break;
         }
 

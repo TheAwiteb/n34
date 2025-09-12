@@ -32,6 +32,8 @@ pub mod parsers;
 pub mod traits;
 /// Common helper types used throughout the CLI.
 pub mod types;
+/// CLI utils
+pub mod utils;
 
 
 use clap::Parser;

@@ -22,7 +22,7 @@ use crate::{
     cli::{
         CliOptions,
         traits::{CommandRunner, VecNostrEventExt},
-        types::{NaddrOrSet, NostrEvent},
+        types::{EntityType, NaddrOrSet, NostrEvent},
     },
     error::{N34Error, N34Result},
 };
@@ -55,7 +55,7 @@ pub struct ApplyArgs {
 
 impl CommandRunner for ApplyArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::cli::common_commands::patch_status_command(
+        crate::cli::common_commands::patch_pr_status_command::<{ EntityType::Patch as u8 }>(
             options,
             self.patch_id,
             self.naddrs,
@@ -76,9 +76,7 @@ impl CommandRunner for ApplyArgs {
                 }
 
                 if patch_status.is_drafted() {
-                    return Err(N34Error::InvalidStatus(
-                        "You can't apply a drafted patch".to_owned(),
-                    ));
+                    return Err(N34Error::InvalidStatus("Cannot apply a draft".to_owned()));
                 }
                 Ok(())
             },

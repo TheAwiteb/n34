@@ -1,5 +1,17 @@
 # Command-Line Usage
 
+## Philosophy
+
+`n34` emphasizes simplicity by exclusively handling Nostr tasks, requiring
+users to manage Git operations themselves. For instance, it won't merge or
+rebase patches into a branch but will prompt you to specify where to write them,
+allowing you to merge them using `git-am`. Similarly, when sending patches, it
+won't ask for the commits but will request the patch files instead.
+
+This approach enhances simplicity and freedom, giving you full control over
+your workflow. Additionally, it simplifies software maintenance by avoiding
+unnecessary complexity.
+
 ## Options
 
 The `n34` command-line tool accepts the following options:

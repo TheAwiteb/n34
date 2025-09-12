@@ -20,6 +20,8 @@ pub mod config;
 pub mod issue;
 /// `patch` subcommands
 pub mod patch;
+/// `pr` subcommands
+pub mod pr;
 /// `reply` command
 pub mod reply;
 /// `repo` subcommands
@@ -40,6 +42,7 @@ use nostr_connect::client::NostrConnect;
 use self::config::ConfigSubcommands;
 use self::issue::IssueSubcommands;
 use self::patch::PatchSubcommands;
+use self::pr::PrSubcommands;
 use self::reply::ReplyArgs;
 use self::repo::RepoSubcommands;
 use self::sets::SetsSubcommands;
@@ -112,6 +115,11 @@ pub enum Commands {
     Patch {
         #[command(subcommand)]
         subcommands: PatchSubcommands,
+    },
+    /// Manage pull requests
+    Pr {
+        #[command(subcommand)]
+        subcommands: PrSubcommands,
     },
     /// Manage configuration
     Config {
@@ -197,6 +205,6 @@ impl CommandRunner for Commands {
         tracing::trace!("Options: {options:#?}");
         tracing::trace!("Handling: {self:#?}");
 
-        crate::run_command!(self, options, Repo Issue Sets Patch Config & Reply)
+        crate::run_command!(self, options, Repo Issue Sets Patch Pr Config & Reply)
     }
 }

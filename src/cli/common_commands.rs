@@ -19,7 +19,7 @@ use std::{iter, str::FromStr, sync::Arc};
 use either::Either;
 use futures::future;
 use nostr::{
-    event::{Event, EventBuilder, EventId, Kind, Tag, TagKind},
+    event::{Event, EventBuilder, EventId, Kind, Tag, TagKind, TagStandard},
     filter::{Alphabet, Filter, SingleLetterTag},
     hashes::sha1::Hash as Sha1Hash,
     nips::{nip10::Marker, nip19::ToBech32},
@@ -32,17 +32,16 @@ use super::{
     types::{NaddrOrSet, NostrEvent},
 };
 use crate::{
-    cli::traits::{OptionNaddrOrSetVecExt, RelayOrSetVecExt},
-    nostr_utils::{
-        NostrClient,
-        traits::{NaddrsUtils, TagsExt},
-        utils,
-    },
-};
-use crate::{
     cli::{CliOptions, patch::GitPatch},
     error::{N34Error, N34Result},
     nostr_utils::traits::{GitIssuePrMetadata, GitPatchUtils, ReposUtils},
+};
+use crate::{
+    cli::{
+        traits::{OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+        types::EntityType,
+    },
+    nostr_utils::{NostrClient, traits::NaddrsUtils, utils},
 };
 
 /// Updates the issue's status to `new_status` after validating it with
@@ -127,17 +126,20 @@ pub async fn issue_status_command(
     Ok(())
 }
 
-/// Updates the patch's status to `new_status` after validating it with
-/// `check_fn`.
-pub async fn patch_status_command(
+/// Updates the patch/pr's status to `new_status` after validating it with
+/// `check_fn`. The `ENTITY_TYPE` can only be a pull request or a patch
+pub async fn patch_pr_status_command<const ENTITY_TYPE: u8>(
     options: CliOptions,
-    patch_id: NostrEvent,
+    patch_pr_id: NostrEvent,
     naddrs: Option<Vec<NaddrOrSet>>,
     new_status: PatchPrStatus,
     merge_or_applied_commits: Option<Either<Sha1Hash, Vec<Sha1Hash>>>,
     merge_or_applied_patches: Vec<EventId>,
     check_fn: impl FnOnce(&PatchPrStatus) -> N34Result<()>,
 ) -> N34Result<()> {
+    EntityType::is_pr_or_patch::<ENTITY_TYPE>();
+    let entity_type = EntityType::from_u8::<ENTITY_TYPE>();
+
     let naddrs = utils::naddrs_or_file(
         naddrs.flat_naddrs(&options.config.sets)?,
         &utils::nostr_address_path()?,
@@ -146,7 +148,7 @@ pub async fn patch_status_command(
     let client = NostrClient::init(&options, &relays).await;
     let user_pubk = client.pubkey().await?;
     client
-        .add_relays(&[naddrs.extract_relays(), patch_id.relays].concat())
+        .add_relays(&[naddrs.extract_relays(), patch_pr_id.relays].concat())
         .await;
 
     let owners = naddrs.extract_owners();
@@ -156,9 +158,14 @@ pub async fn patch_status_command(
     let relay_hint = repos.extract_relays().first().cloned();
     client.add_relays(&repos.extract_relays()).await;
 
-    let patch_event = client.fetch_patch(patch_id.event_id).await?;
+    let event = if entity_type.is_patch() {
+        client.fetch_patch(patch_pr_id.event_id).await?
+    } else {
+        client.fetch_pr(patch_pr_id.event_id).await?
+    };
+    let authorized_pubkeys = [maintainers.as_slice(), &[event.pubkey], &owners].concat();
 
-    if patch_event.is_revision_patch() && !new_status.is_merged_or_applied() {
+    if entity_type.is_patch() && event.is_revision_patch() && !new_status.is_merged_or_applied() {
         return Err(N34Error::InvalidStatus(
             "Invalid action for patch revision. Only 'apply' or 'merge' are allowed, 'open', \
              'close', and 'draft' are not supported."
@@ -166,27 +173,31 @@ pub async fn patch_status_command(
         ));
     }
 
-    let (root_patch, root_revision) = get_patch_root_revision(&patch_event)?;
-    let patch_status = client
-        .fetch_patch_status(
-            root_patch,
-            root_revision,
-            [maintainers.as_slice(), &[patch_event.pubkey], &owners].concat(),
-        )
-        .await?;
+    let (root_patch_or_pr, root_revision) = if entity_type.is_patch() {
+        get_patch_root_revision(&event)?
+    } else {
+        (event.id, None)
+    };
+    let current_status = if entity_type.is_patch() {
+        client
+            .fetch_patch_status(root_patch_or_pr, root_revision, authorized_pubkeys.clone())
+            .await?
+    } else {
+        client
+            .fetch_pr_status(event.id, authorized_pubkeys.clone())
+            .await?
+    };
 
-    check_fn(&patch_status)?;
+    check_fn(&current_status)?;
 
     let mut status_builder = EventBuilder::new(new_status.kind(), "")
         .pow(options.pow.unwrap_or_default())
         .tag(utils::event_reply_tag(
-            &root_patch,
+            &root_patch_or_pr,
             relay_hint.as_ref(),
             Marker::Root,
         ))
-        .tag(Tag::public_key(patch_event.pubkey))
-        .tags(maintainers.iter().map(|p| Tag::public_key(*p)))
-        .tags(owners.iter().map(|p| Tag::public_key(*p)))
+        .tags(authorized_pubkeys.iter().map(|p| Tag::public_key(*p)))
         .tags(
             coordinates
                 .into_iter()
@@ -215,6 +226,7 @@ pub async fn patch_status_command(
                 .tags(commits.into_iter().map(Tag::reference));
         };
 
+        // Patch only
         if let Some(root_revision) = root_revision {
             status_builder = status_builder.tag(utils::event_reply_tag(
                 &root_revision,
@@ -223,6 +235,7 @@ pub async fn patch_status_command(
             ));
         }
 
+        // Patch only
         if !merge_or_applied_patches.is_empty() {
             status_builder = status_builder.tags(
                 build_patches_quote(client.clone(), relay_hint.clone(), merge_or_applied_patches)
@@ -232,7 +245,6 @@ pub async fn patch_status_command(
     }
 
     let status_event = status_builder.dedup_tags().build(user_pubk);
-
     let event_id = status_event.id.expect("There is an id");
     let user_relays_list = client.user_relays_list(user_pubk).await?;
     let write_relays = [
@@ -240,10 +252,7 @@ pub async fn patch_status_command(
         naddrs.extract_relays(),
         repos.extract_relays(),
         utils::add_write_relays(user_relays_list.as_ref()),
-        client.read_relays_from_user(patch_event.pubkey).await,
-        client
-            .read_relays_from_users(&[maintainers, owners].concat())
-            .await,
+        client.read_relays_from_users(&authorized_pubkeys).await,
     ]
     .concat();
 
@@ -256,13 +265,14 @@ pub async fn patch_status_command(
     Ok(())
 }
 
-/// Fetch and display patches and issues for given repositories.
-/// If `list_patches` is true, lists patches instead of issues.
-/// `limit` controls the maximum number of items to fetch.
-pub async fn list_patches_and_issues(
+/// Fetches and displays pull requests, patches, and issues for specified
+/// repositories. The `limit` parameter sets the maximum number of items to
+/// retrieve.
+///
+/// The `ENTITY_TYPE` const is `[EntityType]` enum as u8.
+pub async fn list_pr_patches_and_issues<const ENTITY_TYPE: u8>(
     options: CliOptions,
     naddrs: Option<Vec<NaddrOrSet>>,
-    list_patches: bool,
     limit: usize,
 ) -> N34Result<()> {
     let naddrs = utils::check_empty_naddrs(utils::naddrs_or_file(
@@ -270,6 +280,7 @@ pub async fn list_patches_and_issues(
         &utils::nostr_address_path()?,
     )?)?;
 
+    let entity_type = EntityType::from_u8::<ENTITY_TYPE>();
     let relays = options.relays.clone().flat_relays(&options.config.sets)?;
     let client = NostrClient::init(&options, &relays).await;
     client.add_relays(&naddrs.extract_relays()).await;
@@ -283,18 +294,12 @@ pub async fn list_patches_and_issues(
         .add_relays(&client.read_relays_from_users(&authorized_pubkeys).await)
         .await;
 
-    let kind = if list_patches {
-        Kind::GitPatch
-    } else {
-        Kind::GitIssue
-    };
-
     let mut filter = Filter::new()
         .coordinates(coordinates.iter())
-        .kind(kind)
+        .kind(entity_type.kind())
         .limit(limit);
 
-    if list_patches {
+    if entity_type.is_patch() {
         filter = filter.hashtag("root");
     }
 
@@ -312,23 +317,35 @@ pub async fn list_patches_and_issues(
                     let c = arc_client.clone();
                     let keys = authorized_pubkeys.clone();
                     async move {
-                        let status = if list_patches {
-                            let (root, root_revision) = get_patch_root_revision(&event)?;
-                            c.fetch_patch_status(
-                                root,
-                                root_revision,
-                                [keys.as_slice(), &[event.pubkey]].concat(),
-                            )
-                            .await
-                            .map(Either::Left)?
-                        } else {
-                            c.fetch_issue_status(
-                                event.id,
-                                [keys.as_slice(), &[event.pubkey]].concat(),
-                            )
-                            .await
-                            .map(Either::Right)?
+                        let status = match entity_type {
+                            EntityType::PullRequest => {
+                                c.fetch_pr_status(
+                                    event.id,
+                                    [keys.as_slice(), &[event.pubkey]].concat(),
+                                )
+                                .await
+                                .map(|s| (s.as_str(), s.kind().as_u16()))?
+                            }
+                            EntityType::Patch => {
+                                let (root, root_revision) = get_patch_root_revision(&event)?;
+                                c.fetch_patch_status(
+                                    root,
+                                    root_revision,
+                                    [keys.as_slice(), &[event.pubkey]].concat(),
+                                )
+                                .await
+                                .map(|s| (s.as_str(), s.kind().as_u16()))?
+                            }
+                            EntityType::Issue => {
+                                c.fetch_issue_status(
+                                    event.id,
+                                    [keys.as_slice(), &[event.pubkey]].concat(),
+                                )
+                                .await
+                                .map(|s| (s.as_str(), s.kind().as_u16()))?
+                            }
                         };
+
                         N34Result::Ok((event, status))
                     }
                 }),
@@ -336,11 +353,11 @@ pub async fn list_patches_and_issues(
         .await
         .into_iter()
         .filter_map(|r| r.ok()),
-        |(_, status)| status.as_ref().either_into::<Kind>(),
+        |(_, (_, k))| *k,
     );
 
     let lines = events
-        .map(|(event, status)| format_patch_and_issue(&event, status))
+        .map(|(event, (status, _))| format_entity::<ENTITY_TYPE>(&event, status))
         .collect::<Vec<String>>();
 
     let max_width = lines
@@ -370,33 +387,40 @@ fn get_patch_root_revision(patch_event: &Event) -> N34Result<(EventId, Option<Ev
     }
 }
 
-/// Formats an event as either a patch or an issue. For patches, extracts the
-/// subject line from the Git patch format. For issues, combines the subject
-/// with labels. The output includes status and formatted ID.
-fn format_patch_and_issue(event: &Event, status: Either<PatchStatus, IssueStatus>) -> String {
-    let subject = if status.is_left() {
-        GitPatch::from_str(&event.content)
-            .map(|p| p.subject)
-            .unwrap_or_else(|_| {
-                event
-                    .content
-                    .lines()
-                    .find(|line| line.trim().starts_with("Subject: "))
-                    .unwrap_or_default()
-                    .trim()
-                    .trim_start_matches("Subject: ")
-                    .to_owned()
-            })
-    } else {
-        let labels = event.extract_event_labels();
-        let subject = event.extract_event_subject();
+/// Formats patch, issue or PR. For patches, extracts the
+/// subject line from the Git patch format. For issues and PRs, combines the
+/// subject with labels. The output includes status and formatted ID.
+fn format_entity<const ENTITY_TYPE: u8>(event: &Event, status: &str) -> String {
+    let entity_type = EntityType::from_u8::<ENTITY_TYPE>();
 
-        if labels.is_empty() {
-            subject.to_owned()
-        } else {
-            format!(r#""{subject}" {labels}"#)
+    let subject = match entity_type {
+        EntityType::Patch => {
+            GitPatch::from_str(&event.content)
+                .map(|p| p.subject)
+                .unwrap_or_else(|_| {
+                    event
+                        .content
+                        .lines()
+                        .find(|line| line.trim().starts_with("Subject: "))
+                        .unwrap_or_default()
+                        .trim()
+                        .trim_start_matches("Subject: ")
+                        .to_owned()
+                })
+        }
+        _ => {
+            // Issues and PRs
+            let labels = event.extract_event_labels();
+            let subject = event.extract_event_subject();
+
+            if labels.is_empty() {
+                subject.to_owned()
+            } else {
+                format!(r#""{subject}" {labels}"#)
+            }
         }
     };
+
     format!(
         "({status}) {}\nID: {}\n",
         utils::smart_wrap(&subject, 85),
@@ -455,14 +479,8 @@ pub async fn view_pr_issue<const IS_PR: bool>(
 
     client.add_relays(&naddrs.extract_relays()).await;
     client.add_relays(&event_id.relays).await;
-    client
-        .add_relays(
-            &client
-                .fetch_repos(&naddrs.into_coordinates())
-                .await?
-                .extract_relays(),
-        )
-        .await;
+    let repos = client.fetch_repos(&naddrs.into_coordinates()).await?;
+    client.add_relays(&repos.extract_relays()).await;
 
     let event = client
         .fetch_event(Filter::new().id(event_id.event_id).kind(
@@ -475,7 +493,27 @@ pub async fn view_pr_issue<const IS_PR: bool>(
             },
         ))
         .await?
-        .ok_or(N34Error::CanNotFoundIssue)?;
+        .ok_or(
+            const {
+                if IS_PR {
+                    N34Error::CanNotFoundPr
+                } else {
+                    N34Error::CanNotFoundIssue
+                }
+            },
+        )?;
+    let authorized_pubkeys = [repos.extract_maintainers().as_slice(), &[event.pubkey]].concat();
+    let status = if IS_PR {
+        client
+            .fetch_pr_status(event.id, authorized_pubkeys)
+            .await?
+            .to_string()
+    } else {
+        client
+            .fetch_issue_status(event.id, authorized_pubkeys)
+            .await?
+            .to_string()
+    };
 
     let event_subject = utils::smart_wrap(event.extract_event_subject(), 70);
     let event_author = client.get_username(event.pubkey).await;
@@ -516,10 +554,12 @@ pub async fn view_pr_issue<const IS_PR: bool>(
             .as_ref()
             .unwrap_or(&event)
             .tags
-            .map_tag(TagKind::Clone, |t| {
+            .iter()
+            .filter_map(|t| t.as_standardized())
+            .find_map(|t| {
                 match t {
-                    nostr::event::TagStandard::GitClone(urls) => urls.clone(),
-                    _ => unreachable!(),
+                    TagStandard::GitClone(urls) if !urls.is_empty() => Some(urls.clone()),
+                    _ => None,
                 }
             })
             .unwrap_or_default();
@@ -533,7 +573,7 @@ pub async fn view_pr_issue<const IS_PR: bool>(
     };
 
     println!(
-        "{event_subject} - [by {event_author}]\n{event_labels}{}{pr_data}",
+        "({status}) {event_subject} - [by {event_author}]\n{event_labels}{}{pr_data}",
         utils::smart_wrap(&event.content, 80)
     );
     Ok(())

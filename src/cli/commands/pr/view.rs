@@ -14,44 +14,41 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::num::NonZeroUsize;
-
 use clap::Args;
 
 use crate::{
     cli::{
         CliOptions,
-        common_commands,
         traits::CommandRunner,
-        types::{EntityType, NaddrOrSet},
+        types::{NaddrOrSet, NostrEvent},
     },
     error::N34Result,
 };
 
-#[derive(Debug, Args)]
-pub struct ListArgs {
+
+#[derive(Args, Debug)]
+pub struct ViewArgs {
     /// Repository addresses
     ///
     /// In `naddr` format (`naddr1...`), NIP-05 format (`4rs.nl/n34` or
     /// `_@4rs.nl/n34`), or a set name like `kernel`, separated by commas.
     ///
     /// If omitted, looks for a `nostr-address` file.
-    #[arg(value_name = "NADDR-NIP05-OR-SET", value_delimiter = ',')]
+    #[arg(
+        value_name = "NADDR-NIP05-OR-SET",
+        long = "repo",
+        value_delimiter = ','
+    )]
     naddrs: Option<Vec<NaddrOrSet>>,
-    /// Maximum number of issues to list
-    #[arg(long, default_value = "15")]
-    limit:  NonZeroUsize,
+    /// Pull request ID
+    #[arg(value_name = "EVENT-ID")]
+    pr_id:  NostrEvent,
 }
 
-impl CommandRunner for ListArgs {
+impl CommandRunner for ViewArgs {
     const NEED_SIGNER: bool = false;
 
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        common_commands::list_pr_patches_and_issues::<{ EntityType::Issue as u8 }>(
-            options,
-            self.naddrs,
-            self.limit.into(),
-        )
-        .await
+        crate::cli::common_commands::view_pr_issue::<true>(options, self.naddrs, self.pr_id).await
     }
 }

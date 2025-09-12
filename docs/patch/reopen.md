@@ -15,6 +15,6 @@ Options:
       --repo <NADDR-NIP05-OR-SET>  Repository addresses
 ```
 
-Issue a kind `1632` (Close status) for the specified patch. The patch have to
+Issue a kind `1630` (Open status) for the specified patch. The patch have to
 be closed or drafted.
 

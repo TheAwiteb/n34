@@ -21,7 +21,7 @@ use crate::{
     cli::{
         CliOptions,
         traits::CommandRunner,
-        types::{NaddrOrSet, NostrEvent},
+        types::{EntityType, NaddrOrSet, NostrEvent},
     },
     error::{N34Error, N34Result},
 };
@@ -46,7 +46,7 @@ pub struct DraftArgs {
 
 impl CommandRunner for DraftArgs {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::cli::common_commands::patch_status_command(
+        crate::cli::common_commands::patch_pr_status_command::<{ EntityType::Patch as u8 }>(
             options,
             self.patch_id,
             self.naddrs,
@@ -56,7 +56,7 @@ impl CommandRunner for DraftArgs {
             |patch_status| {
                 if patch_status.is_drafted() {
                     return Err(N34Error::InvalidStatus(
-                        "You can't draft an already drafted patch".to_owned(),
+                        "You can't draft an already draft patch".to_owned(),
                     ));
                 }
 
