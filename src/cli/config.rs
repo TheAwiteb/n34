@@ -77,7 +77,7 @@ pub struct CliConfig {
     #[serde(default)]
     pub keyring_secret_key: bool,
     /// Signs events using the browser's NIP-07 extension.
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub nip07:              Option<SocketAddr>,
 }
 
