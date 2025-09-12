@@ -39,7 +39,7 @@ use nostr_sdk::{Client, ClientOptions};
 use traits::TokenUtils;
 
 use crate::{
-    cli::{CliOptions, issue::IssueStatus, patch::PatchPrStatus},
+    cli::{CliOptions, issue::IssueStatus, types::PatchPrStatus},
     error::{N34Error, N34Result},
     nostr_utils::traits::KindExt,
 };

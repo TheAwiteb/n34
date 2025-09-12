@@ -19,9 +19,8 @@ use clap::Args;
 use crate::{
     cli::{
         CliOptions,
-        patch::PatchPrStatus,
         traits::CommandRunner,
-        types::{EntityType, NaddrOrSet, NostrEvent},
+        types::{EntityType, NaddrOrSet, NostrEvent, PatchPrStatus},
     },
     error::{N34Error, N34Result},
 };

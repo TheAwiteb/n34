@@ -16,12 +16,11 @@
 
 use clap::Args;
 
-use super::PatchPrStatus;
 use crate::{
     cli::{
         CliOptions,
         traits::CommandRunner,
-        types::{EntityType, NaddrOrSet, NostrEvent},
+        types::{EntityType, NaddrOrSet, NostrEvent, PatchPrStatus},
     },
     error::{N34Error, N34Result},
 };

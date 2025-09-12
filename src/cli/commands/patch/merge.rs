@@ -17,12 +17,11 @@
 use clap::Args;
 use nostr::hashes::sha1::Hash as Sha1Hash;
 
-use super::PatchPrStatus;
 use crate::{
     cli::{
         CliOptions,
         traits::{CommandRunner, VecNostrEventExt},
-        types::{EntityType, NaddrOrSet, NostrEvent},
+        types::{EntityType, NaddrOrSet, NostrEvent, PatchPrStatus},
     },
     error::{N34Error, N34Result},
 };

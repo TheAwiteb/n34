@@ -28,11 +28,10 @@ use nostr::{
 
 use super::{
     issue::IssueStatus,
-    patch::PatchPrStatus,
     types::{NaddrOrSet, NostrEvent},
 };
 use crate::{
-    cli::{CliOptions, patch::GitPatch},
+    cli::{CliOptions, patch::GitPatch, types::PatchPrStatus},
     error::{N34Error, N34Result},
     nostr_utils::traits::{GitIssuePrMetadata, GitPatchUtils, ReposUtils},
 };

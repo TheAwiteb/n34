@@ -20,9 +20,8 @@ use nostr::hashes::sha1::Hash as Sha1Hash;
 use crate::{
     cli::{
         CliOptions,
-        patch::PatchPrStatus,
         traits::CommandRunner,
-        types::{EntityType, NaddrOrSet, NostrEvent},
+        types::{EntityType, NaddrOrSet, NostrEvent, PatchPrStatus},
     },
     error::{N34Error, N34Result},
 };
