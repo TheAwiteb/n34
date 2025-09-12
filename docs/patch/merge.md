@@ -1,4 +1,4 @@
-# Merge an Open Patch
+# Mark as Merged
 
 > `n34 patch merge` command
 

@@ -1,4 +1,4 @@
-# Draft an Open Patch
+# Convert to Draft
 
 > `n34 patch draft` command
 

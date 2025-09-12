@@ -1,4 +1,4 @@
-# Merge a Pull Request
+# Mark as Merged
 
 > `n34 pr merge` command
 

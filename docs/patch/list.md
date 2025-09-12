@@ -1,4 +1,4 @@
-# List Repositories Patches
+# List Patches
 
 > `n34 patch list` command
 

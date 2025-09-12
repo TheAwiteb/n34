@@ -1,4 +1,4 @@
-# View an Issue By ID
+# View an Issue
 
 > `n34 issue view` command
 

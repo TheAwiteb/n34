@@ -1,4 +1,4 @@
-# Apply an Open Patch
+# Mark as Applied
 
 > `n34 patch apply` command
 

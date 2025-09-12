@@ -1,4 +1,4 @@
-# Closes an Open or Drafted Patch
+# Close a Patch
 
 > `n34 patch close` command
 

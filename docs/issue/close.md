@@ -1,4 +1,4 @@
-# Closes an Open Issue
+# Close an Issue
 
 > `n34 issue close` command
 

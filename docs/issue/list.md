@@ -1,4 +1,4 @@
-# List Repositories Issues
+# List Issues
 
 > `n34 issue list` command
 

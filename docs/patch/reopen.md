@@ -1,4 +1,4 @@
-# Reopens a Closed or Drafted Patch
+# Reopen a Patch
 
 > `n34 patch reopen` command
 

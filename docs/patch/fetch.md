@@ -1,4 +1,4 @@
-# Fetch a Patch By ID
+# Fetch a Patch
 
 > `n34 patch fetch` command
 

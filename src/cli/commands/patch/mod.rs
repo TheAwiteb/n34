@@ -79,21 +79,21 @@ pub const LEGACY_NGIT_REVISION_ROOT_HASHTAG_CONTENT: &str = "revision-root";
 
 #[derive(Subcommand, Debug)]
 pub enum PatchSubcommands {
-    /// Send one or more patches to a repository.
+    /// Send patches to a repository
     Send(SendArgs),
-    /// Fetches a patch by its id.
+    /// Fetch a patch
     Fetch(FetchArgs),
-    /// Closes an open or drafted patch.
+    /// Close a patch
     Close(CloseArgs),
-    /// Converts an open patch to draft state.
+    /// Convert to draft
     Draft(DraftArgs),
-    /// Reopens a closed or drafted patch.
+    /// Reopen a patch
     Reopen(ReopenArgs),
-    /// Set an open patch status to applied.
+    /// Mark as applied
     Apply(ApplyArgs),
-    /// Set an open patch status to merged.
+    /// Mark as merged
     Merge(MergeArgs),
-    /// List the repositories patches.
+    /// List patches
     List(ListArgs),
 }
 

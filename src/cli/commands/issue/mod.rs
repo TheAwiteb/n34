@@ -46,17 +46,17 @@ pub const ISSUE_ALT_PREFIX: &str = "git issue: ";
 
 #[derive(Subcommand, Debug)]
 pub enum IssueSubcommands {
-    /// Create a new repository issue
+    /// Create an issue
     New(NewArgs),
-    /// View an issue by its ID
+    /// View an issue
     View(ViewArgs),
-    /// Reopens a closed issue.
+    /// Reopen an issue.
     Reopen(ReopenArgs),
-    /// Closes an open issue.
+    /// Closes an issue.
     Close(CloseArgs),
-    /// Resolves an issue.
+    /// Resolve an issue.
     Resolve(ResolveArgs),
-    /// List the repositories issues.
+    /// List issues.
     List(ListArgs),
 }
 

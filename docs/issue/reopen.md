@@ -1,4 +1,4 @@
-# Reopen a Closed Issue
+# Reopen an Issue
 
 > `n34 issue reopen` command
 

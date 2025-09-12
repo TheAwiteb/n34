@@ -1,4 +1,4 @@
-# Resolves an Issue
+# Resolve an Issue
 
 > `n34 issue resolve` command
 
