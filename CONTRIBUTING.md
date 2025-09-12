@@ -37,9 +37,7 @@ as the active development branch.
 
 You can submit issues and patches via any
 Nostr-compatible client using the address:
-`naddr1qqpkuve5qgsqqqqqq9g9uljgjfcyd6dm4fegk8em2yfz0c3qp3tc6mntkrrhawgrqsqqqaueq
-yf8wumn8ghj7mn0wd68yt35wfejumnvqyxhwumn8ghj7mn0wvhxcmmvqy28wumn8ghj7mn0wd68ytn00
-p68ytnyv4mqwuj6xc`
+`naddr1qqpkuve5qgsqqqqqq9g9uljgjfcyd6dm4fegk8em2yfz0c3qp3tc6mntkrrhawgrqsqqqaueqyf8wumn8ghj7mn0wd68yt35wfejumnvqyxhwumn8ghj7mn0wvhxcmmvqy28wumn8ghj7mn0wd68ytn00p68ytnyv4mqwuj6xc`
 
 
 When using `n34`, there's no need to specify the address, it will automatically

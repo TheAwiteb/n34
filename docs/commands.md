@@ -31,8 +31,8 @@ The `n34` command-line tool accepts the following options:
 -   `-v`, `--verbose...`: Increases the logging verbosity. Can be used multiple
   times for more detail (e.g., `-v`, `-vv`).
 
-**Note:** The `--secret-key` and `--bunker-url` options are mutually exclusive.
-You must provide exactly one signing method.
+**Note:** The `--secret-key`, `--nip07` and `--bunker-url` options are mutually
+exclusive. You must provide exactly one signing method.
 
 ## Multiple Repositories
 
