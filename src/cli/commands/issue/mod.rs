@@ -72,9 +72,19 @@ pub enum IssueStatus {
 }
 
 impl IssueStatus {
+    /// Returns all issue statuses as kinds
+    #[inline]
+    pub const fn all_kinds() -> [Kind; 3] {
+        [
+            Self::Open.kind(),
+            Self::Resolved.kind(),
+            Self::Closed.kind(),
+        ]
+    }
+
     /// Maps the issue status to its corresponding Nostr kind.
     #[inline]
-    pub fn kind(&self) -> Kind {
+    pub const fn kind(&self) -> Kind {
         match self {
             Self::Open => Kind::GitStatusOpen,
             Self::Resolved => Kind::GitStatusApplied,

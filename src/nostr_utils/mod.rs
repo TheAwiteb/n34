@@ -212,21 +212,17 @@ impl NostrClient {
     /// Fetches the first event matching the given filter, or None if no event
     /// is found.
     pub async fn fetch_event(&self, filter: Filter) -> N34Result<Option<Event>> {
-        Ok(self
-            .client
-            .fetch_events(filter.limit(1), CLIENT_TIMEOUT)
-            .await?
-            .first_owned())
+        Ok(self.fetch_events(filter).await?.next())
     }
 
     /// Fetches the events matching the given filter
-    pub async fn fetch_events(&self, filter: Filter) -> N34Result<Vec<Event>> {
+    pub async fn fetch_events(&self, filter: Filter) -> N34Result<impl Iterator<Item = Event>> {
         // Multiply timeout by 5 to account for multiple events being fetched
         Ok(self
             .client
             .fetch_events(filter, CLIENT_TIMEOUT * 5)
             .await?
-            .to_vec())
+            .into_iter())
     }
 
     /// Try to fetch the repositories and returns them
@@ -289,19 +285,13 @@ impl NostrClient {
         issue_id: EventId,
         authorized_pubkeys: Vec<PublicKey>,
     ) -> N34Result<IssueStatus> {
-        self.fetch_events(
+        self.fetch_event(
             Filter::new()
                 .event(issue_id)
-                .kinds([
-                    Kind::GitStatusOpen,
-                    Kind::GitStatusApplied,
-                    Kind::GitStatusClosed,
-                ])
+                .kinds(IssueStatus::all_kinds())
                 .authors(utils::dedup(authorized_pubkeys.into_iter())),
         )
         .await?
-        .into_iter()
-        .max_by_key(|e| e.created_at)
         .map(|status| IssueStatus::try_from(status.kind))
         .unwrap_or_else(|| Ok(IssueStatus::Open))
     }
@@ -314,15 +304,13 @@ impl NostrClient {
         pr_id: EventId,
         authorized_pubkeys: Vec<PublicKey>,
     ) -> N34Result<PatchPrStatus> {
-        self.fetch_events(
+        self.fetch_event(
             Filter::new()
                 .event(pr_id)
                 .kinds(PatchPrStatus::all_kinds())
                 .authors(utils::dedup(authorized_pubkeys.into_iter())),
         )
         .await?
-        .into_iter()
-        .max_by_key(|e| e.created_at)
         .map(|status| PatchPrStatus::try_from(status.kind))
         .unwrap_or_else(|| Ok(PatchPrStatus::Open))
     }
@@ -338,15 +326,13 @@ impl NostrClient {
         authorized_pubkeys: Vec<PublicKey>,
     ) -> N34Result<PatchPrStatus> {
         let (root_status, event_tags) = self
-            .fetch_events(
+            .fetch_event(
                 Filter::new()
                     .event(root_patch)
                     .kinds(PatchPrStatus::all_kinds())
                     .authors(utils::dedup(authorized_pubkeys.into_iter())),
             )
             .await?
-            .into_iter()
-            .max_by_key(|e| e.created_at)
             .map(|status| N34Result::Ok((PatchPrStatus::try_from(status.kind)?, status.tags)))
             .unwrap_or_else(|| Ok((PatchPrStatus::Open, Tags::new())))?;
 
@@ -375,7 +361,6 @@ impl NostrClient {
                     .event(root_patch_id),
             )
             .await?
-            .into_iter()
             .filter(|e| {
                 e.tags.iter().any(|t| {
                     t.is_root() && t.content().is_some_and(|c| c == root_patch_id.to_hex())
@@ -450,16 +435,20 @@ impl NostrClient {
     /// Returns the read relays of the given users if found, otherwise empty
     /// vector
     pub async fn read_relays_from_users(&self, users: &[PublicKey]) -> Vec<RelayUrl> {
-        self.fetch_events(
-            Filter::new()
-                .kind(nostr::event::Kind::RelayList)
-                .authors(utils::dedup(users.iter().copied())),
-        )
-        .await
-        .unwrap_or_default()
-        .into_iter()
-        .flat_map(|e| utils::add_read_relays(Some(&e)))
-        .collect()
+        if let Ok(iterator) = self
+            .fetch_events(
+                Filter::new()
+                    .kind(nostr::event::Kind::RelayList)
+                    .authors(utils::dedup(users.iter().copied())),
+            )
+            .await
+        {
+            iterator
+                .flat_map(|e| utils::add_read_relays(Some(&e)))
+                .collect()
+        } else {
+            Vec::new()
+        }
     }
 
     /// Parse the given content and returns the details that inside it

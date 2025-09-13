@@ -276,16 +276,16 @@ impl PatchPrStatus {
     #[inline]
     pub const fn all_kinds() -> [Kind; 4] {
         [
-            Kind::GitStatusOpen,
-            Kind::GitStatusApplied,
-            Kind::GitStatusClosed,
-            Kind::GitStatusDraft,
+            Self::Open.kind(),
+            Self::MergedApplied.kind(),
+            Self::Closed.kind(),
+            Self::Draft.kind(),
         ]
     }
 
     /// Maps the patch/pr status to its corresponding Nostr kind.
     #[inline]
-    pub fn kind(&self) -> Kind {
+    pub const fn kind(&self) -> Kind {
         match self {
             Self::Open => Kind::GitStatusOpen,
             Self::MergedApplied => Kind::GitStatusApplied,

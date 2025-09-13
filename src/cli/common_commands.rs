@@ -310,7 +310,6 @@ pub async fn list_pr_patches_and_issues<const ENTITY_TYPE: u8>(
             arc_client
                 .fetch_events(filter)
                 .await?
-                .into_iter()
                 .take(limit)
                 .map(|event| {
                     let c = arc_client.clone();
@@ -527,15 +526,13 @@ pub async fn view_pr_issue<const IS_PR: bool>(
     let pr_data = if IS_PR {
         // Check if there is an update
         let pr_update = client
-            .fetch_events(
+            .fetch_event(
                 Filter::new()
                     .kind(crate::cli::pr::PR_UPDATE_KIND)
                     .custom_tag(SingleLetterTag::uppercase(Alphabet::E), event.id)
                     .author(event.pubkey),
             )
-            .await?
-            .into_iter()
-            .max_by_key(|e| e.created_at.as_u64());
+            .await?;
 
         let commit = pr_update
             .as_ref()
