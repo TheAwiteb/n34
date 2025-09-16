@@ -16,6 +16,7 @@ Options:
   -c, --clone <CLONE>              URLs for cloning the repository
   -m, --maintainers <MAINTAINERS>  Additional maintainers of the repository (besides yourself)
   -l, --label <LABEL>              Labels to categorize the repository. Can be specified multiple times
+      --personal-fork              Indicates whether the announcement is a personal fork
       --force-id                   Skip kebab-case validation for the repository ID
       --address-file               If set, creates a `nostr-address` file to enable automatic address discovery by n34
 ```

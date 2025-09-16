@@ -18,7 +18,11 @@ use std::{fs, io::Write};
 
 use clap::Args;
 use futures::future;
-use nostr::{event::EventBuilder, key::PublicKey, types::Url};
+use nostr::{
+    event::{EventBuilder, Tag},
+    key::PublicKey,
+    types::Url,
+};
 
 use crate::{
     cli::{CliOptions, CommandRunner, NOSTR_ADDRESS_FILE, traits::RelayOrSetVecExt},
@@ -43,38 +47,42 @@ const NOSTR_ADDRESS_FILE_HEADER: &str = r##"# This file contains NIP-19 `naddr` 
 # Empty lines are ignored. Lines starting with "#" are treated as comments.
 
 "##;
+const PERSONAL_FORK_HASHTAG: &str = "personal-fork";
 
 /// Arguments for the `repo announce` command
 #[derive(Args, Debug)]
 pub struct AnnounceArgs {
     /// Unique identifier for the repository in kebab-case.
     #[arg(long = "id")]
-    repo_id:      String,
+    repo_id:       String,
     /// A name for the repository.
     #[arg(short, long)]
-    name:         Option<String>,
+    name:          Option<String>,
     /// A description for the repository.
     #[arg(short, long)]
-    description:  Option<String>,
+    description:   Option<String>,
     /// Webpage URLs for the repository (if provided by the git server).
     #[arg(short, long)]
-    web:          Vec<Url>,
+    web:           Vec<Url>,
     /// URLs for cloning the repository.
     #[arg(short, long)]
-    clone:        Vec<Url>,
+    clone:         Vec<Url>,
     /// Additional maintainers of the repository (besides yourself).
     #[arg(short, long)]
-    maintainers:  Vec<PublicKey>,
+    maintainers:   Vec<PublicKey>,
     /// Labels to categorize the repository. Can be specified multiple times.
     #[arg(short, long)]
-    label:        Vec<String>,
+    label:         Vec<String>,
     /// Skip kebab-case validation for the repository ID
     #[arg(long)]
-    force_id:     bool,
+    force_id:      bool,
+    /// Indicates whether the announcement is a personal fork.
+    #[arg(long)]
+    personal_fork: bool,
     /// If set, creates a `nostr-address` file to enable automatic address
     /// discovery by n34
     #[arg(long)]
-    address_file: bool,
+    address_file:  bool,
 }
 
 impl CommandRunner for AnnounceArgs {
@@ -94,7 +102,7 @@ impl CommandRunner for AnnounceArgs {
         }
 
         let naddr = utils::repo_naddr(&self.repo_id, user_pubk, &relays)?;
-        let event = EventBuilder::new_git_repo(
+        let mut event_builder = EventBuilder::new_git_repo(
             self.repo_id,
             self.name.map(utils::str_trim),
             self.description.map(utils::str_trim),
@@ -106,9 +114,13 @@ impl CommandRunner for AnnounceArgs {
             self.force_id,
         )?
         .dedup_tags()
-        .pow(options.pow.unwrap_or_default())
-        .build(user_pubk);
+        .pow(options.pow.unwrap_or_default());
 
+        if self.personal_fork {
+            event_builder = event_builder.tag(Tag::hashtag(PERSONAL_FORK_HASHTAG));
+        }
+
+        let event = event_builder.build(user_pubk);
 
         if self.address_file {
             let address_path = std::env::current_dir()?.join(NOSTR_ADDRESS_FILE);
