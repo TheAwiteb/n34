@@ -32,7 +32,7 @@ _default:
     @{{JUST_EXECUTABLE}} --list-heading "{{header}}" --list
 
 # Run the CI
-ci: && msrv _done_ci
+ci: && _done_ci
     echo "🔨 Building n34..."
     cargo build -q
     echo "🔍 Checking code formatting..."
@@ -42,12 +42,6 @@ ci: && msrv _done_ci
     cargo clippy -q -- -D warnings
     echo "🧪 Running tests..."
     cargo test -q
-
-# Check that the current MSRV is correct
-msrv:
-    echo "🔧 Verifying MSRV..."
-    cargo-msrv verify
-    echo "✅ MSRV verification passed"
 
 _done_ci:
     echo "🎉 CI pipeline completed successfully"

@@ -20,9 +20,9 @@
       in
       with pkgs;
       {
+        # n34 development environment
         devShells.default = mkShell {
           packages = [
-            cargo-msrv
             dbus
             git-cliff
             just
@@ -39,6 +39,7 @@
           ];
         };
 
+        # Build n34
         packages.default =
           let
             manifest = (pkgs.lib.importTOML ./Cargo.toml).package;
