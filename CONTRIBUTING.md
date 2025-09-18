@@ -68,8 +68,8 @@ to their read relays, most tools handle this automatically.
 #### Patch Guidelines
 
 - Keep patches small: Focused changes are easier to review and merge.
-- Run `just ci` before submitting your patch.
-- Update the change log with your patch. Run `just changelog` or `git-cliff > CHANGELOG.md`
+- Run `./tasks ci` before submitting your patch.
+- Update the change log with your patch. Run `./tasks changelog` or `git-cliff > CHANGELOG.md`
 - Add your name to the [AUTHORS](AUTHORS) file if this is your first contribution. (alphabetical order)
 - Use [Conventional Commits]: Start the patch subject with one of these types:
   - `feat`: New feature

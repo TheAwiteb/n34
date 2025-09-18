@@ -1,0 +1,100 @@
+#!/usr/bin/env nu
+
+# Set the timezone to UTC
+$env.TZ = "UTC"
+
+const BOOK_DEST_DIR = "dest"
+
+# Releases a new version of n34. Requires a clean file tree with no uncommitted changes.
+def "main release" [version: string]: [nothing -> nothing] {
+    let tag_change_body = "{% for group, commits in commits | group_by(attribute='group') %}\n{{ group | capitalize }}:\n{% for commit in commits %}- {{ commit.message | split(pat='\n') | first | split(pat=':') | slice(start=1) | join(sep=':') | trim | capitalize }} - by {{ commit.author.name}}\n{% endfor %}{% endfor %}"
+    mut tag_msg = $"Version ($version) \n(git-cliff --strip all --unreleased --body $tag_change_body)\n"
+    mut cargo_file = open "Cargo.toml"
+    let old_version = $cargo_file.package.version
+
+    $cargo_file.package.version = $version
+    $cargo_file | save -f "Cargo.toml"
+
+    let old_contributors = git show v($old_version):AUTHORS | split row "\n"
+    let current_contributors = cat AUTHORS | split row "\n"
+    let new_contributors = $current_contributors | where {|user| not ($user in $old_contributors)}
+
+    if not ($new_contributors | is-empty) {
+        $tag_msg = $"($tag_msg)\nNew Contributors:\n($new_contributors | each {|line| '- ' + $line} | str join "\n")"
+    }
+
+    RUST_LOG=none taplo fmt --config "./.taplo.toml"
+    main ci 
+    git-cliff -t $"v($version)" out> "./CHANGELOG.md"
+    git add .
+    git commit -m $"chore: Bump the version to `v($version)`"
+    git tag -s -m $tag_msg $"v($version)"
+}
+
+# Run the CI
+def "main ci" []: [nothing -> nothing] {
+    print "🔨 Building n34..."
+    cargo build -q
+    print "🔍 Checking code formatting..."
+    cargo fmt -q -- --check
+
+    let taplo_output = RUST_LOG=none taplo fmt --check --config "./.taplo.toml" | complete 
+
+    if $taplo_output.exit_code != 0 {
+        print "❌Toml files is not properly formatted"
+        exit 1
+    }
+
+    print "🧹 Running linter checks..."
+    cargo clippy -q -- -D warnings
+    print "🧪 Running tests..."
+    cargo test -q
+
+    print "🎉 CI pipeline completed successfully"
+}
+
+# Update the changelog
+def "main changelog" []: [nothing -> nothing] {
+    def get_hash [] { open "./CHANGELOG.md" | hash sha256 }
+
+    let old_hash = get_hash
+    git-cliff out> "CHANGELOG.md"
+
+    if old_hash != get_hash {
+        git add "CHANGELOG.md"
+        git commit -m "chore(changelog): Update the changelog"
+        print "The changes have been added to the changelog file and committed"
+    } else {
+        print "No changes have been added to the changelog"
+    }
+}
+
+# Deploy the book to Github Pages
+def "main deploy" []: [nothing -> nothing] {
+    mdbook build --dest-dir $BOOK_DEST_DIR
+    cd $BOOK_DEST_DIR
+    git init .
+    git checkout -B gh-pages
+    touch ".nojekyll"
+    print "n34.dev" out> "CNAME"
+
+    git add .
+    git commit -m "Deploy the book to github pages"
+    git remote add origin "git@github.com:TheAwiteb/n34-book"
+    git push origin gh-pages -f
+    cd ..
+    rm -fr $BOOK_DEST_DIR
+}
+
+# n34 tasks runner. e.g. `./tasks deploy`
+def main []: [nothing -> string] {
+    # Returns the tasks
+    "n34 tasks runner. Available tasks:\n\n" + (
+    help main
+      | split row "\n"
+      | each {|line| $line | ansi strip | str trim | str replace "(custom) " ""}
+      | where {|line| $line | str starts-with tasks}
+      | each {|line| $"(ansi green)./tasks(ansi reset) ($line | str replace 'tasks ' '')"}
+      | str join "\n"
+    ) + ""
+}
