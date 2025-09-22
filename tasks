@@ -5,8 +5,28 @@ $env.TZ = "UTC"
 
 const BOOK_DEST_DIR = "dest"
 
+# Verify that the Git repository has no uncommitted changes before proceeding.
+def check_clean_git [] {
+    if (git status --short) != "" {
+        print "Error: Uncommitted changes detected. Please commit or stash your changes before running this command."
+        exit 1
+    }
+}
+
+# Ensures the provided version string does not start with 'v'.
+# If it does, the script exits with an error message.
+def check_version []: string -> nothing {
+    if ($in | str starts-with 'v') {
+        print "Error: The version should not start with 'v'. Please provide the version number only, e.g., '0.5.0'."
+        exit 1
+    }
+}
+
 # Releases a new version of n34. Requires a clean file tree with no uncommitted changes.
-def "main release" [version: string]: [nothing -> nothing] {
+def "main release" [version: string]: nothing -> nothing {
+    check_clean_git
+    $version | check_version
+
     let tag_change_body = "{% for group, commits in commits | group_by(attribute='group') %}\n{{ group | capitalize }}:\n{% for commit in commits %}- {{ commit.message | split(pat='\n') | first | split(pat=':') | slice(start=1) | join(sep=':') | trim | capitalize }} - by {{ commit.author.name}}\n{% endfor %}{% endfor %}"
     mut tag_msg = $"Version ($version) \n(git-cliff --strip all --unreleased --body $tag_change_body)\n"
     mut cargo_file = open "Cargo.toml"
@@ -32,7 +52,7 @@ def "main release" [version: string]: [nothing -> nothing] {
 }
 
 # Run the CI
-def "main ci" []: [nothing -> nothing] {
+def "main ci" []: nothing -> nothing {
     print "🔨 Building n34..."
     cargo build -q
     print "🔍 Checking code formatting..."
@@ -54,7 +74,7 @@ def "main ci" []: [nothing -> nothing] {
 }
 
 # Update the changelog
-def "main changelog" []: [nothing -> nothing] {
+def "main changelog" []: nothing -> nothing {
     def get_hash [] { open "./CHANGELOG.md" | hash sha256 }
 
     let old_hash = get_hash
@@ -70,7 +90,7 @@ def "main changelog" []: [nothing -> nothing] {
 }
 
 # Deploy the book to Github Pages
-def "main deploy" []: [nothing -> nothing] {
+def "main deploy" []: nothing -> nothing {
     mdbook build --dest-dir $BOOK_DEST_DIR
     cd $BOOK_DEST_DIR
     git init .
@@ -87,7 +107,7 @@ def "main deploy" []: [nothing -> nothing] {
 }
 
 # n34 tasks runner. e.g. `./tasks deploy`
-def main []: [nothing -> string] {
+def main []: nothing -> string {
     # Returns the tasks
     "n34 tasks runner. Available tasks:\n\n" + (
     help main
