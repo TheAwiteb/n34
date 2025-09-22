@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New command `repo state` - by Awiteb
 - Support pull requests - by Awiteb
 - Add `--personal-fork` flag to `repo announce` command - by Awiteb
+- Log to stderr and a file - by Awiteb
 
 ### Breaking Change
 

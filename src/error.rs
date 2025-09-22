@@ -55,6 +55,11 @@ pub enum N34Error {
     Keyring(#[from] nostr_keyring::Error),
     #[error("{0}")]
     Config(#[from] ConfigError),
+    #[error(
+        "Could not determine the default data path: both `$XDG_CONFIG_HOME` and `$HOME` \
+         environment variables are missing or unset."
+    )]
+    CanNotFindDataPath,
     #[error("No editor specified in the `EDITOR` environment variable")]
     EditorNotFound,
     #[error("The file you edited is empty. Please save your changes before exiting the editor.")]

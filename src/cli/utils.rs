@@ -14,7 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::io::{self, Write};
+use std::{
+    fs,
+    io::{self, Write},
+};
+
+use crate::error::{N34Error, N34Result};
 
 /// Displays the given prompt and reads a line of input from the user.
 pub fn read_line(prompt: &str) -> io::Result<String> {
@@ -42,4 +47,40 @@ pub fn prompt_bool(prompt: &str) -> io::Result<bool> {
             _ => continue,
         }
     }
+}
+
+/// Opens the logs file for writing. If the file size exceeds 5MB, it is opened
+/// in write mode, otherwise in append mode.
+pub fn logs_file() -> N34Result<fs::File> {
+    const FIVE_MB: u64 = 1024 * 1024 * 5;
+
+    let logs_path = dirs::data_local_dir()
+        .ok_or(N34Error::CanNotFindDataPath)?
+        .join("n34")
+        .join("logs.log");
+
+    tracing::info!(path = %logs_path.display(), "Logs file");
+
+    if let Some(parent) = logs_path.parent()
+        && !parent.exists()
+    {
+        fs::create_dir_all(parent)?;
+    }
+
+    _ = fs::File::create_new(&logs_path);
+
+    let is_large = if let Ok(file) = fs::File::open(&logs_path)
+        && let Ok(metadata) = file.metadata()
+    {
+        metadata.len() >= FIVE_MB
+    } else {
+        false
+    };
+
+    fs::OpenOptions::new()
+        .write(true)
+        .append(!is_large)
+        .truncate(is_large)
+        .open(&logs_path)
+        .map_err(N34Error::from)
 }

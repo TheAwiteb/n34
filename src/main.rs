@@ -22,13 +22,14 @@ pub mod error;
 pub mod nostr_utils;
 
 use std::{
+    fs::File,
     process::ExitCode,
     sync::atomic::{AtomicBool, Ordering},
 };
 
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
-use tracing::Level;
+use tracing::{Level, level_filters::LevelFilter};
 use tracing_subscriber::{Layer, filter, layer::SubscriberExt};
 
 use self::cli::Cli;
@@ -37,42 +38,64 @@ use self::cli::Cli;
 /// open.
 static EDITOR_OPEN: AtomicBool = AtomicBool::new(false);
 
+/// Returns the stderr log layer
+fn stderr_log_layer<S>() -> impl Layer<S>
+where
+    S: tracing::Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a>,
+{
+    tracing_subscriber::fmt::layer()
+        .with_ansi(true)
+        .with_writer(std::io::stderr)
+        .without_time()
+}
+
 /// Configures the logging level based on the provided verbosity.
 ///
 /// When verbosity is set to TRACE, includes file and line numbers in logs.
-fn set_log_level(verbosity: Verbosity) {
-    let is_trace = verbosity
-        .tracing_level()
-        .is_some_and(|l| l == tracing::Level::TRACE);
-
-    let logs_filter = filter::dynamic_filter_fn(move |m, _| {
+fn set_log_level(verbosity: Verbosity, logs_file: File) {
+    let editor_filter = filter::dynamic_filter_fn(move |m, _| {
         // Disable all logs while editor is open
         verbosity.tracing_level().unwrap_or(Level::ERROR) >= *m.level()
+            && (m.name().starts_with("event src") || m.name().contains("nostr"))
             && !EDITOR_OPEN.load(Ordering::Relaxed)
     });
 
-    let logs_layer = tracing_subscriber::fmt::layer()
-        .with_file(is_trace)
-        .with_line_number(is_trace)
-        .without_time();
-    let subscriber = tracing_subscriber::registry().with(logs_layer.with_filter(logs_filter));
+    let file_layer = tracing_subscriber::fmt::layer()
+        .with_ansi(false)
+        .with_writer(logs_file)
+        .with_file(true)
+        .with_line_number(true)
+        .with_filter(LevelFilter::TRACE);
+
+    let subscriber = tracing_subscriber::registry()
+        .with(stderr_log_layer().with_filter(editor_filter))
+        .with(file_layer);
     tracing::subscriber::set_global_default(subscriber).ok();
+}
+
+async fn try_main() -> error::N34Result<()> {
+    // Initialize a thread-local subscriber for logging during CLI parsing and
+    // post-processing.
+    let guard =
+        tracing::subscriber::set_default(tracing_subscriber::registry().with(stderr_log_layer()));
+
+    let cli = cli::post_cli(Cli::parse())?;
+    let logs_file = cli::utils::logs_file()?;
+
+    // Replace the thread-local subscriber with a global default subscriber based on
+    // the CLI verbosity level.
+    drop(guard);
+    set_log_level(cli.verbosity, logs_file);
+
+    cli.run().await?;
+
+    Ok(())
 }
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    let cli = match cli::post_cli(Cli::parse()) {
-        Ok(cli) => cli,
-        Err(err) => {
-            eprintln!("{err}");
-            return ExitCode::FAILURE;
-        }
-    };
-
-    set_log_level(cli.verbosity);
-
-    if let Err(err) = cli.run().await {
-        tracing::error!("{err}");
+    if let Err(err) = try_main().await {
+        eprintln!("{err}");
         return err.exit_code();
     }
 
