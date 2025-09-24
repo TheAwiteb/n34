@@ -53,6 +53,11 @@ use self::send::SendArgs;
 use super::{CliOptions, CommandRunner};
 use crate::error::{N34Error, N34Result};
 
+/// Regular expression for checking the first line in the patch.
+pub static FROM_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^From [a-f0-9]{40} \w+ \w+ \d{1,2} \d{2}:\d{2}:\d{2} \d{4}$").unwrap()
+});
+
 /// Regular expression for extracting the patch subject.
 static SUBJECT_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?m)^Subject: (.*(?:\n .*)*)").unwrap());
@@ -138,6 +143,14 @@ impl FromStr for GitPatch {
     type Err = String;
 
     fn from_str(patch_content: &str) -> Result<Self, Self::Err> {
+        if !patch_content
+            .split("\n")
+            .next()
+            .is_some_and(|line| FROM_RE.is_match(line))
+        {
+            return Err("The first line must start with 'From '.".to_owned());
+        }
+
         // Regex for subject (handles multi-line subjects)
         let subject = SUBJECT_RE
             .captures(patch_content)

@@ -15,11 +15,16 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 use std::{
+    fmt::Write as _,
     fs,
     io::{self, Write},
+    str::FromStr,
 };
 
-use crate::error::{N34Error, N34Result};
+use crate::{
+    cli::patch::{FROM_RE, GitPatch},
+    error::{N34Error, N34Result},
+};
 
 /// Displays the given prompt and reads a line of input from the user.
 pub fn read_line(prompt: &str) -> io::Result<String> {
@@ -83,4 +88,47 @@ pub fn logs_file() -> N34Result<fs::File> {
         .truncate(is_large)
         .open(&logs_path)
         .map_err(N34Error::from)
+}
+
+/// Splits a string with multiple git patches into separate patches. Each patch
+/// begins with a line formatted as "From \<hash\> ...". Ensures the result is
+/// never an empty vector.
+pub fn split_patches(patches: String) -> N34Result<Vec<GitPatch>> {
+    let mut patches = patches.split("\n").peekable();
+    let mut result = Vec::new();
+    let mut current_patch = String::new();
+
+    let push_patch = |patch_str: String| -> N34Result<GitPatch> {
+        tracing::trace!("patch content: {patch_str}");
+        let patch = GitPatch::from_str(&patch_str).map_err(N34Error::InvalidPatch)?;
+        tracing::info!(
+            "Processing patch from stdin: {}",
+            patch
+                .filename("")
+                .map(|p| p.to_string_lossy().into_owned())
+                .unwrap_or_else(|_| "Unnamed patch".to_owned())
+        );
+        Ok(patch)
+    };
+
+    while let Some(line) = patches.next() {
+        // If we have a non-empty patch and encounter a "From " line followed by a line
+        // with ":", it indicates a new patch header. Push the current patch and
+        // clear it for the new one. The "From " line will be added as the first
+        // line of the new patch after this check.
+        if !current_patch.is_empty()
+            && FROM_RE.is_match(line)
+            && patches.peek().is_some_and(|line| line.contains(":"))
+        {
+            result.push(push_patch(current_patch.clone())?);
+            current_patch.clear()
+        }
+        _ = writeln!(&mut current_patch, "{line}");
+    }
+
+    if !current_patch.is_empty() {
+        result.push(push_patch(current_patch)?);
+    }
+
+    Ok(result)
 }

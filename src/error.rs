@@ -60,6 +60,8 @@ pub enum N34Error {
          environment variables are missing or unset."
     )]
     CanNotFindDataPath,
+    #[error("Empty STDIN: expected '{0}' to be present in the input")]
+    EmptyStdin(&'static str),
     #[error("No editor specified in the `EDITOR` environment variable")]
     EditorNotFound,
     #[error("The file you edited is empty. Please save your changes before exiting the editor.")]
@@ -76,6 +78,8 @@ pub enum N34Error {
     InvalidRepoId,
     #[error("Invalid event: {0}")]
     InvalidEvent(String),
+    #[error("Invalid patch: {0}")]
+    InvalidPatch(String),
     #[error("Bech32 error: {0}")]
     Bech32(#[from] nostr::nips::nip19::Error),
     #[error("Event error: {0}")]

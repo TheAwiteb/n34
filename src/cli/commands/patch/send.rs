@@ -31,7 +31,7 @@ use crate::{
     cli::{
         CliOptions,
         patch::{REVISION_ROOT_HASHTAG_CONTENT, ROOT_HASHTAG_CONTENT},
-        traits::{CommandRunner, OptionNaddrOrSetVecExt, RelayOrSetVecExt},
+        traits::{CommandRunner, OptionNaddrOrSetVecExt, RelayOrSetVecExt, VecPatchesExt},
         types::{NaddrOrSet, NostrEvent},
     },
     error::N34Result,
@@ -59,12 +59,12 @@ pub struct SendArgs {
         value_delimiter = ','
     )]
     naddrs:         Option<Vec<NaddrOrSet>>,
-    /// List of patch files to send (space separated).
+    /// Space-separated list of patch files to send. Use `-` to read from stdin.
     ///
-    /// For p-tagging users, include them in the cover letter with
+    /// For p-tagging users, include them in the cover letter using
     /// `nostr:npub1...`.
     #[arg(value_name = "PATCH-PATH", required = true, value_parser = parse_patch_path)]
-    patches:        Vec<GitPatch>,
+    patches:        Vec<Option<GitPatch>>,
     /// Original patch ID if this is a revision of it
     #[arg(long, value_name = "EVENT-ID")]
     original_patch: Option<NostrEvent>,
@@ -77,6 +77,7 @@ impl CommandRunner for SendArgs {
             &utils::nostr_address_path()?,
         )?)?;
 
+        let patches = self.patches.process_patches().await?;
         let repo_coordinates = naddrs.clone().into_coordinates();
         let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
@@ -97,7 +98,7 @@ impl CommandRunner for SendArgs {
 
         let (events, events_write_relays) = make_patch_series(
             &client,
-            self.patches,
+            patches,
             self.original_patch.as_ref().map(|e| e.event_id),
             repos.extract_relays().first().cloned(),
             repo_coordinates,
@@ -145,11 +146,20 @@ impl CommandRunner for SendArgs {
     }
 }
 
-fn parse_patch_path(patch_path: &str) -> Result<GitPatch, String> {
+/// If the patch path is '-', it indicates that patches will be retrieved from
+/// stdin. Otherwise, it reads and parses the patch file from the specified
+/// path.
+fn parse_patch_path(patch_path: &str) -> Result<Option<GitPatch>, String> {
+    if patch_path == "-" {
+        tracing::info!("Reading patches from standard input");
+        return Ok(None);
+    }
+
     tracing::debug!("Parsing patch file `{patch_path}`");
     let patch_content = fs::read_to_string(patch_path)
         .map_err(|err| format!("Failed to read patch file `{patch_path}`: {err}"))?;
-    GitPatch::from_str(&patch_content)
+
+    GitPatch::from_str(&patch_content).map(Option::Some)
 }
 
 async fn make_patch_series(

@@ -14,14 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
+use std::time::Duration;
+
 use nostr::{event::EventId, nips::nip19::Nip19Coordinate, types::RelayUrl};
+use tokio::io::AsyncReadExt;
 
 use super::CliOptions;
 use crate::{
     cli::{
         ConfigError,
         RepoRelaySet,
+        patch::GitPatch,
         types::{NaddrOrSet, NostrEvent, RelayOrSet},
+        utils,
     },
     error::{N34Error, N34Result},
 };
@@ -217,6 +222,47 @@ impl &[RepoRelaySet] {
             "Successfully located a set with the giving name"
         );
         Ok(set)
+    }
+}
+
+#[easy_ext::ext(VecPatchesExt)]
+impl Vec<Option<GitPatch>> {
+    /// Processes a collection of `Option<GitPatch>` values.
+    ///
+    /// This function performs one of two actions:
+    /// 1. If all elements are `Some`, it extracts the `GitPatch` values and
+    ///    returns them as a `Vec<GitPatch>`.
+    /// 2. If there is at least one `None`, it reads patches from standard
+    ///    input, parses them as `GitPatch` values from the stdin, and returns
+    ///    them as a `Vec<GitPatch>`.
+    #[allow(async_fn_in_trait)]
+    pub async fn process_patches(self) -> N34Result<Vec<GitPatch>> {
+        if self.iter().all(Option::is_some) {
+            return Ok(self.into_iter().map(Option::unwrap).collect());
+        }
+
+        let mut patches = String::new();
+
+        match tokio::time::timeout(
+            Duration::from_secs(1),
+            tokio::io::stdin().read_to_string(&mut patches),
+        )
+        .await
+        {
+            Ok(Ok(bytes)) => {
+                tracing::debug!("Received {bytes} bytes from stdin for patch processing");
+            }
+            Ok(Err(err)) => return Err(N34Error::from(err)),
+            Err(_) => return Err(N34Error::EmptyStdin("patches")),
+        }
+
+        let patches = utils::split_patches(patches)?;
+
+        if patches.is_empty() {
+            return Err(N34Error::InvalidPatch("No valid patches".to_owned()));
+        }
+
+        Ok(patches)
     }
 }
 

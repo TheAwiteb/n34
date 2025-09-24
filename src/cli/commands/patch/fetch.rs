@@ -117,7 +117,7 @@ impl CommandRunner for FetchArgs {
             .into_iter()
             .map(|p| {
                 let patch = super::GitPatch::from_str(&p.content).map_err(|err| {
-                    N34Error::InvalidEvent(format!(
+                    N34Error::InvalidPatch(format!(
                         "Failed to parse the patch `{}`: {err}",
                         p.id.to_bech32().expect("Infallible")
                     ))
