@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Make subject mandatory and optional content - by Awiteb
 
+### Dependencies
+
+- Add `io-std` feature to `tokio` - by Awiteb
+
 ### Documentation
 
 - Update commands help messages - by Awiteb

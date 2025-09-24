@@ -64,7 +64,7 @@ tracing-subscriber         = "0.3.19"
   version  = "1.0.219"
 
   [dependencies.tokio]
-  features = ["macros", "rt-multi-thread"]
+  features = ["macros", "rt-multi-thread", "io-std"]
   version  = "1.47.1"
 
 [profile.release]
