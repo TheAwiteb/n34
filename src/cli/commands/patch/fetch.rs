@@ -14,11 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-    str::FromStr,
-};
+use std::{fs, ops::Deref, path::PathBuf, str::FromStr};
 
 use clap::Args;
 use nostr::{
@@ -55,7 +51,8 @@ pub struct FetchArgs {
         value_delimiter = ','
     )]
     naddrs:   Option<Vec<NaddrOrSet>>,
-    /// Output directory for the patches. Default to the current directory
+    /// Directory for saving patches. Defaults to the current directory. Use `-`
+    /// for stdout output.
     #[arg(short, long, value_name = "PATH")]
     output:   Option<PathBuf>,
     /// The patch id to fetch it
@@ -73,6 +70,10 @@ impl CommandRunner for FetchArgs {
         let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
         let output_path = self.output.unwrap_or_default();
+        let (is_stdout, is_current_dir) = {
+            let str_path = output_path.to_string_lossy();
+            (str_path.deref() == "-", str_path.deref().is_empty())
+        };
 
         client
             .add_relays(
@@ -129,13 +130,29 @@ impl CommandRunner for FetchArgs {
         patches.sort_unstable_by_key(|p| p.0.clone());
         patches.dedup_by_key(|p| p.0.clone());
 
-        if output_path.as_path() != Path::new("") && !output_path.exists() {
+        if !is_stdout && !is_current_dir && !output_path.exists() {
             fs::create_dir_all(&output_path)?;
         }
 
-        for (patch_path, patch) in patches {
-            tracing::info!("Writeing `{}` in `{}`", patch.subject, patch_path.display());
-            fs::write(patch_path, patch.inner)?;
+        if is_stdout {
+            tracing::info!(
+                "Writeing {} patch{} to the stdout",
+                patches.len(),
+                if patches.len() >= 2 { "es" } else { "" }
+            );
+            println!(
+                "{}",
+                patches
+                    .into_iter()
+                    .map(|(_, patch)| patch.inner)
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            );
+        } else {
+            for (patch_path, patch) in patches {
+                tracing::info!("Writeing `{}` in `{}`", patch.subject, patch_path.display());
+                fs::write(patch_path, patch.inner)?;
+            }
         }
 
         Ok(())
