@@ -1,4 +1,4 @@
-// n34 - A CLI to interact with NIP-34 and other stuff related to codes in nostr
+// n34 - A CLI to interact with NIP-34 and other stuff related to code in Nostr
 // Copyright (C) 2025 Awiteb <a@4rs.nl>
 //
 // This program is free software: you can redistribute it and/or modify
