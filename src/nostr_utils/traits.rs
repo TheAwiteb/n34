@@ -31,7 +31,6 @@ use nostr::{
     parser::Token,
     types::{RelayUrl, Url},
 };
-use nostr_keyring::KeyringError;
 
 use crate::cli::issue::ISSUE_ALT_PREFIX;
 use crate::cli::patch::{
@@ -375,15 +374,6 @@ impl Event {
             .filter_map(|t| t.content().map(|l| format!("#{l}")))
             .collect::<Vec<_>>()
             .join(", ")
-    }
-}
-
-#[easy_ext::ext(NostrKeyringErrorUtils)]
-impl nostr_keyring::Error {
-    /// Checks if the error indicates a missing keyring entry.
-    #[inline]
-    pub fn is_keyring_no_entry(&self) -> bool {
-        matches!(self, nostr_keyring::Error::Keyring(KeyringError::NoEntry))
     }
 }
 

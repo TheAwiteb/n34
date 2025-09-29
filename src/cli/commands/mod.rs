@@ -158,7 +158,7 @@ impl CliOptions {
         if let Some(ref bunker_url) = self.bunker_url {
             let mut nostrconnect = NostrConnect::new(
                 bunker_url.clone(),
-                Cli::n34_keypair()?,
+                Cli::n34_keypair().await?,
                 BUNKER_TIMEOUT,
                 None,
             )

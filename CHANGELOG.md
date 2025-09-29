@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Check the nip07 signer in `CliOptions::ensure_signer` - by Awiteb
 - Required the `applied_commits` - by Awiteb
 
+### Refactor
+
+- Remove `dbus` C dep - by Awiteb
+
 ## [0.4.0] - 2025-08-08
 
 ### Added

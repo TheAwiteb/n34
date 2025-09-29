@@ -42,8 +42,6 @@ use nostr::key::Keys;
 use nostr::key::SecretKey;
 use nostr_browser_signer_proxy::BrowserSignerProxy;
 use nostr_browser_signer_proxy::BrowserSignerProxyOptions;
-use nostr_keyring::KeyringError;
-use nostr_keyring::NostrKeyring;
 use types::RelayOrSet;
 
 pub use self::commands::*;
@@ -52,7 +50,7 @@ use self::traits::CommandRunner;
 use crate::cli::options_state::BROWSER_SIGNER_PROXY_TIMEOUT;
 use crate::error::N34Error;
 use crate::error::N34Result;
-use crate::nostr_utils::traits::NostrKeyringErrorUtils;
+use crate::nostr_keyring;
 
 /// Header message, used in the help message
 const HEADER: &str = r#"Copyright (C) 2025 Awiteb <a@4rs.nl>
@@ -86,13 +84,6 @@ pub struct Cli {
 
 
 impl Cli {
-    /// Keyring service name of n34
-    pub const N34_KEYRING_SERVICE_NAME: &str = "n34";
-    /// Keyring entry name of the n34 keypair
-    pub const N34_KEY_PAIR_ENTRY: &str = "n34_keypair";
-    /// Keyring entry name of the user secret key
-    pub const USER_KEY_PAIR_ENTRY: &str = "user_keypair";
-
     /// Executes the command
     pub async fn run(self) -> N34Result<()> {
         self.command.run(self.options).await
@@ -100,33 +91,30 @@ impl Cli {
 
     /// Gets the n34 keypair from the keyring or generates and stores a new one
     /// if none exists.
-    pub fn n34_keypair() -> N34Result<Keys> {
-        let keyring = NostrKeyring::new(Self::N34_KEYRING_SERVICE_NAME);
-
-        match keyring.get(Self::N34_KEY_PAIR_ENTRY) {
+    pub async fn n34_keypair() -> N34Result<Keys> {
+        match nostr_keyring::n34::get().await {
             Ok(keys) => Ok(keys),
-            Err(nostr_keyring::Error::Keyring(KeyringError::NoEntry)) => {
+            Err(N34Error::Keyring(keyring::Error::NoEntry)) => {
                 let new_keys = Keys::generate();
-                keyring.set(Self::N34_KEY_PAIR_ENTRY, &new_keys)?;
+                nostr_keyring::n34::set(&new_keys).await?;
                 Ok(new_keys)
             }
-            Err(err) => Err(N34Error::Keyring(err)),
+            Err(err) => Err(err),
         }
     }
 
     /// Retrieves the user's keypair from the keyring. If no key exists and one
     /// is provided, stores and returns it. If no key exists and none is
     /// provided, returns an error.
-    pub fn user_keypair(secret_key: Option<SecretKey>) -> N34Result<Keys> {
-        let keyring = NostrKeyring::new(Self::N34_KEYRING_SERVICE_NAME);
-        let keyring_key = keyring.get(Self::USER_KEY_PAIR_ENTRY);
+    pub async fn user_keypair(secret_key: Option<SecretKey>) -> N34Result<Keys> {
+        let keyring_key = nostr_keyring::user::get().await;
 
         if let Err(ref err) = keyring_key
             && err.is_keyring_no_entry()
             && let Some(secret_key) = secret_key
         {
             let keypair = Keys::new(secret_key);
-            keyring.set(Self::USER_KEY_PAIR_ENTRY, &keypair)?;
+            nostr_keyring::user::set(&keypair).await?;
             return Ok(keypair);
         }
 
@@ -134,7 +122,7 @@ impl Cli {
             if err.is_keyring_no_entry() {
                 N34Error::SecretKeyKeyringWithoutEntry
             } else {
-                N34Error::Keyring(err)
+                err
             }
         })
     }
@@ -142,7 +130,7 @@ impl Cli {
 
 /// Processes the CLI configuration by applying fallback values from config if
 /// needed. Returns the processed Cli configuration if successful.
-pub fn post_cli(mut cli: Cli) -> N34Result<Cli> {
+pub async fn post_cli(mut cli: Cli) -> N34Result<Cli> {
     cli.options.pow = cli.options.pow.or(cli.options.config.pow);
 
     if cli.options.relays.is_empty()
@@ -169,7 +157,8 @@ pub fn post_cli(mut cli: Cli) -> N34Result<Cli> {
             cli.options.bunker_url = Some(bunker_url.clone());
         } else if cli.options.config.keyring_secret_key {
             cli.options.secret_key = Some(
-                Cli::user_keypair(cli.options.secret_key)?
+                Cli::user_keypair(cli.options.secret_key)
+                    .await?
                     .secret_key()
                     .clone(),
             );

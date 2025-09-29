@@ -18,6 +18,8 @@
 pub mod cli;
 /// N34 errors
 pub mod error;
+/// Nostr keyring
+pub mod nostr_keyring;
 /// Nostr utils module
 pub mod nostr_utils;
 
@@ -79,7 +81,7 @@ async fn try_main() -> error::N34Result<()> {
     let guard =
         tracing::subscriber::set_default(tracing_subscriber::registry().with(stderr_log_layer()));
 
-    let cli = cli::post_cli(Cli::parse())?;
+    let cli = cli::post_cli(Cli::parse()).await?;
     let logs_file = cli::utils::logs_file()?;
 
     // Replace the thread-local subscriber with a global default subscriber based on

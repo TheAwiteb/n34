@@ -23,11 +23,9 @@
         # n34 development environment
         devShells.default = mkShell {
           packages = [
-            dbus
             git-cliff
             mdbook
             nushell
-            pkg-config
             taplo
           ];
 
@@ -49,14 +47,6 @@
             version = manifest.version;
             cargoLock.lockFile = ./Cargo.lock;
             src = lib.cleanSource ./.;
-
-            nativeBuildInputs = [
-              pkg-config
-            ];
-
-            buildInputs = [
-              dbus
-            ];
 
             meta = {
               inherit (manifest) description homepage;

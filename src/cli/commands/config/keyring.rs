@@ -17,8 +17,9 @@
 use clap::{ArgGroup, Args};
 
 use crate::{
-    cli::{Cli, CliOptions, traits::CommandRunner},
+    cli::{CliOptions, traits::CommandRunner},
     error::N34Result,
+    nostr_keyring,
 };
 
 #[derive(Args, Debug)]
@@ -46,8 +47,6 @@ impl CommandRunner for KeyringArgs {
     const NEED_SIGNER: bool = false;
 
     async fn run(self, mut options: CliOptions) -> N34Result<()> {
-        let keyring = nostr_keyring::NostrKeyring::new(Cli::N34_KEYRING_SERVICE_NAME);
-
         if self.enable {
             options.config.keyring_secret_key = true;
         } else if self.disable {
@@ -55,7 +54,7 @@ impl CommandRunner for KeyringArgs {
         }
 
         if self.reset || self.disable {
-            let _ = keyring.delete(Cli::USER_KEY_PAIR_ENTRY);
+            let _ = nostr_keyring::user::delete().await;
         }
 
         options.config.dump()

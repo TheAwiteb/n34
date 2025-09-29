@@ -51,8 +51,12 @@ pub enum N34Error {
     Addr(#[from] AddrParseError),
     #[error("Browser Signer Proxy Error: {0}")]
     BrowserSignerProxy(#[from] nostr_browser_signer_proxy::Error),
+    #[error("Keys error: {0}")]
+    Keys(#[from] nostr::key::Error),
     #[error("Keyring error: {0}")]
-    Keyring(#[from] nostr_keyring::Error),
+    Keyring(#[from] keyring::Error),
+    #[error("Join error: {0}")]
+    Join(#[from] tokio::task::JoinError),
     #[error("{0}")]
     Config(#[from] ConfigError),
     #[error(
@@ -186,5 +190,11 @@ impl N34Error {
             | Self::NotRootPatch => ExitCode::from(DATA_ERROR),
             _ => ExitCode::FAILURE,
         }
+    }
+
+    /// Checks if the error indicates a missing keyring entry.
+    #[inline]
+    pub fn is_keyring_no_entry(&self) -> bool {
+        matches!(self, Self::Keyring(keyring::Error::NoEntry))
     }
 }
