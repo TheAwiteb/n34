@@ -43,10 +43,6 @@ use crate::{
         ArgGroup::new("pr-subject")
         .required(true)
     ),
-    group(
-        ArgGroup::new("clone-or-grasp")
-        .required(true)
-    )
 )]
 pub struct NewArgs {
     /// Repository addresses
@@ -80,15 +76,12 @@ pub struct NewArgs {
     /// The branch name for the pull request.
     #[arg(long)]
     branch:  Option<String>,
-    /// Push the pull request to the repository GRASP server.
-    #[arg(long, group = "clone-or-grasp")]
-    grasp:   bool,
     /// The SHA-1 hash of the commit at the tip of the PR branch.
     ///
     /// You can get it using `git rev-parse <branch-name>`
     commit:  Sha1Hash,
     /// Repositories to clone for the pull request, separated by commas.
-    #[arg(value_delimiter = ',', group = "clone-or-grasp")]
+    #[arg(value_delimiter = ',', required = true)]
     clones:  Vec<nostr::Url>,
 }
 
@@ -155,16 +148,12 @@ impl CommandRunner for NewArgs {
             ));
         }
 
-        let event = if self.grasp {
-            utils::build_grasp_event(&repos, user_pubk, event_builder.clone())?
-        } else {
-            // Since `grasp` is false, `clones` must be provided
-            event_builder = event_builder.tag(Tag::custom(
+        let event = event_builder
+            .tag(Tag::custom(
                 TagKind::custom("clone"),
                 self.clones.iter().map(ToString::to_string),
-            ));
-            event_builder.build(user_pubk)
-        };
+            ))
+            .build(user_pubk);
 
         let event_id = event.id.expect("There is an id");
 

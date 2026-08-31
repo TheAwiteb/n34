@@ -13,13 +13,6 @@ Arguments:
 
 Options:
       --repo <NADDR-NIP05-OR-SET>  Repository addresses
-      --grasp                      Push the pull request update to the repository GRASP server
 ```
 
 Update an existing pull request with the new changes.
-
-Utilize the `--grasp` option if you intend to send the pull request to the
-[GRASP] servers. Note that `n34` will not automatically send the pull request
-for you but will indicate where to push your changes.
-
-[GRASP]: https://ngit.dev/grasp

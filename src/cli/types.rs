@@ -103,12 +103,6 @@ impl EntityType {
         matches!(self, Self::Patch)
     }
 
-    /// Returns true if the entity is an issue.
-    #[inline]
-    pub const fn is_issue(&self) -> bool {
-        matches!(self, Self::Issue)
-    }
-
     /// Returns the kind of the entity
     #[inline]
     pub const fn kind(&self) -> Kind {

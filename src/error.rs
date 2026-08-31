@@ -161,13 +161,6 @@ pub enum N34Error {
          keyring is enabled to store it"
     )]
     SecretKeyKeyringWithoutEntry,
-    #[error(
-        "Your push was not accepted by any GRASP server. Try creating a personal fork, pushing to \
-         your own GRASP servers, and then make a pull request with your GRASP repos as a clone"
-    )]
-    PushRejectedByGraspServers,
-    #[error("The repository doesn't contains any GRASP servers")]
-    NoGraspServer,
 }
 
 impl N34Error {

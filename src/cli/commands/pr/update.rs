@@ -16,7 +16,7 @@
 
 use std::iter;
 
-use clap::{ArgGroup, Args};
+use clap::Args;
 use nostr::{
     event::{EventBuilder, Tag, TagKind, TagStandard, Tags},
     filter::{Alphabet, Filter},
@@ -38,12 +38,6 @@ use crate::{
 };
 
 #[derive(Args, Debug)]
-#[clap(
-    group(
-        ArgGroup::new("clone-or-grasp")
-        .required(true)
-    )
-)]
 pub struct UpdateArgs {
     /// Repository addresses
     ///
@@ -60,15 +54,12 @@ pub struct UpdateArgs {
     /// Original PR ID
     #[arg(value_name = "EVENT-ID")]
     original_pr: NostrEvent,
-    /// Push the pull request update to the repository GRASP server.
-    #[arg(long, group = "clone-or-grasp")]
-    grasp:       bool,
     /// The SHA-1 hash of the commit at the tip of the PR branch.
     ///
     /// You can get it using `git rev-parse <branch-name>`
     commit:      Sha1Hash,
     /// Repositories to clone for the pull request, separated by commas.
-    #[arg(value_delimiter = ',', group = "clone-or-grasp")]
+    #[arg(value_delimiter = ',', required = true)]
     clones:      Vec<nostr::Url>,
 }
 
@@ -127,7 +118,7 @@ impl CommandRunner for UpdateArgs {
             uppercase: true,
         }));
 
-        let mut event_builder = EventBuilder::new(super::PR_UPDATE_KIND, "")
+        let event = EventBuilder::new(super::PR_UPDATE_KIND, "")
             .pow(options.pow.unwrap_or_default())
             .tags(nip22_orignal_pr)
             .tags(
@@ -139,19 +130,12 @@ impl CommandRunner for UpdateArgs {
             .tag(Tag::custom(
                 TagKind::single_letter(Alphabet::C, false),
                 iter::once(self.commit.to_string()),
-            ));
-
-        let event = if self.grasp {
-            utils::build_grasp_event(&repos, user_pubk, event_builder.clone())?
-        } else {
-            // Since `grasp` is false, `clones` must be provided
-            event_builder = event_builder.tag(Tag::custom(
+            ))
+            .tag(Tag::custom(
                 TagKind::custom("clone"),
                 self.clones.iter().map(ToString::to_string),
-            ));
-
-            event_builder.build(user_pubk)
-        };
+            ))
+            .build(user_pubk);
 
         let event_id = event.id.expect("There is an id");
 

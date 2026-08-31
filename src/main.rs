@@ -15,13 +15,13 @@
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
 /// Command line interface module
-pub mod cli;
+pub(crate) mod cli;
 /// N34 errors
-pub mod error;
+pub(crate) mod error;
 /// Nostr keyring
-pub mod nostr_keyring;
+pub(crate) mod nostr_keyring;
 /// Nostr utils module
-pub mod nostr_utils;
+pub(crate) mod nostr_utils;
 
 use std::{
     fs::File,

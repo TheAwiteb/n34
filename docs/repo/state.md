@@ -17,13 +17,11 @@ Options:
       --branches <BRANCHES>        Branches to announce a state for, in the format `<branch-name>=<commit-id>`. Separated by comma
 ```
 
-This command allows you to announce your repository state, which is useful for
-pushing to permissionless git repositories like the [GRASP] relay. The relay
-will verify your repository state and permit pushing commits only if they match
-the announced state.
+This command announces your repository state, enabling secure pushes to
+permissionless git repositories such as a [GRASP] relay.
 
 To get the commit ID that a branch or tag points to, use `git rev-parse
 <tag-or-branch-name>`. You can automate this process by creating a script to
 generate the required input for this command.
 
-[GRASP]: https://ngit.dev/grasp
+[GRASP]: https://gitgrasp.com

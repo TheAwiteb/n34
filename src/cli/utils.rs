@@ -14,45 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::{
-    fmt::Write as _,
-    fs,
-    io::{self, Write},
-    str::FromStr,
-};
+use std::{fmt::Write as _, fs, str::FromStr};
 
 use crate::{
     cli::patch::{FROM_RE, GitPatch},
     error::{N34Error, N34Result},
 };
-
-/// Displays the given prompt and reads a line of input from the user.
-pub fn read_line(prompt: &str) -> io::Result<String> {
-    {
-        let mut stdout = io::stdout().lock();
-
-        write!(&mut stdout, "{prompt}: ")?;
-        _ = stdout.flush();
-    }
-    let mut user_input = String::new();
-    io::stdin().read_line(&mut user_input)?;
-    Ok(user_input.trim().to_owned())
-}
-
-/// Prompts the user with a message and repeatedly asks until they enter a valid
-/// boolean response. Recognizes "yes", "y", "true" for `true` and "no", "n",
-/// "false" for `false`.
-pub fn prompt_bool(prompt: &str) -> io::Result<bool> {
-    loop {
-        let user_input = read_line(prompt)?.to_ascii_lowercase();
-
-        match user_input.as_str() {
-            "yes" | "y" | "true" => return Ok(true),
-            "no" | "n" | "false" => return Ok(false),
-            _ => continue,
-        }
-    }
-}
 
 /// Opens the logs file for writing. If the file size exceeds 5MB, it is opened
 /// in write mode, otherwise in append mode.

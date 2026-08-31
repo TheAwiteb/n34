@@ -33,11 +33,10 @@ commit tip to construct the event. For more details on the philosophy behind
 
 Pull requests are useful for large changes. Most relays limit events to 60KB,
 so if your changes exceed that limit (per event, not in total), consider using
-pull requests. For [GRASP] servers, the limit is usually higher. Before using pull
-requests, check the relays, patches are more decentralized.
+pull requests. Before using pull requests, check the relays limit, patches are
+more decentralized.
 
 [NIP-34]: https://github.com/nostr-protocol/nips/blob/master/34.md
 [DanConwayDev]: https://danconwaydev.com
 [nostr-protocol/nips#1966]: https://github.com/nostr-protocol/nips/pull/1966
 [Philosophy]: https://n34.dev/commands.html#philosophy
-[GRASP]: https://ngit.dev/grasp

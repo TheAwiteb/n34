@@ -17,14 +17,7 @@ Options:
   -e, --editor                     Opens the user's default editor to write PR subject and body
       --labels <LABELS>            Labels to associate with the pull request, separated by commas
       --branch <BRANCH>            The branch name for the pull request
-      --grasp                      Push the pull request to the repository GRASP server
 ```
 
 Submit a pull request to the repositories specified using the `--repo` option or
 obtained from the `nostr-address` file.
-
-Utilize the `--grasp` option if you intend to send the pull request to the
-[GRASP] servers. Note that `n34` will not automatically send the pull request
-for you but will indicate where to push your changes.
-
-[GRASP]: https://ngit.dev/grasp
