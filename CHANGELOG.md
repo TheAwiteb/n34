@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - New command `repo state` - by Awiteb
 - Support pull requests - by Awiteb
-- Add `--personal-fork` flag to `repo announce` command - by Awiteb
 - Log to stderr and a file - by Awiteb
 - Accept patches from stdin in `patch send` command - by Awiteb
 - Write patches to the stdout in `patch fetch` command - by Awiteb
