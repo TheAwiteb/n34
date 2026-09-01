@@ -248,6 +248,19 @@ impl NostrClient {
         .collect()
     }
 
+    /// Try to fetch a repository and returns it
+    pub async fn fetch_repo(&self, coordinate: &Coordinate) -> Option<GitRepositoryAnnouncement> {
+        self.fetch_event(
+            Filter::new()
+                .author(coordinate.public_key)
+                .identifier(&coordinate.identifier)
+                .kind(Kind::GitRepoAnnouncement),
+        )
+        .await
+        .ok()?
+        .map(|e| utils::event_into_repo(e, &coordinate.identifier))
+    }
+
     /// Fetch the patch by the given id. None if not found
     pub async fn fetch_patch(&self, patch_id: EventId) -> N34Result<Event> {
         self.fetch_event(Filter::new().id(patch_id).kind(Kind::GitPatch))

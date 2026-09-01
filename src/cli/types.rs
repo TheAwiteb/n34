@@ -16,14 +16,17 @@
 
 use std::{fmt, str::FromStr};
 
+use either::Either;
 use nostr::{
     event::{EventId, Kind},
+    key::PublicKey,
     nips::{
         nip01::Coordinate,
         nip05::{Nip05Address, Nip05Profile},
         nip19::{self, FromBech32, Nip19Coordinate},
     },
     types::RelayUrl,
+    types::Url,
     util::BoxedFuture,
 };
 use nostr_connect::client::AuthUrlHandler;
@@ -346,6 +349,53 @@ impl TryFrom<Kind> for PatchPrStatus {
             Kind::GitStatusClosed => Ok(Self::Closed),
             Kind::GitStatusDraft => Ok(Self::Draft),
             _ => Err(N34Error::InvalidPatchStatus(kind)),
+        }
+    }
+}
+
+/// Represents the source repository that a fork originates from.
+#[derive(Debug, Clone)]
+pub struct ParentRepo {
+    /// Repository, either a NIP-19 coordinate or a direct URL.
+    pub repo:   Either<Nip19Coordinate, Url>,
+    /// Public key of the repository's author.
+    pub author: PublicKey,
+}
+
+impl FromStr for ParentRepo {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(NaddrOrSet::Naddr(coor)) = NaddrOrSet::from_str(s) {
+            Ok(Self {
+                author: coor.public_key,
+                repo:   Either::Left(coor),
+            })
+        } else if let Some((str_url, str_pkey)) = s.split_once(",")
+            && let Ok(url) = Url::parse(str_url)
+            && url.scheme() == "https"
+            && url.as_str().ends_with(".git")
+            && let Ok(pkey) = PublicKey::parse(str_pkey)
+        {
+            Ok(Self {
+                repo:   Either::Right(url),
+                author: pkey,
+            })
+        } else {
+            Err(
+                "Invalid parent format: use 'https://git.example.com/repo.git,npub1...' or \
+                 '<nip05>/<repo-name>' or 'naddr1...'"
+                    .to_owned(),
+            )
+        }
+    }
+}
+
+impl fmt::Display for ParentRepo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.repo {
+            Either::Left(ref coor) => write!(f, "{}", coor.coordinate),
+            Either::Right(ref url) => write!(f, "{}", url),
         }
     }
 }

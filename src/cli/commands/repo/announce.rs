@@ -17,11 +17,22 @@
 use std::{fs, io::Write};
 
 use clap::Args;
+use either::Either;
 use futures::future;
-use nostr::{event::EventBuilder, key::PublicKey, types::Url};
+use nostr::{
+    event::{EventBuilder, Tag, TagKind},
+    key::PublicKey,
+    types::{RelayUrl, Url},
+};
 
 use crate::{
-    cli::{CliOptions, CommandRunner, NOSTR_ADDRESS_FILE, traits::RelayOrSetVecExt},
+    cli::{
+        CliOptions,
+        CommandRunner,
+        NOSTR_ADDRESS_FILE,
+        traits::RelayOrSetVecExt,
+        types::ParentRepo,
+    },
     error::N34Result,
     nostr_utils::{NostrClient, traits::NewGitRepositoryAnnouncement, utils},
 };
@@ -68,6 +79,14 @@ pub struct AnnounceArgs {
     /// Labels to categorize the repository. Can be specified multiple times.
     #[arg(short, long)]
     label:        Vec<String>,
+    /// Specifies the parent repository when this is a fork.
+    ///
+    /// Format is "parent,author". For HTTPS git repos, include the author's
+    /// public key: e.g., "https://git.example.com/repo.git,npub1...". If the
+    /// repo has a Nostr announcement, you can just use "<nip05>/<repo-name>" or
+    /// a Nostr address like "naddr1..." with no author.
+    #[arg(long)]
+    parent:       Option<ParentRepo>,
     /// Skip kebab-case validation for the repository ID
     #[arg(long)]
     force_id:     bool,
@@ -84,6 +103,7 @@ impl CommandRunner for AnnounceArgs {
         let relays = options.relays.clone().flat_relays(&options.config.sets)?;
         let client = NostrClient::init(&options, &relays).await;
         let user_pubk = client.pubkey().await?;
+        let parent_pkey = self.parent.as_ref().map(|p| p.author);
         let relays_list = client.user_relays_list(user_pubk).await?;
         client
             .add_relays(&utils::add_read_relays(relays_list.as_ref()))
@@ -94,7 +114,7 @@ impl CommandRunner for AnnounceArgs {
         }
 
         let naddr = utils::repo_naddr(&self.repo_id, user_pubk, &relays)?;
-        let event = EventBuilder::new_git_repo(
+        let mut event_builder = EventBuilder::new_git_repo(
             self.repo_id,
             self.name.map(utils::str_trim),
             self.description.map(utils::str_trim),
@@ -105,10 +125,36 @@ impl CommandRunner for AnnounceArgs {
             self.label.into_iter().map(utils::str_trim).collect(),
             self.force_id,
         )?
-        .dedup_tags()
-        .pow(options.pow.unwrap_or_default())
-        .build(user_pubk);
+        .pow(options.pow.unwrap_or_default());
 
+
+        let parent_author_relays = match parent_pkey {
+            Some(p) => client.user_relays_list(p).await.ok().flatten(),
+            None => None,
+        };
+
+        // Connect to the author write realys to search for the repo
+        client
+            .add_relays(&utils::add_write_relays(parent_author_relays.as_ref()))
+            .await;
+        let parent_relays = get_parent_relays(&client, self.parent.as_ref()).await;
+
+        if let Some(repo) = self.parent {
+            let parent_relay_tag_value = parent_relays
+                .first()
+                .map(|r| r.to_string())
+                .unwrap_or_default();
+
+            event_builder = event_builder.tag(Tag::custom(
+                TagKind::single_letter(nostr::filter::Alphabet::U, false),
+                [
+                    repo.to_string(),
+                    parent_relay_tag_value,
+                    repo.author.to_hex(),
+                ],
+            ));
+        }
+        let event = event_builder.build(user_pubk);
 
         if self.address_file {
             let address_path = std::env::current_dir()?.join(NOSTR_ADDRESS_FILE);
@@ -131,6 +177,10 @@ impl CommandRunner for AnnounceArgs {
         let write_relays = [
             relays,
             utils::add_write_relays(relays_list.as_ref()),
+            // Parent relays
+            parent_relays,
+            // parent author read relays
+            utils::add_read_relays(parent_author_relays.as_ref()),
             // Include read relays for each maintainer (if found)
             future::join_all(
                 self.maintainers
@@ -153,5 +203,36 @@ impl CommandRunner for AnnounceArgs {
         println!("Repo Address: {naddr}",);
 
         Ok(())
+    }
+}
+
+/// Fetch the parent repository announcement event and extract its relays
+async fn get_parent_relays(client: &NostrClient, parent: Option<&ParentRepo>) -> Vec<RelayUrl> {
+    match parent {
+        Some(ParentRepo {
+            repo: Either::Left(coor),
+            ..
+        }) => {
+            client.add_relays(&coor.relays).await;
+
+            match client.fetch_repo(&coor.coordinate).await {
+                Some(repo) => {
+                    tracing::info!(
+                        parent_coordinate = %coor.coordinate,
+                        relay_count = repo.relays.len(),
+                        "Found parent repository announcement. Extract relays from parent."
+                    );
+                    repo.relays
+                }
+                None => {
+                    tracing::warn!(
+                        parent_coordinate = %coor.coordinate,
+                        "Parent repository announcement not found. Continuing without parent relays."
+                    );
+                    Vec::new()
+                }
+            }
+        }
+        _ => Vec::new(),
     }
 }

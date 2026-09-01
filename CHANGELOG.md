@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Log to stderr and a file - by Awiteb
 - Accept patches from stdin in `patch send` command - by Awiteb
 - Write patches to the stdout in `patch fetch` command - by Awiteb
+- Support `u` tag for forks - by Awiteb
 
 ### Breaking Change
 
@@ -27,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update commands help messages - by Awiteb
 - Update commands titles and descriptions - by Awiteb
+- Remove PR from pull requests - by Awiteb
+- Refrence `passing repositories` section - by Awiteb
 
 ### Fixed
 

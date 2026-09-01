@@ -16,6 +16,7 @@ Options:
   -c, --clone <CLONE>              URLs for cloning the repository
   -m, --maintainers <MAINTAINERS>  Additional maintainers of the repository (besides yourself)
   -l, --label <LABEL>              Labels to categorize the repository. Can be specified multiple times
+      --parent <PARENT>            Specifies the parent repository when this is a fork
       --force-id                   Skip kebab-case validation for the repository ID
       --address-file               If set, creates a `nostr-address` file to enable automatic address discovery by n34
 ```
@@ -30,3 +31,8 @@ completely new announcement event that will replace the old one.
 It is recommended to use the `--address-file` flag. This option creates
 a `nostr-address` file that enables `n34` to automatically discover the
 repository's address, simplifying the workflow for contributors.
+
+The parent format is "parent,author". For HTTPS git repos, include the author's
+public key: e.g., "https://git.example.com/repo.git,npub1...". If the repo has
+a Nostr announcement, you can just use "<nip05>/<repo-name>" or a Nostr address
+like "naddr1..." with no author.
