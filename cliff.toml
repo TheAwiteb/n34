@@ -55,6 +55,9 @@ filter_unconventional = false
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
+  # Skip personal-fork feature. Got reverted by f4c0a3b8
+  { sha = "8d8ad5f1e5d6d65e1314eba6f475cdcc7d156c3a", skip = true },
+
   { message = '^.*!:', group = "Breaking Change" },
   { message = '^feat', group = "Added" },
   { message = '^deprecate', group = "Deprecated" },
