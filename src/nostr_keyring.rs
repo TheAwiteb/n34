@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use async_utility::task;
 use keyring::Entry;
 use nostr::key::{Keys, SecretKey};
+use tokio::task::spawn_blocking;
 
 use crate::error::{N34Error, N34Result};
 
@@ -46,7 +46,7 @@ pub mod user {
     pub async fn set(key: &Keys) -> N34Result<()> {
         let private_key = key.secret_key().to_secret_bytes();
 
-        task::spawn_blocking(move || {
+        spawn_blocking(move || {
             user_entry()?
                 .set_secret(&private_key)
                 .map_err(N34Error::from)
@@ -56,7 +56,7 @@ pub mod user {
 
     /// Retrieves the user's keypair from the system.
     pub async fn get() -> N34Result<Keys> {
-        task::spawn_blocking(move || {
+        spawn_blocking(move || {
             Ok(Keys::new(SecretKey::from_slice(
                 &user_entry()?.get_secret()?,
             )?))
@@ -66,8 +66,7 @@ pub mod user {
 
     /// Delete the user's keypair from the system.
     pub async fn delete() -> N34Result<()> {
-        task::spawn_blocking(move || user_entry()?.delete_credential().map_err(N34Error::from))
-            .await?
+        spawn_blocking(move || user_entry()?.delete_credential().map_err(N34Error::from)).await?
     }
 }
 
@@ -78,7 +77,7 @@ pub mod n34 {
     pub async fn set(key: &Keys) -> N34Result<()> {
         let private_key = key.secret_key().to_secret_bytes();
 
-        task::spawn_blocking(move || {
+        spawn_blocking(move || {
             n34_entry()?
                 .set_secret(&private_key)
                 .map_err(N34Error::from)
@@ -88,7 +87,7 @@ pub mod n34 {
 
     /// Retrieves the `n34` client's keypair from the system.
     pub async fn get() -> N34Result<Keys> {
-        task::spawn_blocking(move || {
+        spawn_blocking(move || {
             Ok(Keys::new(SecretKey::from_slice(
                 &n34_entry()?.get_secret()?,
             )?))

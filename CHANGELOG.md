@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Dependencies
 
 - Add `io-std` feature to `tokio` - by Awiteb on df54a53
+- Remove `async-utility` - by Awiteb on fd8a58d
 
 ### Documentation
 
