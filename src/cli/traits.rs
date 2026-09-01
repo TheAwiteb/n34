@@ -44,6 +44,15 @@ pub trait CommandRunner {
     fn run(self, options: CliOptions) -> impl Future<Output = N34Result<()>> + Send;
 }
 
+impl<T> CommandRunner for Box<T>
+where
+    T: CommandRunner + Send,
+{
+    fn run(self, options: CliOptions) -> impl Future<Output = N34Result<()>> + Send {
+        <T as CommandRunner>::run(*self, options)
+    }
+}
+
 #[easy_ext::ext(VecNostrEventExt)]
 impl Vec<NostrEvent> {
     /// Extracts `EventId` from each `NostrEvent` and collects them into a

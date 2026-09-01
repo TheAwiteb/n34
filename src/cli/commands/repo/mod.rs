@@ -34,7 +34,7 @@ pub enum RepoSubcommands {
     /// View details of a nostr git repository
     View(ViewArgs),
     /// Broadcast and update a git repository
-    Announce(AnnounceArgs),
+    Announce(Box<AnnounceArgs>),
     /// Repository state announcements
     State(StateArgs),
 }
