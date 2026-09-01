@@ -11,14 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - New command `repo state` - by Awiteb on dd05e05
 - Support pull requests - by Awiteb on 4360aa1
-- Log to stderr and a file - by Awiteb on 95a46a7
+- logs: Log to stderr and a file - by Awiteb on 95a46a7
 - Accept patches from stdin in `patch send` command - by Awiteb on ee17c21
 - Write patches to the stdout in `patch fetch` command - by Awiteb on d2adff7
-- Support `u` tag for forks - by Awiteb on 041a2e6
+- repo-announce: Support `u` tag for forks - by Awiteb on 041a2e6
 
 ### Breaking Change
 
-- Make subject mandatory and optional content - by Awiteb on ed1bfaf
+- issue: Make subject mandatory and optional content - by Awiteb on ed1bfaf
 
 ### Dependencies
 
@@ -29,12 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update commands help messages - by Awiteb on c308dc1
 - Update commands titles and descriptions - by Awiteb on 4bcf104
 - Remove PR from pull requests - by Awiteb on d3ac52b
-- Refrence `passing repositories` section - by Awiteb on 6072dc6
+- sets-update: Refrence `passing repositories` section - by Awiteb on 6072dc6
 
 ### Fixed
 
 - Check the nip07 signer in `CliOptions::ensure_signer` - by Awiteb on ec68e97
-- Required the `applied_commits` - by Awiteb on 089b62a
+- n34-patch-apply: Required the `applied_commits` - by Awiteb on 089b62a
 
 ### Refactor
 
@@ -130,7 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Create a valid naddr string - by Awiteb on 55a4868
+- utils-repo_naddr: Create a valid naddr string - by Awiteb on 55a4868
 
 ### Refactor
 
@@ -142,7 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Setup the CLI and create `repo view` command - by Awiteb on d962732
 - Add `repo announce` command - by Awiteb on b444aeb
-- Support PoW - by Awiteb on c0a5e47
+- nip13: Support PoW - by Awiteb on c0a5e47
 - Add `issue new` command - by Awiteb on 54f1c7e
 - New `reply` command - by Awiteb on 9444fc1
 

@@ -22,7 +22,10 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
-        - {{ commit.message | split(pat="\n") | first | split(pat=":") | slice(start=1) | join(sep=":") | trim | upper_first }} - \
+        {% set msg = commit.message | split(pat="\n") | first -%}
+        {# type(scope): msg -> scope or empty string -#}
+        {% set scope = msg | split(pat=":") | first | split(pat='(') | nth(n=1) | split(pat=')') | first | trim -%}
+        - {% if scope != "" %}{{ scope ~ ": " }}{% endif %}{{ msg | split(pat=":") | slice(start=1) | join(sep=":") | trim | upper_first }} - \
             by {{ commit.author.name}} \
             on {{ commit.id | truncate(length=7, end="") }}\
     {% endfor %}
