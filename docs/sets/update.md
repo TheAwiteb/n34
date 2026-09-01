@@ -20,6 +20,7 @@ Options:
 Use this command to update an existing set by its name. By default, providing
 relays via `--set-relay` or repositories via `--repo` will add them to the set's
 existing entries. To replace the current relays and repositories with the new
-values, use the `--override` flag.
+values, use the `--override` flag. See [passing repositories] for details on
+accepted formats.
 
 [passing repositories]: /commands.html#passing-repositories
