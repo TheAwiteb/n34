@@ -45,7 +45,7 @@ use crate::{
 };
 
 /// Timeout duration for the client.
-const CLIENT_TIMEOUT: Duration = Duration::from_millis(1500);
+const CLIENT_TIMEOUT: Duration = Duration::from_millis(5000);
 /// Length of a Nostr npub (public key) in characters.
 const NPUB_LEN: usize = 63;
 
