@@ -23,7 +23,7 @@ use crate::{
 
 #[derive(Args, Debug)]
 pub struct PowArgs {
-    /// The new default PoW difficulty
+    /// The new default PoW difficulty. 0 to disable
     difficulty: u8,
 }
 

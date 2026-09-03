@@ -9,7 +9,7 @@ Sets the default PoW difficulty (0 if not specified)
 Usage: n34 config pow <DIFFICULTY>
 
 Arguments:
-  <DIFFICULTY>  The new default PoW difficulty
+  <DIFFICULTY>  The new default PoW difficulty, 0 to disable
 ```
 
 This command configures the default Proof of Work (PoW) difficulty for newly

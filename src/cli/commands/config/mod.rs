@@ -41,20 +41,18 @@ use crate::{cli::traits::CommandRunner, error::N34Result};
 
 #[derive(Subcommand, Debug)]
 pub enum ConfigSubcommands {
-    /// Sets the default PoW difficulty (0 if not specified)
+    /// Sets the default PoW difficulty.
     Pow(PowArgs),
-    /// Enable tor proxy for onion-service relays
+    /// Enable tor proxy for onion-service relays.
     Tor(TorArgs),
     /// Sets the default fallback relays if none provided. Use this relays for
     /// read and write.
     Relays(RelaysArgs),
     /// Sets a URL of NIP-46 bunker server used for signing events.
     Bunker(BunkerArgs),
-    /// Managing the secret key keyring, including enabling, disabling, or
-    /// resetting it.
+    /// Managing the secret key keyring.
     Keyring(KeyringArgs),
-    /// Controls the NIP-07 browser signer proxy, turning it on or off, and
-    /// configures the `ip:port` address.
+    /// Controls the NIP-07 browser signer proxy.
     Nip07(Nip07Args),
 }
 
