@@ -82,6 +82,9 @@ pub struct CliOptions {
     /// Proof of Work difficulty when creatring events
     #[arg(long, value_name = "DIFFICULTY")]
     pub pow:        Option<u8>,
+    /// When set, route onion-service relays through Tor (default port 9050).
+    #[arg(long, value_name = "PORT")]
+    pub tor:        Option<Option<u16>>,
     /// Config path [default: `$XDG_CONFIG_HOME` or `$HOME/.config`]
     #[arg(long, value_name = "PATH", default_value = DEFAULT_FALLBACK_PATH,
          hide_default_value = true, value_parser = parsers::parse_config_path

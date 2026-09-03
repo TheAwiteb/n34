@@ -16,19 +16,20 @@ unnecessary complexity.
 
 The `n34` command-line tool accepts the following options:
 
--   `-s`, `--secret-key`: Your Nostr secret key (in `nsec` format), used for
+- `-s`, `--secret-key`: Your Nostr secret key (in `nsec` format), used for
   signing events.
--   `-b`, `--bunker-url`: The URL of a NIP-46 bunker service used for remote
+- `-b`, `--bunker-url`: The URL of a NIP-46 bunker service used for remote
   signing of events.
--   `-7`, `--nip07`: Enables signing events using the browser's NIP-07
+- `-7`, `--nip07`: Enables signing events using the browser's NIP-07
   extension. Listens on `127.0.0.1:51034`. You can configure the address with `n34
   config nip07`
--   `-r`, `--relays`: A relay to read from and write to. This option can be
+- `-r`, `--relays`: A relay to read from and write to. This option can be
   specified multiple times to connect to several relays.
--   `--pow`: Sets the Proof of Work difficulty required when creating events.
--   `--config`: Specifies a custom path to the configuration file (Default:
+- `--pow`: Sets the Proof of Work difficulty required when creating events.
+- `--tor [<PORT>]`: Routes onion-service relays through Tor (default port 9050).
+- `--config`: Specifies a custom path to the configuration file (Default:
   `$HOME/.config/n34/config.toml`).
--   `-v`, `--verbose...`: Increases the logging verbosity. Can be used multiple
+- `-v`, `--verbose...`: Increases the logging verbosity. Can be used multiple
   times for more detail (e.g., `-v`, `-vv`).
 
 **Note:** The `--secret-key`, `--nip07` and `--bunker-url` options are mutually

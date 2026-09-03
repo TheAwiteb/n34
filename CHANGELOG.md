@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Accept patches from stdin in `patch send` command - by Awiteb on ee17c21
 - Write patches to the stdout in `patch fetch` command - by Awiteb on d2adff7
 - repo-announce: Support `u` tag for forks - by Awiteb on 041a2e6
+- Enable Tor proxy for onion-service relay connections - by Awiteb on 06c75d2
 
 ### Breaking Change
 
@@ -23,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Dependencies
 
 - Add `io-std` feature to `tokio` - by Awiteb on df54a53
-- Remove `async-utility` - by Awiteb on fd8a58d
+- Remove `async-utility` - by Awiteb on 8688c2a
 
 ### Documentation
 

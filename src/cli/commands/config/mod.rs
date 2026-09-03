@@ -24,6 +24,8 @@ mod nip07;
 mod pow;
 /// `config relays` subcommand
 mod relays;
+/// `config tor` subcommand
+mod tor;
 
 use clap::Subcommand;
 
@@ -32,6 +34,7 @@ use self::keyring::KeyringArgs;
 use self::nip07::Nip07Args;
 use self::pow::PowArgs;
 use self::relays::RelaysArgs;
+use self::tor::TorArgs;
 use super::CliOptions;
 use crate::{cli::traits::CommandRunner, error::N34Result};
 
@@ -40,6 +43,8 @@ use crate::{cli::traits::CommandRunner, error::N34Result};
 pub enum ConfigSubcommands {
     /// Sets the default PoW difficulty (0 if not specified)
     Pow(PowArgs),
+    /// Enable tor proxy for onion-service relays
+    Tor(TorArgs),
     /// Sets the default fallback relays if none provided. Use this relays for
     /// read and write.
     Relays(RelaysArgs),
@@ -55,6 +60,6 @@ pub enum ConfigSubcommands {
 
 impl CommandRunner for ConfigSubcommands {
     async fn run(self, options: CliOptions) -> N34Result<()> {
-        crate::run_command!(self, options, & Pow Relays Bunker Keyring Nip07)
+        crate::run_command!(self, options, & Pow Tor Relays Bunker Keyring Nip07)
     }
 }

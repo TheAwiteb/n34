@@ -132,6 +132,7 @@ impl Cli {
 /// needed. Returns the processed Cli configuration if successful.
 pub async fn post_cli(mut cli: Cli) -> N34Result<Cli> {
     cli.options.pow = cli.options.pow.or(cli.options.config.pow);
+    cli.options.tor = cli.options.tor.or_else(|| cli.options.config.tor.map(Some));
 
     if cli.options.relays.is_empty()
         && let Some(relays) = &cli.options.config.fallback_relays

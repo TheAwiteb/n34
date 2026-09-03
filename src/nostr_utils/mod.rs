@@ -19,7 +19,11 @@ pub mod traits;
 /// Utility functions for nostr.
 pub mod utils;
 
-use std::{collections::HashSet, time::Duration};
+use std::{
+    collections::HashSet,
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
+    time::Duration,
+};
 
 use futures::future;
 use nostr::{
@@ -35,7 +39,11 @@ use nostr::{
     parser::NostrParser,
     types::RelayUrl,
 };
-use nostr_sdk::{Client, ClientOptions};
+use nostr_sdk::{
+    Client,
+    ClientOptions,
+    client::{Connection, ConnectionTarget},
+};
 use traits::TokenUtils;
 
 use crate::{
@@ -112,8 +120,9 @@ impl NostrClient {
     /// Initializes a new [`NostrClient`] instance and connects to the specified
     /// relays.
     pub async fn init(options: &CliOptions, relays: &[RelayUrl]) -> Self {
-        let mut client_builder =
-            Client::builder().opts(ClientOptions::new().verify_subscriptions(true));
+        let mut client_builder = Client::builder()
+            .opts(ClientOptions::new().verify_subscriptions(true))
+            .opts(ClientOptions::new().connection(setup_tor_proxy(options.tor)));
 
         if let Ok(Some(signer)) = options.signer().await {
             client_builder = client_builder.signer(signer);
@@ -501,5 +510,23 @@ impl NostrClient {
             hashtags,
             write_relays,
         )
+    }
+}
+
+/// Configure a proxy for onion relays when Tor is enabled, otherwise direct.
+fn setup_tor_proxy(tor_enabled: Option<Option<u16>>) -> Connection {
+    // Extract port with default fallback: 9050 if enabled but port unspecified
+    match tor_enabled.map(|maybe_port| maybe_port.unwrap_or(9050)) {
+        // Tor enabled: configure the proxy
+        Some(tor_port) => {
+            Connection::new()
+                .target(ConnectionTarget::Onion)
+                .proxy(SocketAddr::V4(SocketAddrV4::new(
+                    Ipv4Addr::LOCALHOST,
+                    tor_port,
+                )))
+        }
+        // Tor disabled: create direct connection without proxy
+        None => Connection::new(),
     }
 }

@@ -8,6 +8,7 @@
     - [Remove a Set](sets/remove.md)
   - [Manage Configuration](config/README.md)
     - [Default PoW Difficulty](config/pow.md)
+    - [Configure Tor Proxy for Onion-Service Relays](config/tor.md)
     - [Fallback Relays](config/relays.md)
     - [NIP-07 Browser Signer Proxy](config/nip07.md)
     - [NIP-46 Bunker](config/bunker.md)

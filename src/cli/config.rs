@@ -79,6 +79,9 @@ pub struct CliConfig {
     /// Signs events using the browser's NIP-07 extension.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nip07:              Option<SocketAddr>,
+    /// Route onion-service relays through tor proxy
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tor:                Option<u16>,
 }
 
 /// A named group of repositories and relays.
