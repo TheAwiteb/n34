@@ -25,7 +25,7 @@ Check the documentation at [n34.dev]
 - [X] Issues (Send, view and list)
 - [X] Replies
 - [X] Issues and patches status
-- [X] Pull requests ([nostr-protocol/nips#1966])
+- [X] Pull requests
 - [X] Gossip Model ([NIP-65])
 - [X] Proof of Work ([NIP-13])
 - [X] `nostr:` URI scheme, in the issue/reply content ([NIP-21])
@@ -54,7 +54,6 @@ into a future-proof foundation for decentralized collaboration.
 
 ### More about Nostr
 
-- <https://nostr.com>
 - <https://nostr.org>
 - <https://nostr.how/en/what-is-nostr>
 
@@ -136,7 +135,6 @@ refer to the [LICENSE](LICENSE) file for more details.
 [NIP-C0]: https://github.com/nostr-protocol/nips/blob/master/C0.md
 [NIP-46]: https://github.com/nostr-protocol/nips/blob/master/46.md
 [NIP-07]: https://github.com/nostr-protocol/nips/blob/master/07.md
-[nostr-protocol/nips#1966]: https://github.com/nostr-protocol/nips/pull/1966
 [nostr-browser-signer-proxy]: https://crates.io/crates/nostr-browser-signer-proxy
 [home-manager]: https://github.com/nix-community/home-manager
 [n34.dev]: https://n34.dev
