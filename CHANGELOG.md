@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Write patches to the stdout in `patch fetch` command - by Awiteb on d2adff7
 - repo-announce: Support `u` tag for forks - by Awiteb on 041a2e6
 - Enable Tor proxy for onion-service relay connections - by Awiteb on 10d05cc
+- Send nip07 request after user open the proxy page - by Awiteb on 6324e31
 
 ### Breaking Change
 
@@ -25,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `io-std` feature to `tokio` - by Awiteb on df54a53
 - Remove `async-utility` - by Awiteb on 8688c2a
-- Update nostr crates to v0.44 - by Awiteb on f4eefb0
+- Update nostr crates to v0.44 - by Awiteb on 2961900
 
 ### Documentation
 

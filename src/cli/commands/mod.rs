@@ -145,9 +145,12 @@ impl CliOptions {
                 self.state.browser_signer_proxy.url()
             );
 
-            // FIXME: Use `BrowserSignerProxy::is_session_active` after it release
-            // nostr@0.44.0
-            tokio::time::sleep(Duration::from_secs(10)).await;
+            // Wait for user to open proxy page
+            tracing::debug!("waiting for proxy page to be opened by user");
+            while !self.state.browser_signer_proxy.is_session_active() {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+            }
+            tracing::debug!("proxy page opened, browser signer proxy is now active");
 
             return Ok(Some(
                 self.state.browser_signer_proxy.clone().into_nostr_signer(),
