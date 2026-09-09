@@ -20,7 +20,7 @@ dirs                       = "6.0.0"
 easy-ext                   = "1.0.2"
 either                     = "1.15.0"
 futures                    = "0.3.31"
-nostr-browser-signer-proxy = "0.43.0"
+nostr-browser-signer-proxy = "0.44.0"
 regex                      = "1.11.1"
 tempfile                   = "3.20.0"
 thiserror                  = "2.0.12"
@@ -50,15 +50,15 @@ tracing-subscriber         = "0.3.19"
   [dependencies.nostr]
   default-features = false
   features         = ["std"]
-  version          = "0.43.0"
+  version          = "0.44.0"
 
   [dependencies.nostr-connect]
   default-features = false
-  version          = "0.43.0"
+  version          = "0.44.0"
 
   [dependencies.nostr-sdk]
   default-features = false
-  version          = "0.43.0"
+  version          = "0.44.0"
 
   [dependencies.reqwest]
   default-features = false

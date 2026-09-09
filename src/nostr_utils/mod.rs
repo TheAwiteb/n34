@@ -20,6 +20,7 @@ pub mod traits;
 pub mod utils;
 
 use std::{
+    borrow::Cow,
     collections::HashSet,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     time::Duration,
@@ -168,9 +169,9 @@ impl NostrClient {
     }
 
     /// Add a relay hint and connect to it
-    pub async fn add_relay_hint(&self, hint: Option<RelayUrl>) {
+    pub async fn add_relay_hint(&self, hint: Option<Cow<'_, RelayUrl>>) {
         if let Some(relay) = hint {
-            self.add_relays(&[relay]).await
+            self.add_relays(&[relay.into_owned()]).await
         }
     }
 
@@ -408,8 +409,8 @@ impl NostrClient {
             if let Some(nip22::CommentTarget::Event { id, relay_hint, .. }) =
                 nip22::extract_root(&event)
             {
-                self.add_relay_hint(relay_hint.cloned()).await;
-                let root_event = self.fetch_event(Filter::new().id(*id)).await?;
+                self.add_relay_hint(relay_hint).await;
+                let root_event = self.fetch_event(Filter::new().id(id)).await?;
                 if let Some(ref root_event) = root_event
                     && !root_event.kind.is_root_kind()
                 {
@@ -419,8 +420,8 @@ impl NostrClient {
             } else if let Some(nip22::CommentTarget::Event { id, relay_hint, .. }) =
                 nip22::extract_parent(&event)
             {
-                self.add_relay_hint(relay_hint.cloned()).await;
-                if let Ok(Some(parent_event)) = self.fetch_event(Filter::new().id(*id)).await {
+                self.add_relay_hint(relay_hint).await;
+                if let Ok(Some(parent_event)) = self.fetch_event(Filter::new().id(id)).await {
                     event = parent_event;
                     continue;
                 }

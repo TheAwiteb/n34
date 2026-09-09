@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::fs;
+use std::{borrow::Cow, fs};
 
 use clap::{ArgGroup, Args};
 use futures::future;
 use nostr::{
     event::{Event, EventBuilder, Kind},
     filter::Filter,
-    nips::nip01::Coordinate,
+    nips::{nip01::Coordinate, nip22::CommentTarget},
     types::RelayUrl,
 };
 
@@ -132,16 +132,31 @@ impl CommandRunner for ReplyArgs {
         let content = utils::get_content(self.comment.as_ref(), quoted_content.as_ref(), ".txt")?;
         let content_details = client.parse_content(&content).await;
 
-        let event = EventBuilder::comment(
-            content,
-            &reply_to,
-            root.as_ref(),
-            repos.first().and_then(|r| r.relays.first()).cloned(),
-        )
-        .dedup_tags()
-        .pow(options.pow.unwrap_or_default())
-        .tags(content_details.clone().into_tags())
-        .build(user_pubk);
+        let relay_hint = repos
+            .first()
+            .and_then(|r| r.relays.first().cloned())
+            .map(Cow::Owned);
+
+        let comment_to = CommentTarget::event(
+            reply_to.id,
+            reply_to.kind,
+            Some(reply_to.pubkey),
+            relay_hint.clone(),
+        );
+        let comment_root = root.as_ref().map(|root_event| {
+            CommentTarget::event(
+                root_event.id,
+                root_event.kind,
+                Some(root_event.pubkey),
+                relay_hint,
+            )
+        });
+
+        let event = EventBuilder::comment(content, comment_to, comment_root)
+            .dedup_tags()
+            .pow(options.pow.unwrap_or_default())
+            .tags(content_details.clone().into_tags())
+            .build(user_pubk);
 
         let event_id = event.id.expect("There is an id");
         let write_relays = [
@@ -193,7 +208,7 @@ async fn quote_reply_to_content(client: &NostrClient, quoted_event: &Event) -> S
     let fdate = chrono::DateTime::from_timestamp(
         quoted_event
             .created_at
-            .as_u64()
+            .as_secs()
             .try_into()
             .unwrap_or(MAX_DATE),
         0,
