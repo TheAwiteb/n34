@@ -201,6 +201,7 @@ impl fmt::Debug for CliOptions {
             .field("nip07", &self.nip07)
             .field("relays", &self.relays)
             .field("pow", &self.pow)
+            .field("tor", &self.tor)
             .field("config", &self.config)
             .finish()
     }
