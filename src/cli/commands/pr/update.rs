@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://gnu.org/licenses/gpl-3.0.html>.
 
-use std::iter;
+use std::{borrow::Cow, iter};
 
 use clap::Args;
 use nostr::{
-    event::{EventBuilder, Tag, TagKind, TagStandard, Tags},
+    event::{EventBuilder, Tag, TagKind},
     filter::{Alphabet, Filter},
     hashes::sha1::Hash as Sha1Hash,
+    nips::nip22::CommentTarget,
 };
 
 use crate::{
@@ -96,31 +97,16 @@ impl CommandRunner for UpdateArgs {
             return Err(N34Error::EventNotFound);
         };
 
-        // TODO: Use `CommentTarget` to mention the orignal PR
-        let mut nip22_orignal_pr = Tags::new();
-        nip22_orignal_pr.push(Tag::from_standardized_without_cell(TagStandard::Event {
-            event_id:   orignal_pr.id,
-            relay_url:  None,
-            marker:     None,
-            public_key: Some(orignal_pr.pubkey),
-            uppercase:  true,
-        }));
-        nip22_orignal_pr.push(Tag::from_standardized_without_cell(
-            TagStandard::PublicKey {
-                public_key: orignal_pr.pubkey,
-                relay_url:  None,
-                alias:      None,
-                uppercase:  true,
-            },
-        ));
-        nip22_orignal_pr.push(Tag::from_standardized_without_cell(TagStandard::Kind {
-            kind:      orignal_pr.kind,
-            uppercase: true,
-        }));
+        let nip22_root_tags = CommentTarget::event(
+            orignal_pr.id,
+            orignal_pr.kind,
+            Some(orignal_pr.pubkey),
+            repos_relays.first().map(|r| Cow::Owned(r.clone())),
+        );
 
         let event = EventBuilder::new(super::PR_UPDATE_KIND, "")
             .pow(options.pow.unwrap_or_default())
-            .tags(nip22_orignal_pr)
+            .tags(nip22_root_tags.as_vec(true))
             .tags(
                 coordinates
                     .into_iter()
