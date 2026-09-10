@@ -27,7 +27,7 @@ def "main release" [version: string]: nothing -> nothing {
     check_clean_git
     $version | check_version
 
-    let tag_change_body = "{% for group, commits in commits | group_by(attribute='group') %}\n{{ group | capitalize }}:\n{% for commit in commits %}- {{ commit.message | split(pat='\n') | first | split(pat=':') | slice(start=1) | join(sep=':') | trim | capitalize }} - by {{ commit.author.name}}\n{% endfor %}{% endfor %}"
+    let tag_change_body = "{% for group, commits in commits | group_by(attribute='group') %}\n{{ group | upper_first }}:{% for commit in commits %}\n{% set msg = commit.message | split(pat='\n') | first -%}\n{% set scope = msg | split(pat=':') | first | split(pat='(') | nth(n=1) | split(pat=')') | first | trim -%}\n- {% if scope != '' %}{{ scope ~ ': ' }}{% endif %}{{ msg | split(pat=':') | slice(start=1) | join(sep=':') | trim | upper_first }} - by {{ commit.author.name}} in {{ commit.id | truncate(length=7, end='') }}{% endfor %}\n{% endfor %}"
     mut tag_msg = $"Version ($version) \n(git-cliff --strip all --unreleased --body $tag_change_body)\n"
     mut cargo_file = open "Cargo.toml"
     let old_version = $cargo_file.package.version
