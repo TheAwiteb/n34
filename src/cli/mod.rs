@@ -1,5 +1,5 @@
 // n34 - A CLI to interact with NIP-34 and other stuff related to code in Nostr
-// Copyright (C) 2025 Awiteb <a@4rs.nl>
+// Copyright (C) 2025-2026 Awiteb <a@4rs.nl>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ use crate::error::N34Result;
 use crate::nostr_keyring;
 
 /// Header message, used in the help message
-const HEADER: &str = r#"Copyright (C) 2025 Awiteb <a@4rs.nl>
+const HEADER: &str = r#"Copyright (C) 2025-2026 Awiteb <a@4rs.nl>
 License GNU GPL-3.0-or-later <https://gnu.org/licenses/gpl-3.0.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
