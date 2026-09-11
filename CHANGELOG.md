@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Multi thread pow mining - by Awiteb in c5de11e
+- Multi thread pow mining - by Awiteb in 146e411
+
+### Documentation
+
+- Add pull requests to the description - by Awiteb in 1ceab87
 
 ## [0.5.1] - 2026-09-10
 
