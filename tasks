@@ -96,7 +96,7 @@ def "main deploy" []: nothing -> nothing {
     git init .
     git checkout -B gh-pages
     touch ".nojekyll"
-    print "n34.dev" out> "CNAME"
+    echo "n34.dev" out> "CNAME"
 
     git add .
     git commit -m "Deploy the book to github pages"
