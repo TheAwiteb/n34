@@ -79,10 +79,11 @@ pub fn split_patches(patches: String) -> N34Result<Vec<GitPatch>> {
     };
 
     while let Some(line) = patches.next() {
-        // If we have a non-empty patch and encounter a "From " line followed by a line
-        // with ":", it indicates a new patch header. Push the current patch and
-        // clear it for the new one. The "From " line will be added as the first
-        // line of the new patch after this check.
+        // If we have a non-empty patch and encounter a "From " line followed by
+        // a line with ":", it indicates a new patch header. Push the
+        // current patch and clear it for the new one. The "From " line
+        // will be added as the first line of the new patch after this
+        // check.
         if !current_patch.is_empty()
             && FROM_RE.is_match(line)
             && patches.peek().is_some_and(|line| line.contains(":"))

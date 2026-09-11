@@ -231,8 +231,8 @@ async fn make_patch(
     // 2. The second patch would reply to the root twice:
     //    - First with the 'root' marker
     //    - Then with the 'reply' marker
-    // The `EventBuilder::dedup_tags` function then removes the 'reply' marker as a
-    // duplicate.
+    // The `EventBuilder::dedup_tags` function then removes the 'reply' marker
+    // as a duplicate.
     let mut safe_dedup_tags = Tags::new();
     safe_dedup_tags.push(Tag::alt(format!("{PATCH_ALT_PREFIX}{}", patch.subject)));
     safe_dedup_tags.push(Tag::description(patch.subject));

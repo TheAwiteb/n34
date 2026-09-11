@@ -84,8 +84,8 @@ async fn try_main() -> error::N34Result<()> {
     let cli = cli::post_cli(Cli::parse()).await?;
     let logs_file = cli::utils::logs_file()?;
 
-    // Replace the thread-local subscriber with a global default subscriber based on
-    // the CLI verbosity level.
+    // Replace the thread-local subscriber with a global default subscriber
+    // based on the CLI verbosity level.
     drop(guard);
     set_log_level(cli.verbosity, logs_file);
 
